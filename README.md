@@ -3,10 +3,10 @@
 Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to try to create a
 6502 emulator as a stepping stone towards creating 32-bit ARM emulator.
 
-# 6502 Based Systems
+## 6502 Based Systems
 
 * Apple IIe - I wonder if I still have a floppy disk around here of my 8th and 9th grade Apple IIe
-  projects I made in computer class.  The apple II was pretty cool because it was pretty easy to
+  projects I made in computer class.  The Apple II was pretty cool because it was pretty easy to
   use the graphical modes from within BASIC.
 * Atari 2600 - Wizards worked on this thing.   David Crane (creator of Pitfall and A Boy and his
   Blob did a [fantastic talk (GDC 2011 Pitfall Classic Postmortem with David Crane)
@@ -26,4 +26,23 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
   ](http://www.commodore.ca/commodore-manuals/commodore-64-users-guide/)
 * Famicom / Nintendo Entertainment System - Legendary start for Zelda, Super Mario Bros., Metroid, 
   Final Fantasy, and countless others.  I never owned one until recently.
+
+## Design
+
+* MemoryController: Class will manage switching out which MemoryDev class will be available at the
+  6502 memory space.  For instance, C64 has special ROM memory and RAM that occupy the same memory
+  address space depending on the current system mode.
+* MemoryDev: Abstract class that defines an interface to read and write the many different memory
+  mapped peripherals available to the 6502
+** RAM: Memory module representing the system RAM
+** ROM: Memory module representing the system ROM (For C64 this will include the kernel, chargen,
+   and basic interpreter.
+** Interface: C64 and NES both have interface peripheral memory spaces to talk to things like 
+   controllers or serial ports.
+** SID: C64 Sound Chip.  Probably one of the last things I will try to emulate, if I do ever,
+   because I know so little about how sound ICs work on legacy or current devices.
+** VIC2: C64 video processor.  This will be connected to the user display.  I'm kind of
+   wondering if it is possible to make this ncurses based too for plain text operation modes.
+** 6510: Special memory mapped features of the individual processors themselves.  I think the
+   C64 CPU has a page or two of special memory mapped registers.
 
