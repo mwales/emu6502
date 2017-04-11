@@ -34,20 +34,20 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
   address space depending on the current system mode.
 * MemoryDev: Abstract class that defines an interface to read and write the many different memory
   mapped peripherals available to the 6502
-** RAM: Memory module representing the system RAM
-** ROM: Memory module representing the system ROM (For C64 this will include the kernel, chargen,
+  * RAM: Memory module representing the system RAM
+  * ROM: Memory module representing the system ROM (For C64 this will include the kernel, chargen,
    and basic interpreter.
-** Interface: C64 and NES both have interface peripheral memory spaces to talk to things like 
+  * Interface: C64 and NES both have interface peripheral memory spaces to talk to things like 
    controllers or serial ports.
-** SID: C64 Sound Chip.  Probably one of the last things I will try to emulate, if I do ever,
+  * SID: C64 Sound Chip.  Probably one of the last things I will try to emulate, if I do ever,
    because I know so little about how sound ICs work on legacy or current devices.
-** VIC2: C64 video processor.  This will be connected to the user display.  I'm kind of
+  * VIC2: C64 video processor.  This will be connected to the user display.  I'm kind of
    wondering if it is possible to make this ncurses based too for plain text operation modes.
-** 6510: Special memory mapped features of the individual processors themselves.  I think the
+  * 6510: Special memory mapped features of the individual processors themselves.  I think the
    C64 CPU has a page or two of special memory mapped registers.
 * Decoder: An abstract class for decoding instructions
-** Processor: Does the instruction decoding, and actually emulates the processor operations.
-** Disassembler: Does the instruction decoding, and makes a dissassembly listing of all the
+  * Processor: Does the instruction decoding, and actually emulates the processor operations.
+  * Disassembler: Does the instruction decoding, and makes a dissassembly listing of all the
    instructions.
 
 ## 6502 Stuff
@@ -60,13 +60,13 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
 * SP= stack pointer (can also think of it as 01SP since stack is on page 1
 * PC= 16-bit program counter
 * Flags
-** 0x80 Sign (N)
-** 0x40 Overflow (V)
-** 0x10 Breakpoint (B)
-** 0x08 Binary Coded Decimal (D)
-** 0x04 Interrupt (I)
-** 0x02 Zero (Z)
-** 0x01 Carry (C)
+  * 0x80 Sign (N)
+  * 0x40 Overflow (V)
+  * 0x10 Breakpoint (B)
+  * 0x08 Binary Coded Decimal (D)
+  * 0x04 Interrupt (I)
+  * 0x02 Zero (Z)
+  * 0x01 Carry (C)
 
 ### Instructions
 
