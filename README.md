@@ -45,4 +45,57 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
    wondering if it is possible to make this ncurses based too for plain text operation modes.
 ** 6510: Special memory mapped features of the individual processors themselves.  I think the
    C64 CPU has a page or two of special memory mapped registers.
+* Decoder: An abstract class for decoding instructions
+** Processor: Does the instruction decoding, and actually emulates the processor operations.
+** Disassembler: Does the instruction decoding, and makes a dissassembly listing of all the
+   instructions.
 
+## 6502 Stuff
+
+### Registers
+
+* A = accumulator
+* X = general purpose register 1
+* Y = general purpose register 2
+* SP= stack pointer (can also think of it as 01SP since stack is on page 1
+* PC= 16-bit program counter
+* Flags
+** 0x80 Sign (N)
+** 0x40 Overflow (V)
+** 0x10 Breakpoint (B)
+** 0x08 Binary Coded Decimal (D)
+** 0x04 Interrupt (I)
+** 0x02 Zero (Z)
+** 0x01 Carry (C)
+
+### Instructions
+
+| MNM | Instruction        | Modes                   | Notes         |
+|-----|--------------------|-------------------------|---------------|
+| LDx | Load               |                         | A, X, or Y    |
+| STx | Store              |                         | A, X, or Y    |
+| Txx | Transfer           |                         | A->XY, X->AS, Y->A, S->X |
+| ADC | Add with Carry     |                         |               |
+| SBC | Sub with Carry     |                         |               |
+| INx | Increment          |                         | X, Y, or Memory |
+| DEx | Decrement          |                         | X, Y, or Memory |
+| ORA | Or                 |                         |               |
+| AND | And                |                         |               |
+| EOR | Xor                |                         |               |
+| ASL | Arithmetic Shift L |                         | Shift Left    |
+| LSR | Logical Shift Rght |                         | Shift Right   |
+| ROR | Rotate Right       |                         |               |
+| ROL | Rotate Left        |                         |               |
+| PHx | Push               |                         | Push A or (P)rocessor Flags onto stack |
+| PLx | Pull               |                         | Pull A or (P)rocessor Flags from stack |
+| JMP | Jump               |                         |               |
+| JSR | Jump Subroutine    |                         |               |
+| RTI | Return from Intrpt |                         |               |
+| RTS | Return from Subrtn |                         |               |
+| BIT | Bit Test           |                         | Status Flags  |
+| CMP | Compare            |                         | A, X, or Y    |
+| CLx | Clear              |                         | Clear processor status flag: (C)arry, (D)ecimal, (I)nterrupt disable, o(V)erflow |
+| SEx | Set                |                         | Set processor status flag: (C)arry, (D)ecimal, (I)nterrupt disable |
+| NOP | No Op              |                         |               | 
+| BRK | Break              |                         | Halts and prints out registers |
+| Bxx | Branch             |                         | (C)arry (C)lear, (C)arry (S)et, (EQ)ual or zero flag, (MI)nus, (N)ot (E)qual, (PL)us |
