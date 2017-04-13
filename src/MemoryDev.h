@@ -8,7 +8,9 @@
 class MemoryDev
 {
 public:
-   std::string getName() = 0;
+   MemoryDev(uint16_t address);
+
+   std::string getName();
 
    virtual uint8_t read8(uint16_t offset) = 0;
 
@@ -18,7 +20,17 @@ public:
 
    virtual bool write16(uint16_t offset, uint16_t val) = 0;
 
-   virtual uint16_t getAddress() = 0;
+   virtual uint16_t getAddress();
+
+protected:
+
+   bool isAbsAddressValid(uint16_t addr);
+
+   uint16_t theAddress;
+
+   uint16_t theSize;
+
+   std::string theName;
 };
 
 #endif // MEMORYDEV_H

@@ -6,38 +6,41 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "Logger.h"
+
 RomMemory::RomMemory(std::string filepath, uint16_t address):
-   theAddress(address),
-   theSize(0),
-   theName("ROM"),
+   MemoryDev(address),
+
    theData(0)
 {
+   theName = "ROM";
+
    int fd = open(filepath.c_str(), O_RDONLY);
 
    if (fd <= 0)
    {
-      std::cerr << "ROM INIT ERROR: Couldn't open ROM file " << filepath << std::endl;
+      LOG_WARNING() << "ROM INIT ERROR: Couldn't open ROM file " << filepath;
       return;
    }
 
    int32_t sizeStatus =  lseek(fd, 0, SEEK_END);
    if (sizeStatus < 0)
    {
-      std::cerr << "ROM INIT ERROR: Couldn't seek to the end of the ROM" << std::endl;
+      LOG_WARNING() << "ROM INIT ERROR: Couldn't seek to the end of the ROM";
       close(fd);
       return;
    }
 
    if (sizeStatus > UINT16_MAX)
    {
-      std::cerr << "ROM INIT ERROR: ROM File too large for 6502 memory space" << std::endl;
+      LOG_WARNING() << "ROM INIT ERROR: ROM File too large for 6502 memory space";
       close(fd);
       return;
    }
 
    if (sizeStatus > (UINT16_MAX - address))
    {
-      std::cerr << "ROM INIT ERROR: ROM file will not fit in the memory region" << std::endl;
+      LOG_WARNING() << "ROM INIT ERROR: ROM file will not fit in the memory region";
       close(fd);
       return;
    }
@@ -55,7 +58,7 @@ RomMemory::RomMemory(std::string filepath, uint16_t address):
 
       if (bytesRead <= 0)
       {
-         std::cerr << "ROM INIT ERROR: Error reading the ROM contents" << std::endl;
+         LOG_WARNING() << "ROM INIT ERROR: Error reading the ROM contents";
          close(fd);
          return;
       }
@@ -64,7 +67,7 @@ RomMemory::RomMemory(std::string filepath, uint16_t address):
       bytesReadCumulative += bytesRead;
    }
 
-   std::cout << "ROM INITIALIZED: " << filepath << " (" << theSize << " bytes)" << std::endl;
+   LOG_DEBUG() << "ROM INITIALIZED: " << filepath << " (" << theSize << " bytes)";
    close(fd);
 }
 
@@ -79,36 +82,54 @@ RomMemory::~RomMemory()
 
 void RomMemory::setName(std::string name)
 {
-
+   theName = name;
 }
 
 
-std::string RomMemory::getName()
+
+
+uint8_t RomMemory::read8(uint16_t absAddr)
 {
+   if (!isAbsAddressValid(absAddr))
+   {
+      return 0;
+   }
 
+   return theData[absAddr - theAddress];
 }
 
-uint8_t RomMemory::read8(uint16_t offset)
+bool RomMemory::write8(uint16_t absAddr, uint8_t val)
 {
+   if (!isAbsAddressValid(absAddr))
+   {
+      return false;
+   }
 
+   theData[absAddr - theAddress] = val;
+   return true;
 }
 
-bool RomMemory::write8(uint16_t offset, uint8_t val)
+uint16_t RomMemory::read16(uint16_t absAddr)
 {
+   if (!isAbsAddressValid(absAddr) || !isAbsAddressValid(absAddr + 1))
+   {
+      return 0;
+   }
 
+   uint16_t* retData = (uint16_t*) &theData[absAddr - theAddress];
+   return *retData;
 }
 
-uint16_t RomMemory::read16(uint16_t offset)
+bool RomMemory::write16(uint16_t absAddr, uint16_t val)
 {
+   if (!isAbsAddressValid(absAddr) || !isAbsAddressValid(absAddr + 1))
+   {
+      return false;
+   }
 
+   uint16_t* dataPtr = (uint16_t*) &theData[absAddr - theAddress];
+   *dataPtr = val;
+   return true;
 }
 
-bool RomMemory::write16(uint16_t offset, uint16_t val)
-{
 
-}
-
-uint16_t RomMemory::getAddress()
-{
-
-}
