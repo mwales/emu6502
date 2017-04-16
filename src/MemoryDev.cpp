@@ -1,34 +1,33 @@
 #include"MemoryDev.h"
 #include "Logger.h"
-
-MemoryDev::MemoryDev(uint16_t address):
-   theAddress(address)
-{
-   theSize = 0;
-   theName = "Memory";
-}
+#include "Utils.h"
 
 std::string MemoryDev::getName()
 {
    return theName;
 }
 
-uint16_t MemoryDev::getAddress()
+CpuAddress MemoryDev::getAddress()
 {
    return theAddress;
 }
 
-bool MemoryDev::isAbsAddressValid(uint16_t addr)
+CpuAddress MemoryDev::getSize()
+{
+   return theSize;
+}
+
+bool MemoryDev::isAbsAddressValid(CpuAddress addr, bool haltOnError)
 {
    if (addr < theAddress)
    {
-      LOG_FATAL() << "ROM - Address " << addr << " is below the start address of ROM " << theName;
+      LOG_FATAL() << "Memory (" << theName << ") - Address " << addressToString(addr) << " is below the start address of ROM " << theName;
       return false;
    }
 
    if (addr > (theAddress + theSize))
    {
-      LOG_FATAL() << "ROM - Address " << addr << " is after the end address of ROM " << theName;
+      LOG_FATAL() << "Memory (" << theName << ") - Address " << addressToString(addr) << " is after the end address of ROM " << theName;
       return false;
    }
 

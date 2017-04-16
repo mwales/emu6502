@@ -1,15 +1,24 @@
 #include "Disassembler.h"
+#include "Logger.h"
 
 
 
+Disassembler::Disassembler(MemoryController* memCtrl)
+{
+   theMemoryController = memCtrl;
+}
 
-Disassembler::Disassembler(MemoryController* memCtrl):
-   Decoder(memCtrl)
+void Disassembler::start(CpuAddress address)
 {
 
 }
 
-void Disassembler::start(uint16_t address)
+void Disassembler::halt()
 {
+   theHaltFlag = true;
+}
 
+void Disassembler::printDisassembly()
+{
+   LOG_DEBUG() << __PRETTY_FUNCTION__;
 }

@@ -2,21 +2,26 @@
 #define DECODER_H
 
 #include<stdint.h>
+#include"Cpu6502Defines.h"
 
 class MemoryController;
 
 class Decoder
 {
 
-protected:
-
-   Decoder(MemoryController* memCtrl)
-   {
-      theMemoryController = memCtrl;
-   }
-
 public:
-   virtual void start(uint16_t address) = 0;
+
+   /**
+    * Start the decoding process
+    *
+    * @param address
+    */
+   virtual void start(CpuAddress address) = 0;
+
+   /**
+    * Something happend during decoding this callback provides a way to stop the decoding
+    */
+   virtual void halt() = 0;
 
 
 protected:

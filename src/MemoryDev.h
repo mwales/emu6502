@@ -3,32 +3,35 @@
 
 #include<iostream>
 #include<stdint.h>
+#include "Cpu6502Defines.h"
 
-
+/**
+ * Defines the interface and common functionality for all memory based subsystems of the emulator
+ */
 class MemoryDev
 {
 public:
-   MemoryDev(uint16_t address);
-
    std::string getName();
 
-   virtual uint8_t read8(uint16_t offset) = 0;
+   virtual uint8_t read8(CpuAddress offset) = 0;
 
-   virtual bool write8(uint16_t offset, uint8_t val) = 0;
+   virtual bool write8(CpuAddress offset, uint8_t val) = 0;
 
-   virtual uint16_t read16(uint16_t offset) = 0;
+   virtual uint16_t read16(CpuAddress offset) = 0;
 
-   virtual bool write16(uint16_t offset, uint16_t val) = 0;
+   virtual bool write16(CpuAddress offset, uint16_t val) = 0;
 
-   virtual uint16_t getAddress();
+   virtual CpuAddress getAddress();
 
-protected:
+   virtual CpuAddress getSize();
 
-   bool isAbsAddressValid(uint16_t addr);
+   bool isAbsAddressValid(CpuAddress addr , bool haltOnError = true);
 
-   uint16_t theAddress;
+protected:   
 
-   uint16_t theSize;
+   CpuAddress theAddress;
+
+   CpuAddress theSize;
 
    std::string theName;
 };

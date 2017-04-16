@@ -6,7 +6,7 @@
 class RomMemory : public MemoryDev
 {
 public:
-   RomMemory(std::string filepath, uint16_t address);
+   RomMemory(std::string filepath, CpuAddress address);
 
    ~RomMemory();
 
@@ -14,13 +14,13 @@ public:
 
 
 
-   virtual uint8_t read8(uint16_t absAddr);
+   virtual uint8_t read8(CpuAddress absAddr);
 
-   virtual bool write8(uint16_t absAddr, uint8_t val);
+   virtual bool write8(CpuAddress absAddr, uint8_t val);
 
-   virtual uint16_t read16(uint16_t absAddr);
+   virtual uint16_t read16(CpuAddress absAddr);
 
-   virtual bool write16(uint16_t absAddr, uint16_t val);
+   virtual bool write16(CpuAddress absAddr, uint16_t val);
 
 
 

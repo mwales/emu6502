@@ -8,11 +8,10 @@
 
 #include "Logger.h"
 
-RomMemory::RomMemory(std::string filepath, uint16_t address):
-   MemoryDev(address),
-
+RomMemory::RomMemory(std::string filepath, CpuAddress address):
    theData(0)
 {
+   theAddress = address;
    theName = "ROM";
 
    int fd = open(filepath.c_str(), O_RDONLY);
@@ -67,7 +66,8 @@ RomMemory::RomMemory(std::string filepath, uint16_t address):
       bytesReadCumulative += bytesRead;
    }
 
-   LOG_DEBUG() << "ROM INITIALIZED: " << filepath << " (" << theSize << " bytes)";
+   LOG_DEBUG() << "ROM INITIALIZED: " << filepath << " (" << theSize << " bytes) "
+               << addressToString(theAddress) << "-" << addressToString(theAddress + theSize);
    close(fd);
 }
 
@@ -88,7 +88,7 @@ void RomMemory::setName(std::string name)
 
 
 
-uint8_t RomMemory::read8(uint16_t absAddr)
+uint8_t RomMemory::read8(CpuAddress absAddr)
 {
    if (!isAbsAddressValid(absAddr))
    {
@@ -98,7 +98,7 @@ uint8_t RomMemory::read8(uint16_t absAddr)
    return theData[absAddr - theAddress];
 }
 
-bool RomMemory::write8(uint16_t absAddr, uint8_t val)
+bool RomMemory::write8(CpuAddress absAddr, uint8_t val)
 {
    if (!isAbsAddressValid(absAddr))
    {
@@ -109,7 +109,7 @@ bool RomMemory::write8(uint16_t absAddr, uint8_t val)
    return true;
 }
 
-uint16_t RomMemory::read16(uint16_t absAddr)
+uint16_t RomMemory::read16(CpuAddress absAddr)
 {
    if (!isAbsAddressValid(absAddr) || !isAbsAddressValid(absAddr + 1))
    {
@@ -120,7 +120,7 @@ uint16_t RomMemory::read16(uint16_t absAddr)
    return *retData;
 }
 
-bool RomMemory::write16(uint16_t absAddr, uint16_t val)
+bool RomMemory::write16(CpuAddress absAddr, uint16_t val)
 {
    if (!isAbsAddressValid(absAddr) || !isAbsAddressValid(absAddr + 1))
    {
