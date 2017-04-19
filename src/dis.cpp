@@ -5,7 +5,7 @@
 
 #include "RomMemory.h"
 #include "MemoryController.h"
-#include "Disassembler.h"
+#include "Disassembler6502.h"
 #include "Logger.h"
 
 int main(int argc, char* argv[])
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
    MemoryController memControl;
    memControl.addNewDevice( (MemoryDev*) &programData);
 
-   Disassembler dis(&memControl);
+   Disassembler6502 dis(&memControl);
 
    dis.start(addr);
 

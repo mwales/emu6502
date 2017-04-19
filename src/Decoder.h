@@ -26,6 +26,8 @@ public:
 
 protected:
 
+   virtual void decode(CpuAddress address) = 0;
+
    MemoryController* theMemoryController;
 
 };

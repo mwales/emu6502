@@ -99,3 +99,33 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
 | NOP | No Op              |                         |               | 
 | BRK | Break              |                         | Halts and prints out registers |
 | Bxx | Branch             |                         | (C)arry (C)lear, (C)arry (S)et, (EQ)ual or zero flag, (MI)nus, (N)ot (E)qual, (PL)us |
+
+### Addressing Modes
+
+1. Immediate (2-byte instruction).  1-byte operand built right into the op-code.  Example: LDA #$ff
+2. Absolute (3-byte instruction).  2-byte operand specifies the memory address.  Example: LDA $0200
+3. Absolute Zero-Page (2-byte instruction).  1-byte operand specifies the offset within the zero
+   page for the memory address.  Example: LDA $02
+4. Implied (1-byte instruction). There is no operand.  Example: BRK
+5. Accumulator (1-byte instruction). No operands, the accumulator is the implied operand.
+   Example ROL A
+6. Indexed (3-byte instruction).  2-byte operand is the memory location with offset provided by a
+   register. Example: LDA $1234,X ; Loads accumulator with data from address 0x1234+X.
+7. Indexed Zero-paged (2-byte instruction). 1-byte operand is the zero-page memory location with
+   offset provided by a register.  Example: LDA $12,X ; Loads accumulator with data from address
+   0x0012+X.
+8. Indirect (3-byte instruction).  2-byte operand is loaded from an address specified by the
+   address provided in the instruction. Example: JMP ($1234) ; Means to jump to the address found
+   at the address $1234.  JMP is the only instruction that has this mode.
+9. Relative (2-byte instruction).  1-byte operand is a signed offset from current PC.  Example:
+   BEQ *+4 ; If equal branch to instruction PC += 4
+10. Indirect Indexed (2-byte instruction). 1-byte operand is the address on zero page of a table
+    that will be indexed by value in register.  Wraps around on zero page if value overflows.
+    Example: LDA ($40,X) ; Loads a value from memory address specified in memory location 0x40+X
+11. Indexed Indirect (2-byte instruction). 1-byte operand is the offset from address read from the
+    zero-page address specified in the op-code.  Example: LDA ($40),X ; Loads a memory address from
+    address 0x0040, then adds X, then reads the memory address into accumulator.
+
+
+
+
