@@ -2,8 +2,10 @@
           cout = $fded ; display a character
              * = $300  ; assemble at $300
                code
-	brk
-;	ora ($1234,X)
-	php
-	asl a
+   BRK
+   ORA ($34,X)
+   ORA $45
+   ORA $1234
+   PHP
+   ASL $ab
 

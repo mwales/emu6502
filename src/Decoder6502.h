@@ -71,7 +71,12 @@ protected:
 
     virtual void branch(CpuAddress instAddr, uint8_t opCodes) = 0;
 
+    virtual void updatePc(uint8_t bytesIncrement) = 0;
 
+   // Addressing mode specific instructions
+   virtual uint8_t getOperand(CpuAddress addr, uint8_t opCode);
+   virtual uint8_t getImmediateOperand(CpuAddress addr);
+   virtual uint8_t getAbsolute(CpuAddress addr);
 
 
 };

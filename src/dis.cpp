@@ -2,6 +2,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<unistd.h>
 
 #include "RomMemory.h"
 #include "MemoryController.h"
@@ -10,6 +11,8 @@
 
 int main(int argc, char* argv[])
 {
+   //sleep(3);
+
    if (argc != 3)
    {
       std::cerr << "Usage error" << std::endl;
@@ -45,8 +48,13 @@ int main(int argc, char* argv[])
    memControl.addNewDevice( (MemoryDev*) &programData);
 
    Disassembler6502 dis(&memControl);
+   dis.includeOpCodes(true);
+   dis.includeAddress(true);
 
    dis.start(addr);
+
+
+   dis.printDisassembly();
 
 
    return 0;

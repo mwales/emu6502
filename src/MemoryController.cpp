@@ -51,7 +51,7 @@ MemoryDev* MemoryController::getDevice(CpuAddress address)
 
       CpuAddress offsetWithinDevice = address - (*curDevice)->getAddress();
 
-      if (offsetWithinDevice <= (*curDevice)->getSize())
+      if (offsetWithinDevice < (*curDevice)->getSize())
       {
          return (*curDevice);
       }

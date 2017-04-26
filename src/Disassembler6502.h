@@ -17,6 +17,10 @@ public:
 
    void printDisassembly();
 
+   void includeOpCodes(bool val);
+
+   void includeAddress(bool val);
+
 protected:
 
    // All the virtual void methods inherited from parent decoder
@@ -48,11 +52,30 @@ protected:
    virtual void breakOperation(CpuAddress instAddr, uint8_t opCodes);
    virtual void branch(CpuAddress instAddr, uint8_t opCodes);
 
+   std::string getOperandText(CpuAddress addr, uint8_t opcode);
+   std::string getImmediateOpText(CpuAddress addr);
+   std::string getAbsoluteOpText(CpuAddress addr);
+
+   virtual void updatePc(uint8_t bytesIncrement);
+
+   void printOpCodes(std::string* listingText, CpuAddress addr, int numOpCodes);
+
+   void printAddress(std::string* listingText, CpuAddress addr);
+
+   bool theDeadEndFlag;
+   CpuAddress thePc;
+
+   std::vector<CpuAddress> theEntryPoints;
+
    std::map<CpuAddress, std::string> theListing;
 
    std::map<CpuAddress, std::string> theLabels;
 
    bool theHaltFlag;
+
+   bool thePrintOpCodeFlag;
+
+   bool thePrintAddressFlag;
 
 };
 
