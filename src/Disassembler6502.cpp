@@ -82,16 +82,21 @@ void Disassembler6502::includeAddress(bool val)
    thePrintAddressFlag = val;
 }
 
-void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, int numOpCodes)
+void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, int opCode)
 {
    // opcode fmt:                     "xx xx xx  "
    char const * const EMPTY_OP_CODE = "          ";
    const int OP_CODE_TEXT_LEN = 11;
    char opCodeText[OP_CODE_TEXT_LEN];
 
+   int numOpCodes = 1;
    if (!thePrintOpCodeFlag)
    {
       numOpCodes = 0;
+   }
+   else
+   {
+      numOpCodes = OP_CODE_LENGTH[ (int) ADDRESS_MODE[opCode]];
    }
 
    LOG_DEBUG() << "Printing" << numOpCodes << "opcode(s) for instruction at address" << addressToString(addr);
@@ -109,7 +114,7 @@ void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, i
 
    case 3:
       snprintf(opCodeText, OP_CODE_TEXT_LEN, "%02x %02x %02x  ", theMemoryController->getDevice(addr)->read8(addr),
-               theMemoryController->getDevice(addr+1)->read8(addr),
+               theMemoryController->getDevice(addr+1)->read8(addr+1),
                theMemoryController->getDevice(addr + 2)->read8(addr + 2));
       break;
 
@@ -173,11 +178,9 @@ void Disassembler6502::andOperation(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::orOperation(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << "Bitwise OR op";
-
    std::string listingData;
    printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, 1);
+   printOpCodes(&listingData, instAddr, opCodes);
    listingData += "ORA ";
 
    listingData += getOperandText(instAddr, opCodes);
@@ -192,7 +195,14 @@ void Disassembler6502::xorOperation(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::shiftLeft(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "ASL ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::shiftRight(CpuAddress instAddr, uint8_t opCodes)
@@ -212,7 +222,20 @@ void Disassembler6502::rotateRight(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::push(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   if (opCodes == (uint8_t) OpCode6502::PUSH_PROC_STATUS)
+   {
+      listingData += "PHP";
+   }
+   else
+   {
+      listingData += "PHA";
+   }
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::pull(CpuAddress instAddr, uint8_t opCodes)
@@ -267,11 +290,9 @@ void Disassembler6502::noOp(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::breakOperation(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << "Break op";
-
    std::string listingData;
    printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, 1);
+   printOpCodes(&listingData, instAddr, opCodes);
    listingData += "BRK";
 
    theListing[instAddr] = listingData;
@@ -295,22 +316,29 @@ std::string Disassembler6502::getOperandText(CpuAddress addr, uint8_t opCode)
       return getAbsoluteOpText(addr);
 
    case OpCodeAddressMode::ABSOLUTE_ZERO_PAGE:
+      return getAbsoluteZeroOpText(addr);
 
    case OpCodeAddressMode::IMPLIED:
+      // These instructions have no operand
+      return "";
 
    case OpCodeAddressMode::INDEXED:
+      return getIndexedOpText(addr);
 
    case OpCodeAddressMode::INDEXED_ZERO_PAGE:
+      return getIndexedZeroPageOpText(addr);
 
    case OpCodeAddressMode::INDIRECT:
+      return getIndirectOpText(addr);
 
    case OpCodeAddressMode::RELATIVE:
+      return getRelativeOpText(addr);
 
    case OpCodeAddressMode::INDIRECT_INDEXED:
+      return getIndirectIndexedOpText(addr);
 
    case OpCodeAddressMode::INDEXED_INDIRECT:
-      LOG_WARNING() << __PRETTY_FUNCTION__ << "not implemented yet";
-      break;
+      return getIndexedIndirectOpText(addr);
 
    case OpCodeAddressMode::INVALID:
       LOG_WARNING() << "OpCode" << Utils::toHex8(opCode) << "is not valid op code for 6502 (@" << addressToString(addr) << ")";
@@ -358,6 +386,107 @@ std::string Disassembler6502::getAbsoluteOpText(CpuAddress addr)
 
    return buf;
 }
+
+std::string Disassembler6502::getAbsoluteZeroOpText(CpuAddress addr)
+{
+   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
+      return "<FAIL>";
+   }
+
+   char buf[10];
+   snprintf(buf, 10, "$%02x", mem->read8(addr + 1));
+
+   return buf;
+}
+
+std::string Disassembler6502::getIndexedOpText(CpuAddress addr)
+{
+   // Some of these instructions use the X register for indexing, and some Y
+   MemoryDev* mem = theMemoryController->getDevice(addr);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
+      return "<FAIL>";
+   }
+
+   uint8_t opCode = mem->read8(addr);
+
+   uint16_t addressToIndex = mem->read16(addr+1);
+
+   uint8_t lowNibble = opCode & 0x0f;
+
+   char buf[10];
+   // Operations that index with why have a lower nibble of 0x09, with the exception of LDX abs, Y (BE)
+   if ( (lowNibble == 0x09) || (opCode == 0xbe) )
+   {
+      snprintf(buf, 10, "$%04x, Y", addressToIndex);
+   }
+   else
+   {
+      snprintf(buf, 10, "$%04x, X", addressToIndex);
+   }
+
+   return buf;
+}
+
+std::string Disassembler6502::getIndexedZeroPageOpText(CpuAddress addr)
+{
+   return "not implemented";
+}
+
+std::string Disassembler6502::getIndirectOpText(CpuAddress addr)
+{
+return "not implemented";
+}
+
+std::string Disassembler6502::getRelativeOpText(CpuAddress addr)
+{
+return "not implemented";
+}
+
+std::string Disassembler6502::getIndirectIndexedOpText(CpuAddress addr)
+{
+   // These are always with the X register
+   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
+      return "<FAIL>";
+   }
+
+   char buf[20];
+   snprintf(buf, 20, "($%02x, X)", mem->read8(addr + 1));
+
+   return buf;
+}
+
+std::string Disassembler6502::getIndexedIndirectOpText(CpuAddress addr)
+{
+   // These are always with the Y register
+   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
+      return "<FAIL>";
+   }
+
+   char buf[20];
+   snprintf(buf, 20, "($%02x), Y", mem->read8(addr + 1));
+
+   return buf;
+}
+
 
 void Disassembler6502::updatePc(uint8_t bytesIncrement)
 {

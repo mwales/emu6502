@@ -55,10 +55,18 @@ protected:
    std::string getOperandText(CpuAddress addr, uint8_t opcode);
    std::string getImmediateOpText(CpuAddress addr);
    std::string getAbsoluteOpText(CpuAddress addr);
+   std::string getAbsoluteZeroOpText(CpuAddress addr);
+   std::string getIndexedOpText(CpuAddress addr);
+   std::string getIndexedZeroPageOpText(CpuAddress addr);
+   std::string getIndirectOpText(CpuAddress addr);
+   std::string getRelativeOpText(CpuAddress addr);
+   std::string getIndirectIndexedOpText(CpuAddress addr);
+   std::string getIndexedIndirectOpText(CpuAddress addr);
+
 
    virtual void updatePc(uint8_t bytesIncrement);
 
-   void printOpCodes(std::string* listingText, CpuAddress addr, int numOpCodes);
+   void printOpCodes(std::string* listingText, CpuAddress addr, int opCode);
 
    void printAddress(std::string* listingText, CpuAddress addr);
 

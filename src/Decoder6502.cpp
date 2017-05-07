@@ -27,6 +27,7 @@ void Decoder6502::decode(CpuAddress address)
       break;
 
    case OpCode6502::ORA_ABSOLUTE:
+
    case OpCode6502::ORA_ABSOLUTE_ZEROPAGE:
    case OpCode6502::ORA_IMMEDIATE:
    case OpCode6502::ORA_X_INDIRECT_INDEXED:
