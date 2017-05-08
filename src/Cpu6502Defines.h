@@ -35,7 +35,7 @@ enum class OpCode6502
    ORA_ABSOLUTE_ZEROPAGE     = 0x05,
    ASL_ABSOLUTE_ZEROPAGE,   // 0x06
    // 0x07
-   PUSH_PROC_STATUS          = 0x08,
+   PHP                       = 0x08,
    ORA_IMMEDIATE,           // 0x09
    ASL_A_IMPLIED,           // 0x0a
    // 0x0b

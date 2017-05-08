@@ -76,8 +76,15 @@ protected:
    // Addressing mode specific instructions
    virtual uint8_t getOperand(CpuAddress addr, uint8_t opCode);
    virtual uint8_t getImmediateOperand(CpuAddress addr);
-   virtual uint8_t getAbsolute(CpuAddress addr);
+   virtual uint8_t getAbsoluteOperand(CpuAddress addr);
+   virtual uint8_t getAbsoluteZeroPageOperand(CpuAddress addr);
+   virtual uint8_t getIndexedOperand(CpuAddress addr);
+   virtual uint8_t getIndexedZeroPageOperand(CpuAddress addr);
+   virtual uint8_t getIndirectIndexedOperand(CpuAddress addr);
+   virtual uint8_t getIndexedIndirectOperand(CpuAddress addr);
 
+   virtual uint16_t getRelativeOperand(CpuAddress addr);
+   virtual uint16_t getIndirectOperand(CpuAddress addr);
 
 };
 

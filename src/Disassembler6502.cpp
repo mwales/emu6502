@@ -226,7 +226,7 @@ void Disassembler6502::push(CpuAddress instAddr, uint8_t opCodes)
    printAddress(&listingData, instAddr);
    printOpCodes(&listingData, instAddr, opCodes);
 
-   if (opCodes == (uint8_t) OpCode6502::PUSH_PROC_STATUS)
+   if (opCodes == (uint8_t) OpCode6502::PHP)
    {
       listingData += "PHP";
    }
@@ -438,12 +438,52 @@ std::string Disassembler6502::getIndexedOpText(CpuAddress addr)
 
 std::string Disassembler6502::getIndexedZeroPageOpText(CpuAddress addr)
 {
-   return "not implemented";
+   // Some of these instructions use the X register for indexing, and some Y
+   MemoryDev* mem = theMemoryController->getDevice(addr);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
+      return "<FAIL>";
+   }
+
+   OpCode6502 opCode = (OpCode6502) mem->read8(addr);
+
+   uint16_t addressToIndex = 0x00ff & mem->read8(addr+1);
+
+   char buf[10];
+   // Operations that index with why have a lower nibble of 0x09, with the exception of LDX abs, Y (BE)
+   if ( (opCode == OpCode6502::STX_Y_ABSOLUTE_ZERO_PAGE) ||
+        (opCode == OpCode6502::LDX_Y_ABSOLUTE_ZERO_PAGE) )
+   {
+      snprintf(buf, 10, "$%02x, Y", addressToIndex);
+   }
+   else
+   {
+      snprintf(buf, 10, "$%02x, X", addressToIndex);
+   }
+
+   return buf;
 }
 
 std::string Disassembler6502::getIndirectOpText(CpuAddress addr)
 {
-return "not implemented";
+   MemoryDev* mem = theMemoryController->getDevice(addr);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
+      return "<FAIL>";
+   }
+
+   uint16_t addressInOperand = mem->read16(addr+1);
+
+   char buf[10];
+   snprintf(buf, 10, "(%02x)", addressInOperand);
+
+   return buf;
 }
 
 std::string Disassembler6502::getRelativeOpText(CpuAddress addr)
