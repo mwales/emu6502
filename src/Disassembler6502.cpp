@@ -138,12 +138,88 @@ void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
 
 void Disassembler6502::load(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   // Load opcodes can be LDA, LDX, LDY (the low nibble determines)
+   //  0x00, 0x04,       0x0c = LDY
+   //  0x01, 0x05, 0x09, 0x0d = LDA
+   //  0x02, 0x06,       0x0e = LDX
+   uint8_t lowNibble = opCodes & 0x0f;
+
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   switch(lowNibble)
+   {
+   case 0x00:
+   case 0x04:
+   case 0x0c:
+      listingData += "LDY ";
+      break;
+
+   case 0x01:
+   case 0x05:
+   case 0x09:
+   case 0x0d:
+      listingData += "LDA ";
+      break;
+
+   case 0x02:
+   case 0x06:
+   case 0x0e:
+      listingData += "LDX ";
+      break;
+
+   default:
+      LOG_FATAL() << "Invalid load op code: " << Utils::toHex8(opCodes);
+      theListing[instAddr] = "<Disassembler Internal Error>";
+      return;
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::store(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   // Load opcodes can be STA, STX, STY (the low nibble determines)
+   //        0x04,       0x0c = STY
+   //  0x01, 0x05, 0x09, 0x0d = STA
+   //        0x06,       0x0e = STX
+   uint8_t lowNibble = opCodes & 0x0f;
+
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   switch(lowNibble)
+   {
+   case 0x04:
+   case 0x0c:
+      listingData += "STY ";
+      break;
+
+   case 0x01:
+   case 0x05:
+   case 0x09:
+   case 0x0d:
+      listingData += "STA ";
+      break;
+
+   case 0x06:
+   case 0x0e:
+      listingData += "STX ";
+      break;
+
+   default:
+      LOG_FATAL() << "Invalid load op code: " << Utils::toHex8(opCodes);
+      theListing[instAddr] = "<Disassembler Internal Error>";
+      return;
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::transfer(CpuAddress instAddr, uint8_t opCodes)

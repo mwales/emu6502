@@ -20,8 +20,8 @@ enum class OpCodeAddressMode
    INDEXED_ZERO_PAGE,   // 2 byte instruction  MNM $xx, X
    INDIRECT,            // 3 byte instruction  MNM ($xxxx)
    RELATIVE,            // 2 byte instruction  MNM *+4
-   INDIRECT_INDEXED,    // 2 byte instruction  MNM ($xx, Y)
-   INDEXED_INDIRECT,    // 2 byte instruction  MNM ($xx), Y
+   INDEXED_INDIRECT,    // 2 byte instruction  MNM ($xx, X)
+   INDIRECT_INDEXED,    // 2 byte instruction  MNM ($xx), Y
    INVALID
 };
 
