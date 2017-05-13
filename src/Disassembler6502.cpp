@@ -32,7 +32,7 @@ void Disassembler6502::start(CpuAddress address)
       if (theListing.find(nextAddress) == theListing.end())
       {
          std::ostringstream oss;
-         oss << "entry_" << addressToString(nextAddress) << ":";
+         oss << "entry_" << addressToString(nextAddress);
 
          theLabels[nextAddress] = oss.str();
          theDeadEndFlag = false;
@@ -67,6 +67,13 @@ void Disassembler6502::printDisassembly()
 {
    for(auto lineIter = theListing.begin(); lineIter != theListing.end(); lineIter++)
    {
+      // Is there a label for this address?
+      if (theLabels.find(lineIter->first) != theLabels.end())
+      {
+         std::cout << theLabels[lineIter->first] << ":" << std::endl;
+      }
+
+
       std::cout << lineIter->second << std::endl;
    }
 }
@@ -134,6 +141,47 @@ void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
       listingText->append(addressToString(addr));
       *listingText += "   ";
    }
+}
+
+void Disassembler6502::addJumpLabelStatement(CpuAddress instAddr, char const * const prefix)
+{
+   char buf[20];
+   MemoryDev* mem = theMemoryController->getDevice(instAddr + 1);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Jump labeling (failed during operand fetch), no memory device for address"
+                    << addressToString(instAddr + 1);
+      return;
+   }
+
+   uint16_t dest = mem->read16(instAddr + 1);
+   snprintf(buf, 20, "%s_0x%04x", prefix, dest);
+
+   theLabels[dest] = buf;
+}
+
+std::string Disassembler6502::addBranchLabelStatement(CpuAddress instAddr)
+{
+   char buf[20];
+   MemoryDev* mem = theMemoryController->getDevice(instAddr + 1);
+
+   if (mem == 0)
+   {
+      halt();
+      LOG_WARNING() << "Branch labeling (failed during operand fetch), no memory device for address"
+                    << addressToString(instAddr + 1);
+      return "label_error";
+   }
+
+   int16_t offset = (int8_t) mem->read8(instAddr + 1);
+   uint16_t dest = instAddr + offset + 2;
+
+   snprintf(buf, 20, "label_0x%04x", dest);
+
+   theLabels[dest] = buf;
+   return buf;
 }
 
 void Disassembler6502::load(CpuAddress instAddr, uint8_t opCodes)
@@ -482,12 +530,33 @@ void Disassembler6502::pull(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::jump(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "JMP ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
+
+   if (opCodes == (int) OpCode6502::JMP_ABSOLUTE)
+   {
+      addJumpLabelStatement(instAddr, "label");
+   }
 }
 
 void Disassembler6502::jumpSubroutine(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "JSR ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
+
+   addJumpLabelStatement(instAddr, "sub");
 }
 
 void Disassembler6502::returnFromInterrupt(CpuAddress instAddr, uint8_t opCodes)
@@ -636,7 +705,52 @@ void Disassembler6502::breakOperation(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::branch(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   OpCode6502 oc = (OpCode6502) opCodes;
+   switch(oc)
+   {
+   case OpCode6502::BPL_REL:
+      listingData += "BPL ";
+      break;
+
+   case OpCode6502::BMI_REL:
+      listingData += "BMI ";
+      break;
+
+   case OpCode6502::BVC_REL:
+      listingData += "BVC ";
+      break;
+
+   case OpCode6502::BVS_REL:
+      listingData += "BVS ";
+      break;
+
+   case OpCode6502::BCC_REL:
+      listingData += "BCC ";
+      break;
+
+   case OpCode6502::BCS_REL:
+      listingData += "BCS ";
+      break;
+
+   case OpCode6502::BNE_REL:
+      listingData += "BNE ";
+      break;
+
+   case OpCode6502::BEQ_REL:
+      listingData += "BEQ ";
+      break;
+
+   default:
+      listingData += "<error> ";
+   }
+
+   listingData += addBranchLabelStatement(instAddr);
+
+   theListing[instAddr] = listingData;
 }
 
 std::string Disassembler6502::getOperandText(CpuAddress addr, uint8_t opCode)
@@ -817,7 +931,7 @@ std::string Disassembler6502::getIndirectOpText(CpuAddress addr)
    uint16_t addressInOperand = mem->read16(addr+1);
 
    char buf[10];
-   snprintf(buf, 10, "(%02x)", addressInOperand);
+   snprintf(buf, 10, "($%02x)", addressInOperand);
 
    return buf;
 }

@@ -70,6 +70,9 @@ protected:
 
    void printAddress(std::string* listingText, CpuAddress addr);
 
+   void addJumpLabelStatement(CpuAddress instAddr, char const * const labelPrefix);
+   std::string addBranchLabelStatement(CpuAddress instAddr);
+
    bool theDeadEndFlag;
    CpuAddress thePc;
 

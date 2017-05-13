@@ -31,10 +31,19 @@
    ASL $44,X
    ASL $4400
    ASL $4400,X
-
    ; BIT (test BITs)
-   BIT $44
+fart    BIT $44
    BIT $4400
+
+   ; Branch instructions
+   BPL fart
+   BMI fart
+   BVC fart
+   BVS fart
+   BCC fart
+   BCS fart
+   BNE fart
+   BEQ fart
 
    ; BRK (BReaK)
    BRK
@@ -84,10 +93,18 @@
    CLD
    SED
 
+   ; INC (INCrement)
    INC $44
    INC $44,X
    INC $4400
    INC $4400,X
+
+   ; JMP (JuMP)
+   JMP $4002
+   JMP ($5597)
+   
+   ; JSR (Jump to SubRoutine)
+   JSR $4004
 
    ; LDA (LoaD Accumulator)
    LDA #$44
