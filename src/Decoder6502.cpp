@@ -63,7 +63,7 @@ void Decoder6502::decode(CpuAddress address)
    case OpCode6502::TYA:
    case OpCode6502::TXS:
    case OpCode6502::TAY:
-   case OpCode6502::TAX_IMPLIED:
+   case OpCode6502::TAX:
    case OpCode6502::TSX:
       transfer(address, opCode);
       break;
@@ -101,7 +101,7 @@ void Decoder6502::decode(CpuAddress address)
 
    case OpCode6502::DEY:
    case OpCode6502::DEC_ABSOLUTE_ZERO_PAGE:
-   case OpCode6502::DEX_IMPLIED:
+   case OpCode6502::DEX:
    case OpCode6502::DEC_ABSOLUTE:
    case OpCode6502::DEC_X_ABSOLUTE_ZERO_PAGE:
    case OpCode6502::DEC_X_ABSOLUTE:
@@ -158,7 +158,7 @@ void Decoder6502::decode(CpuAddress address)
       break;
 
    case OpCode6502::ROL_ABSOLUTE_ZERO_PAGE:
-   case OpCode6502::ROL_A_IMPLIED:
+   case OpCode6502::ROL_A:
    case OpCode6502::ROL_ABSOLUTE:
    case OpCode6502::ROL_X_ABSOLUTE_ZERO_PAGE:
    case OpCode6502::ROL_X_ABSOLUTE:

@@ -71,7 +71,7 @@ enum class OpCode6502
    // 0x27
    PLP                       = 0x28,
    AND_IMMEDIATE,           // 0x29
-   ROL_A_IMPLIED,           // 0x2a
+   ROL_A,                   // 0x2a
    // 0x2b
    BIT_ABSOLUTE              = 0x2c,
    AND_ABSOLUTE,            // 0x2d
@@ -100,7 +100,7 @@ enum class OpCode6502
    // 0x42
    // 0x43
    // 0x44
-   EOR_ABSOLUTE_ZERO_PAGE,  // 0x45
+   EOR_ABSOLUTE_ZERO_PAGE    = 0x45,
    LSR_ABSOLUTE_ZERO_PAGE,  // 0x46
    // 0x47
    PHA                       = 0x48,
@@ -134,7 +134,7 @@ enum class OpCode6502
    // 0x62
    // 0x63
    // 0x64
-   ADC_ABSOLUTE_ZERO_PAGE,  // 0x65
+   ADC_ABSOLUTE_ZERO_PAGE    = 0x65,
    ROR_ABSOLUTE_ZERO_PAGE,  // 0x66
    // 0x67
    PLA                       = 0x68,
@@ -207,7 +207,7 @@ enum class OpCode6502
    // 0xa7
    TAY                       = 0xa8,
    LDA_IMMEDIATE,           // 0xa9
-   TAX_IMPLIED,             // 0xaa
+   TAX,                     // 0xaa
    // 0xab
    LDY_ABSOLUTE              = 0xac,
    LDA_ABSOLUTE,            // 0xad
@@ -241,7 +241,7 @@ enum class OpCode6502
    // 0xc7
    INY                       = 0xc8,
    CMP_IMMEDIATE,           // 0xc9
-   DEX_IMPLIED,             // 0xca
+   DEX,                     // 0xca
    // 0xcb
    CPY_ABSOLUTE              = 0xcc,
    CMP_ABSOLUTE,            // 0xcd

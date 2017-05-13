@@ -224,32 +224,128 @@ void Disassembler6502::store(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::transfer(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   OpCode6502 oc = (OpCode6502) opCodes;
+
+   switch(oc)
+   {
+   case OpCode6502::TAX:
+      listingData += "TAX ";
+      break;
+
+   case OpCode6502::TXA:
+      listingData += "TXA ";
+      break;
+
+   case OpCode6502::TAY:
+      listingData += "TAY ";
+      break;
+
+   case OpCode6502::TYA:
+      listingData += "TYA ";
+      break;
+
+   case OpCode6502::TXS:
+      listingData += "TXS ";
+      break;
+
+   case OpCode6502::TSX:
+      listingData += "TSX ";
+      break;
+
+   default:
+      listingData += "<ERROR> ";
+      break;
+   }
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::add(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "ADC ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::subtract(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "SBC ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::increment(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   if (opCodes == (int) OpCode6502::INX)
+   {
+      listingData += "INX ";
+   }
+   else if (opCodes == (int) OpCode6502::INY)
+   {
+      listingData += "INY ";
+   }
+   else
+   {
+      listingData += "INC ";
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::decrement(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   if (opCodes == (int) OpCode6502::DEX)
+   {
+      listingData += "DEX ";
+   }
+   else if (opCodes == (int) OpCode6502::DEY)
+   {
+      listingData += "DEY ";
+   }
+   else
+   {
+      listingData += "DEC ";
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::andOperation(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "AND ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::orOperation(CpuAddress instAddr, uint8_t opCodes)
@@ -266,7 +362,14 @@ void Disassembler6502::orOperation(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::xorOperation(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "EOR ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::shiftLeft(CpuAddress instAddr, uint8_t opCodes)
@@ -278,22 +381,67 @@ void Disassembler6502::shiftLeft(CpuAddress instAddr, uint8_t opCodes)
 
    listingData += getOperandText(instAddr, opCodes);
 
+   // Special case for "ASL A" instruction
+   if (opCodes == (int) OpCode6502::ASL_A_IMPLIED)
+   {
+      listingData += "A";
+   }
+
    theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::shiftRight(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "LSR ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   // Special case for "LSR A" instruction
+   if (opCodes == (int) OpCode6502::LSR_A)
+   {
+      listingData += "A";
+   }
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::rotateLeft(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "ROL ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   // Special case for "ROL A" instruction
+   if (opCodes == (int) OpCode6502::ROL_A)
+   {
+      listingData += "A";
+   }
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::rotateRight(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "ROR ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   // Special case for "ROR A" instruction
+   if (opCodes == (int) OpCode6502::ROR_A)
+   {
+      listingData += "A";
+   }
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::push(CpuAddress instAddr, uint8_t opCodes)
@@ -316,7 +464,20 @@ void Disassembler6502::push(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::pull(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   if (opCodes == (uint8_t) OpCode6502::PLP)
+   {
+      listingData += "PLP";
+   }
+   else
+   {
+      listingData += "PLA";
+   }
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::jump(CpuAddress instAddr, uint8_t opCodes)
@@ -331,37 +492,136 @@ void Disassembler6502::jumpSubroutine(CpuAddress instAddr, uint8_t opCodes)
 
 void Disassembler6502::returnFromInterrupt(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "RTI";
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::returnFromSubroutine(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "RTS";
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::bitTest(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "BIT ";
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::compare(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   uint8_t upperNibble = opCodes & 0xf0;
+   if (upperNibble == 0xe0)
+   {
+      // CPX (compare X)
+      listingData += "CPX ";
+   }
+   else if (upperNibble == 0xc0)
+   {
+      // CPY (compare Y)
+      listingData += "CPY ";
+   }
+   else
+   {
+      // CMP (compare A)
+      listingData += "CMP ";
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::clear(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   OpCode6502 oc = (OpCode6502) opCodes;
+   switch (oc)
+   {
+   case OpCode6502::CLC:
+      listingData += "CLC ";
+      break;
+
+   case OpCode6502::CLI:
+      listingData += "CLI ";
+      break;
+
+   case OpCode6502::CLV:
+      listingData += "CLV ";
+      break;
+
+   case OpCode6502::CLD:
+      listingData += "CLD ";
+      break;
+
+   default:
+      listingData += "<ERROR>";
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::set(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+
+   OpCode6502 oc = (OpCode6502) opCodes;
+   switch (oc)
+   {
+   case OpCode6502::SEC:
+      listingData += "SEC ";
+      break;
+
+   case OpCode6502::SEI:
+      listingData += "SEI ";
+      break;
+
+   case OpCode6502::SED:
+      listingData += "SED ";
+      break;
+
+   default:
+      listingData += "<ERROR>";
+   }
+
+   listingData += getOperandText(instAddr, opCodes);
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::noOp(CpuAddress instAddr, uint8_t opCodes)
 {
-   LOG_DEBUG() << __PRETTY_FUNCTION__;
+   std::string listingData;
+   printAddress(&listingData, instAddr);
+   printOpCodes(&listingData, instAddr, opCodes);
+   listingData += "NOP";
+
+   theListing[instAddr] = listingData;
 }
 
 void Disassembler6502::breakOperation(CpuAddress instAddr, uint8_t opCodes)
