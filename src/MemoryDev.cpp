@@ -33,3 +33,24 @@ bool MemoryDev::isAbsAddressValid(CpuAddress addr, bool haltOnError)
 
    return true;
 }
+
+MemoryRange MemoryDev::getAddressRange()
+{
+   MemoryRange retVal;
+   retVal.first = theAddress;
+   retVal.second = theAddress + theSize - 1;
+   return retVal;
+}
+
+std::string MemoryDev::getDebugString()
+{
+   std::string retVal = "[";
+   retVal += addressToString(theAddress);
+   retVal += " ~ ";
+   retVal += theName;
+   retVal += " ~ ";
+   retVal += addressToString(theAddress + theSize);
+   retVal += "]";
+
+   return retVal;
+}

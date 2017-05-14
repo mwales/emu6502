@@ -5,6 +5,8 @@
 
 typedef uint16_t CpuAddress;
 
+typedef std::pair<CpuAddress, CpuAddress> MemoryRange;
+
 inline std::string addressToString(CpuAddress val)
 {
    return Utils::toHex16(val);

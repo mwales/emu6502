@@ -29,7 +29,29 @@ public:
 
     MemoryDev* getDevice(CpuAddress address);
 
+    /**
+     * Gets a list of all the valid memory ranges available to the processor
+     */
+    std::vector<MemoryRange> getOrderedRangeList();
+
 protected:
+    /**
+     * Do two memory ranges overlap each other for 1 or more addresses
+     */
+    bool doRangesOverlap(MemoryRange dev1, MemoryRange dev2);
+
+    /**
+     * Do 2 memory ranges directly neighbor each other (with no invalid addresses inbetween the two
+     * ranges, and no overlapping addresses)
+     */
+    bool doRangesMerge(MemoryRange dev1, MemoryRange dev2);
+
+    /**
+     * Determines what memory range could represent both ranges togehter.
+     *
+     * @note Only call if doRangesMerge returns true!
+     */
+    MemoryRange mergeRanges(MemoryRange dev1, MemoryRange dev2);
 
     std::vector<MemoryDev*> theDevices;
 };

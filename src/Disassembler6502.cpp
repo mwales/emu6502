@@ -40,11 +40,7 @@ void Disassembler6502::start(CpuAddress address)
 
          while(!theDeadEndFlag)
          {
-
-
             decode(thePc);
-
-
 
             // Delete me!!!
             //theDeadEndFlag = true;
@@ -65,16 +61,37 @@ void Disassembler6502::halt()
 
 void Disassembler6502::printDisassembly()
 {
-   for(auto lineIter = theListing.begin(); lineIter != theListing.end(); lineIter++)
+   std::vector<MemoryRange> ranges = theMemoryController->getOrderedRangeList();
+   for(auto curRange = ranges.begin(); curRange != ranges.end(); curRange++)
    {
-      // Is there a label for this address?
-      if (theLabels.find(lineIter->first) != theLabels.end())
+      // Dissassemble all address from each range of memory available
+      CpuAddress curDisAddr = curRange->first;
+      while(curDisAddr <= curRange->second)
       {
-         std::cout << theLabels[lineIter->first] << ":" << std::endl;
+         // Is there a label for this address?
+         if (theLabels.find(curDisAddr) != theLabels.end())
+         {
+            std::cout << theLabels[curDisAddr] << ":" << std::endl;
+         }
+
+         uint8_t curAddrVal = theMemoryController->getDevice(curDisAddr)->read8(curDisAddr);
+
+         // Is there a listing for this address?
+         if (theListing.find(curDisAddr) != theListing.end())
+         {
+            std::cout << theListing[curDisAddr] << std::endl;
+            curDisAddr += OP_CODE_LENGTH[(int) ADDRESS_MODE[curAddrVal]];
+         }
+         else
+         {
+            // This is just a raw databyte
+            std::cout << addressToString(curDisAddr) << getOperandText(curDisAddr, (int) OpCode6502::BRK)
+                      << " DB $" << Utils::toHex8(curAddrVal) << std::endl;
+
+            curDisAddr++;
+         }
+
       }
-
-
-      std::cout << lineIter->second << std::endl;
    }
 }
 
@@ -106,7 +123,7 @@ void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, i
       numOpCodes = OP_CODE_LENGTH[ (int) ADDRESS_MODE[opCode]];
    }
 
-   LOG_DEBUG() << "Printing" << numOpCodes << "opcode(s) for instruction at address" << addressToString(addr);
+   // LOG_DEBUG() << "Printing" << numOpCodes << "opcode(s) for instruction at address" << addressToString(addr);
 
    switch(numOpCodes)
    {
@@ -160,6 +177,9 @@ void Disassembler6502::addJumpLabelStatement(CpuAddress instAddr, char const * c
    snprintf(buf, 20, "%s_0x%04x", prefix, dest);
 
    theLabels[dest] = buf;
+
+   LOG_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(dest);
+   theEntryPoints.push_back(dest);
 }
 
 std::string Disassembler6502::addBranchLabelStatement(CpuAddress instAddr)
@@ -181,6 +201,10 @@ std::string Disassembler6502::addBranchLabelStatement(CpuAddress instAddr)
    snprintf(buf, 20, "label_0x%04x", dest);
 
    theLabels[dest] = buf;
+
+   LOG_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(dest);
+   theEntryPoints.push_back(dest);
+
    return buf;
 }
 
@@ -567,6 +591,8 @@ void Disassembler6502::returnFromInterrupt(CpuAddress instAddr, uint8_t opCodes)
    listingData += "RTI";
 
    theListing[instAddr] = listingData;
+
+   halt();
 }
 
 void Disassembler6502::returnFromSubroutine(CpuAddress instAddr, uint8_t opCodes)
@@ -577,6 +603,8 @@ void Disassembler6502::returnFromSubroutine(CpuAddress instAddr, uint8_t opCodes
    listingData += "RTS";
 
    theListing[instAddr] = listingData;
+
+   halt();
 }
 
 void Disassembler6502::bitTest(CpuAddress instAddr, uint8_t opCodes)
@@ -938,7 +966,7 @@ std::string Disassembler6502::getIndirectOpText(CpuAddress addr)
 
 std::string Disassembler6502::getRelativeOpText(CpuAddress addr)
 {
-return "not implemented";
+   return "not implemented";
 }
 
 std::string Disassembler6502::getIndirectIndexedOpText(CpuAddress addr)
@@ -980,6 +1008,6 @@ std::string Disassembler6502::getIndexedIndirectOpText(CpuAddress addr)
 
 void Disassembler6502::updatePc(uint8_t bytesIncrement)
 {
-   LOG_DEBUG() << "PC Incrementing" << (int) bytesIncrement;
+   // LOG_DEBUG() << "PC Incrementing" << (int) bytesIncrement;
    thePc += bytesIncrement;
 }

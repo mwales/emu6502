@@ -20,9 +20,30 @@ std::vector<std::string> MemoryController::getDeviceNames()
 
 void MemoryController::addNewDevice(MemoryDev* device)
 {
-   theDevices.push_back(device);
+   // Make sure new device does not overlap the memory of existing memory devices
+   for(auto existingDevice = theDevices.begin(); existingDevice != theDevices.end(); existingDevice++)
+   {
+      if (doRangesOverlap((*existingDevice)->getAddressRange(), device->getAddressRange()))
+      {
+         LOG_WARNING() << "Adding a new memory device failed due to overlapping ranges!";
+         LOG_WARNING() << device->getDebugString() << " overlaps with " << (*existingDevice)->getDebugString();
+         return;
+      }
+   }
 
-   LOG_DEBUG() << "Memory Controller added device " << device->getName() << " at addr " << addressToString(device->getAddress());
+
+   for(auto existingDevice = theDevices.begin(); existingDevice != theDevices.end(); existingDevice++)
+   {
+      if (device->getAddress() < (*existingDevice)->getAddress())
+      {
+         theDevices.insert(existingDevice, device);
+         LOG_DEBUG() << "Memory Controller added device " << device->getDebugString();
+         return;
+      }
+   }
+
+   theDevices.push_back(device);
+   LOG_DEBUG() << "Memory Controller added device " << device->getDebugString();
 }
 
 void MemoryController::deleteDevice(MemoryDev* device)
@@ -60,4 +81,71 @@ MemoryDev* MemoryController::getDevice(CpuAddress address)
 
    // No matching device found
    return nullptr;
+}
+
+std::vector<MemoryRange> MemoryController::getOrderedRangeList()
+{
+   std::vector<MemoryRange> retVal;
+
+   for(auto curDevice = theDevices.begin(); curDevice != theDevices.end(); curDevice++)
+   {
+      retVal.push_back( (*curDevice)->getAddressRange());
+   }
+
+   return retVal;
+}
+
+bool MemoryController::doRangesOverlap(MemoryRange dev1, MemoryRange dev2)
+{
+   // [ dev1 ]
+   //     [   dev2  ]
+   if ( (dev1.second >= dev2.first) && (dev2.second >= dev1.first) )
+   {
+      return true;
+   }
+
+
+   if ( (dev2.second >= dev1.first) && (dev1.second >= dev2.first) )
+   {
+      return true;
+   }
+
+   return false;
+}
+
+bool MemoryController::doRangesMerge(MemoryRange dev1, MemoryRange dev2)
+{
+   if ( (dev1.second + 1) == dev2.first)
+   {
+      return true;
+   }
+   if ( (dev2.second + 1) == dev1.first)
+   {
+      return true;
+   }
+
+   return false;
+}
+
+MemoryRange MemoryController::mergeRanges(MemoryRange dev1, MemoryRange dev2)
+{
+   MemoryRange retVal;
+   if ( (dev1.second + 1) == dev2.first)
+   {
+      retVal.first = dev1.first;
+      retVal.second = dev2.second;
+      return retVal;
+   }
+   if ( (dev2.second + 1) == dev1.first)
+   {
+      retVal.first = dev2.first;
+      retVal.second = dev1.second;
+      return retVal;
+   }
+
+   LOG_FATAL() << "mergeRanges called with non-mergable ranges!";
+   retVal.first = 0;
+   retVal.second = 0;
+   return retVal;
+
 }

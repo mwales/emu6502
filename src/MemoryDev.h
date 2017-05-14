@@ -27,6 +27,10 @@ public:
 
    bool isAbsAddressValid(CpuAddress addr , bool haltOnError = true);
 
+   MemoryRange getAddressRange();
+
+   std::string getDebugString();
+
 protected:   
 
    CpuAddress theAddress;

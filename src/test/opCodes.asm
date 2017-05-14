@@ -1,6 +1,6 @@
     cpu 6502
           cout = $fded ; display a character
-             * = $300  ; assemble at $300
+             * = $4000  ; assemble at $300
                code
 ; These instructions are in the order of the webpage: http://www.6502.org/tutorials/6502opcodes.html
 ; To ensure I don't miss any
@@ -32,7 +32,7 @@
    ASL $4400
    ASL $4400,X
    ; BIT (test BITs)
-fart    BIT $44
+fart  BIT $44
    BIT $4400
 
    ; Branch instructions
@@ -100,11 +100,11 @@ fart    BIT $44
    INC $4400,X
 
    ; JMP (JuMP)
-   JMP $4002
+   JMP l2
    JMP ($5597)
    
    ; JSR (Jump to SubRoutine)
-   JSR $4004
+   JSR l3
 
    ; LDA (LoaD Accumulator)
    LDA #$44
@@ -175,12 +175,18 @@ fart    BIT $44
    ; RTI (ReTurn from Interrupt)
    RTI
 
+   DB $de
+   DB $ad
+   DB $be
+   DB $ef
+   DW $face
+
    ; RTS (ReTurn from Subroutine)
-   RTS
+l2   RTS
 
    ; SBC (SuBtract with Carry)
 
-   SBC #$44
+l3   SBC #$44
    SBC $44
    SBC $44,X
    SBC $4400

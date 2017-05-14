@@ -277,9 +277,6 @@ enum OpCodeAddressMode ADDRESS_MODE[] =
 };
 
 
-
-
-
 int OP_CODE_LENGTH[] =
 {
    2, // IMMEDIATE
