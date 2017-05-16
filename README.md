@@ -126,6 +126,50 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
     zero-page address specified in the op-code.  Example: LDA ($40),X ; Loads a memory address from
     address 0x0040, then adds X, then reads the memory address into accumulator.
 
+## Build Instructions
 
+A C++ compiler with C++11 support is required.  I test with gcc and clang.  If you have them
+installed, run the build.sh from the src directory.
+
+At this time, this only builds the disassembler, emulator not started.
+
+## Disassembler
+
+This program can disassemble a single 64K ROM Image.  The filename of the binary and the base
+address of the binary are required.  The emulator assumes that the base address is a code
+entry point for the recursive disassembler.
+
+Other entry points can be manually specified using the --address (-a) option to force the
+disassembler to down different branches that it didn't detect as code.  These dead branches may
+be because they were interrupt handler or jumped to via an indirect jump instruction.
+
+The user can also specify if opcodes and memory addresses should be output as part of the
+disassembly by using the -o option to enable opcodes, and the -l option to enable location
+information.
+
+### Usage Documenation
+
+```
+./dis6502-f filename -b baseaddr [-a address] [-h] [-o] [-l]
+  -f --file       Filename of the file to disassemble
+  -b --baseaddr   Base address of the file to disassemble
+  -a --address    Address of extra entry points to recursively disassemble (multiple)
+  -h --help       Show this help
+  -o --opcodes    Show opcodes in the disassembly
+  -l --location   Show locations / memory address of instructions and data in the listing
+```
+
+### Test Disassembler
+
+Assemble the test assembly file in the src/test folder.  The crasm 6502 assembler is required for
+this.  The assemble shell script will assemble the provided test file at the base address 0x4000.
+
+To disassemble:
+
+```
+./dis6502 --file test/opCodes.bin --b 0x4000 -a 0x414c -o -l
+```
+
+## Emulator
 
 

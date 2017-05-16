@@ -13,6 +13,8 @@ public:
 
    virtual void start(CpuAddress address);
 
+   virtual void addExtraEntryPoint(CpuAddress address);
+
    virtual void halt();
 
    void printDisassembly();

@@ -219,4 +219,11 @@ l3   SBC #$44
    STY $44
    STY $44,X
    STY $4400
+   RTS
 
+   DB $13
+   DB $37
+   DW $C0DE
+
+   LSR A
+   RTI

@@ -53,6 +53,11 @@ void Disassembler6502::start(CpuAddress address)
    }
 }
 
+void Disassembler6502::addExtraEntryPoint(CpuAddress address)
+{
+   theEntryPoints.push_back(address);
+}
+
 void Disassembler6502::halt()
 {
    theHaltFlag = true;
