@@ -1,0 +1,93 @@
+Most of the data contained in these tables was taken from:
+http://www.6502.org/tutorials/65c02opcodes.html
+
+The major unique thing that I needed from this was the status flags were in a
+format that I could easily parse to shove in my code.
+
+-- --- --- ---- ------   ------
+#BEGIN_OP_CODES
+00 1   7   zp   ....01.. BRK
+04 2   5   zp   ......Z. TSB $12
+07 2   5   zp   ........ RMB0 $12
+0C 3   6   abs  ......Z. TSB $3456
+0F 3   5   zp,l ........ BBR0 $12,LABEL
+12 2   5   (zp) N.....Z. ORA ($12)
+14 2   5   zp   ......Z. TRB $12
+17 2   5   zp   ........ RMB1 $12
+1A 1   2   acc  N.....Z. INC
+1C 3   6   abs  ......Z. TRB $3456
+1E 3   6 a abs  N.....Z. ASL $1234,X
+1F 3   5   zp,l ........ BBR1 $12,LABEL
+27 2   5   zp   ........ RMB2 $12
+2F 3   5   zp,l ........ BBR2 $12,LABEL
+32 2   5   (zp) N.....Z. AND ($12)
+34 2   4   zp,  NV....Z. BIT $34,X
+37 2   5   zp   ........ RMB3 $12
+3A 1   2   acc  N.....Z. DEC
+3C 3   4 a absX NV....Z. BIT $5678,X
+3E 3   6 a absX N.....Z. ROL $1234,X
+3F 3   5   zp,l ........ BBR3 $12,LABEL
+47 2   5   zp   ........ RMB4 $12
+4F 3   5   zp,l ........ BBR4 $12,LABEL
+52 2   5   (zp) N.....Z. EOR ($12)
+57 2   5   zp   ........ RMB5 $12
+5A 1   3   imp  ........ PHY
+5E 3   6 a absX N.....Z. LSR $1234,X
+5F 3   5   zp,l ........ BBR5 $12,LABEL
+61 2   6 a (zp) NV....ZC ADC ($34,X)
+64 2   3   zp   ........ STZ $12
+65 2   3 a zp   NV....ZC ADC $34
+67 2   5   zp   ........ RMB6 $12
+69 2   2 a imm  NV....ZC ADC #$12
+6D 3   4 a abs  NV....ZC ADC $5678
+6F 3   5   zp,l ........ BBR6 $12,LABEL
+71 2   5 b (zpY NV....ZC ADC ($34),Y
+72 2   5 a (zp) NV....ZC ADC ($12)
+72 2   5 a (zp  NV....ZC ADC ($34)
+74 2   4   zp,  ........ STZ $12,X
+75 2   4 a zp,  NV....ZC ADC $34,X
+77 2   5   zp   ........ RMB7 $12
+79 3   4 b abs, NV....ZC ADC $5678,Y
+7A 1   4   imp  N.....Z. PLY
+7C 3   6   (abs ........ JMP ($1234,X)
+7D 3   4 b abs, NV....ZC ADC $5678,X
+7E 3   6 a abs, N.....Z. ROR $1234,X
+7F 3   5   zp,r ........ BBR7 $12,LABEL
+80 2   3 a rel  ........ BRA LABEL
+87 2   5   zp   ........ SMB0 $12
+89 2   2   imm  ......Z. BIT #$12
+8F 3   5   zp,r ........ BBS0 $12,LABEL
+92 2   5   (zp) ........ STA ($12)
+97 2   5   zp   ........ SMB1 $12
+9C 3   4   abs  ........ STZ $3456
+9E 3   5   abs, ........ STZ $3456,X
+9F 3   5   zp,r ........ BBS1 $12,LABEL
+A7 2   5   zp   ........ SMB2 $12
+AF 3   5   zp,r ........ BBS2 $12,LABEL
+B2 2   5   (zp) N.....Z. LDA ($12)
+B7 2   5   zp   ........ SMB3 $12
+BF 3   5   zp,r ........ BBS3 $12,LABEL
+C7 2   5   zp   ........ SMB4 $12
+CB 1   3   imp  ........ WAI
+CF 3   5   zp,r ........ BBS4 $12,LABEL
+D2 2   5   (zp) N.....ZC CMP ($12)
+D7 2   5   zp   ........ SMB5 $12
+DA 1   3   imp  ........ PHX
+DB 1   3   imp  ........ STP
+DF 3   5   zp,l ........ BBS5 $12,LABEL
+E1 2   6 a (zp) NV....ZC SBC ($34,X)
+E5 2   3 a zp   NV....ZC SBC $34
+E7 2   5   zp   ........ SMB6 $12
+E9 2   2 a imm  NV....ZC SBC #$12
+ED 3   4 a abs  NV....ZC SBC $5678
+EF 3   5   zp,l ........ BBS6 $12,LABEL
+F1 2   5 b (zpY NV....ZC SBC ($34),Y
+F2 2   5 a (zp) NV....ZC SBC ($12)
+F2 2   5 a (zp  NV....ZC SBC ($34)
+F5 2   4 a zp,  NV....ZC SBC $34,X
+F7 2   5   zp   ........ SMB7 $12
+F9 3   4 b abs  NV....ZC SBC $5678,Y
+FA 1   4   imp  N.....Z. PLX
+FD 3   4 b abs  NV....ZC SBC $5678,X
+FF 3   5   zp,l ........ BBS7 $12,LABEL
+#END_OP_CODES
