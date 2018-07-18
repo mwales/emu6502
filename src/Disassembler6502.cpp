@@ -9,14 +9,13 @@
 #include "MemoryController.h"
 
 
-
-
-
 Disassembler6502::Disassembler6502(MemoryController* memCtrl):
    thePrintOpCodeFlag(false),
    thePrintAddressFlag(false)
 {
    theMemoryController = memCtrl;
+
+   constructCpuGlobals();
 }
 
 void Disassembler6502::start(CpuAddress address)
@@ -84,14 +83,20 @@ void Disassembler6502::printDisassembly()
          // Is there a listing for this address?
          if (theListing.find(curDisAddr) != theListing.end())
          {
+            // Print out the address if configured
+            if(thePrintAddressFlag)
+            {
+               std::cout << Utils::toHex16(curDisAddr, false) << "   ";
+            }
+
             std::cout << theListing[curDisAddr] << std::endl;
-            curDisAddr += OP_CODE_LENGTH[(int) ADDRESS_MODE[curAddrVal]];
+            //curDisAddr += OP_CODE_LENGTH[(int) ADDRESS_MODE[curAddrVal]];
+            curDisAddr += gOpCodes[curAddrVal].theNumBytes;
          }
          else
          {
             // This is just a raw databyte
-            std::cout << addressToString(curDisAddr) << getOperandText(curDisAddr, (int) OpCode6502::BRK)
-                      << " DB $" << Utils::toHex8(curAddrVal) << std::endl;
+            std::cout << addressToString(curDisAddr) << " DB $" << Utils::toHex8(curAddrVal) << std::endl;
 
             curDisAddr++;
          }
@@ -125,10 +130,8 @@ void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, i
    }
    else
    {
-      numOpCodes = OP_CODE_LENGTH[ (int) ADDRESS_MODE[opCode]];
+      numOpCodes = gOpCodes[opCode].theNumBytes;
    }
-
-   // LOG_DEBUG() << "Printing" << numOpCodes << "opcode(s) for instruction at address" << addressToString(addr);
 
    switch(numOpCodes)
    {
@@ -143,7 +146,7 @@ void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, i
 
    case 3:
       snprintf(opCodeText, OP_CODE_TEXT_LEN, "%02x %02x %02x  ", theMemoryController->getDevice(addr)->read8(addr),
-               theMemoryController->getDevice(addr+1)->read8(addr+1),
+               theMemoryController->getDevice(addr + 1)->read8(addr + 1),
                theMemoryController->getDevice(addr + 2)->read8(addr + 2));
       break;
 
@@ -165,854 +168,588 @@ void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
    }
 }
 
-void Disassembler6502::addJumpLabelStatement(CpuAddress instAddr, char const * const prefix)
+std::string Disassembler6502::addJumpLabelStatement(CpuAddress destAddr, char const * const prefix)
 {
    char buf[20];
-   MemoryDev* mem = theMemoryController->getDevice(instAddr + 1);
 
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Jump labeling (failed during operand fetch), no memory device for address"
-                    << addressToString(instAddr + 1);
-      return;
-   }
+   snprintf(buf, 20, "%s_0x%04x", prefix, destAddr);
 
-   uint16_t dest = mem->read16(instAddr + 1);
-   snprintf(buf, 20, "%s_0x%04x", prefix, dest);
+   theLabels[destAddr] = buf;
 
-   theLabels[dest] = buf;
-
-   LOG_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(dest);
-   theEntryPoints.push_back(dest);
-}
-
-std::string Disassembler6502::addBranchLabelStatement(CpuAddress instAddr)
-{
-   char buf[20];
-   MemoryDev* mem = theMemoryController->getDevice(instAddr + 1);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Branch labeling (failed during operand fetch), no memory device for address"
-                    << addressToString(instAddr + 1);
-      return "label_error";
-   }
-
-   int16_t offset = (int8_t) mem->read8(instAddr + 1);
-   uint16_t dest = instAddr + offset + 2;
-
-   snprintf(buf, 20, "label_0x%04x", dest);
-
-   theLabels[dest] = buf;
-
-   LOG_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(dest);
-   theEntryPoints.push_back(dest);
+   LOG_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(destAddr);
+   theEntryPoints.push_back(destAddr);
 
    return buf;
 }
 
-void Disassembler6502::load(CpuAddress instAddr, uint8_t opCodes)
+std::string Disassembler6502::addBranchLabelFromRelativeOffset(uint8_t offset)
 {
-   // Load opcodes can be LDA, LDX, LDY (the low nibble determines)
-   //  0x00, 0x04,       0x0c = LDY
-   //  0x01, 0x05, 0x09, 0x0d = LDA
-   //  0x02, 0x06,       0x0e = LDX
-   uint8_t lowNibble = opCodes & 0x0f;
+   int8_t signedOffset = (int8_t) offset;
+   int signedAddr = signedOffset + thePc;
+   CpuAddress targetAddr = signedAddr;
 
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
+   addJumpLabelStatement(targetAddr, "branch");
 
-   switch(lowNibble)
-   {
-   case 0x00:
-   case 0x04:
-   case 0x0c:
-      listingData += "LDY ";
-      break;
+   std::string retVal;
 
-   case 0x01:
-   case 0x05:
-   case 0x09:
-   case 0x0d:
-      listingData += "LDA ";
-      break;
-
-   case 0x02:
-   case 0x06:
-   case 0x0e:
-      listingData += "LDX ";
-      break;
-
-   default:
-      LOG_FATAL() << "Invalid load op code: " << Utils::toHex8(opCodes);
-      theListing[instAddr] = "<Disassembler Internal Error>";
-      return;
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
+   retVal = "branch_";
+   retVal += Utils::toHex16(targetAddr);
+   return retVal;
 }
-
-void Disassembler6502::store(CpuAddress instAddr, uint8_t opCodes)
-{
-   // Load opcodes can be STA, STX, STY (the low nibble determines)
-   //        0x04,       0x0c = STY
-   //  0x01, 0x05, 0x09, 0x0d = STA
-   //        0x06,       0x0e = STX
-   uint8_t lowNibble = opCodes & 0x0f;
-
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   switch(lowNibble)
-   {
-   case 0x04:
-   case 0x0c:
-      listingData += "STY ";
-      break;
-
-   case 0x01:
-   case 0x05:
-   case 0x09:
-   case 0x0d:
-      listingData += "STA ";
-      break;
-
-   case 0x06:
-   case 0x0e:
-      listingData += "STX ";
-      break;
-
-   default:
-      LOG_FATAL() << "Invalid load op code: " << Utils::toHex8(opCodes);
-      theListing[instAddr] = "<Disassembler Internal Error>";
-      return;
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::transfer(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   OpCode6502 oc = (OpCode6502) opCodes;
-
-   switch(oc)
-   {
-   case OpCode6502::TAX:
-      listingData += "TAX ";
-      break;
-
-   case OpCode6502::TXA:
-      listingData += "TXA ";
-      break;
-
-   case OpCode6502::TAY:
-      listingData += "TAY ";
-      break;
-
-   case OpCode6502::TYA:
-      listingData += "TYA ";
-      break;
-
-   case OpCode6502::TXS:
-      listingData += "TXS ";
-      break;
-
-   case OpCode6502::TSX:
-      listingData += "TSX ";
-      break;
-
-   default:
-      listingData += "<ERROR> ";
-      break;
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::add(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "ADC ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::subtract(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "SBC ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::increment(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   if (opCodes == (int) OpCode6502::INX)
-   {
-      listingData += "INX ";
-   }
-   else if (opCodes == (int) OpCode6502::INY)
-   {
-      listingData += "INY ";
-   }
-   else
-   {
-      listingData += "INC ";
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::decrement(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   if (opCodes == (int) OpCode6502::DEX)
-   {
-      listingData += "DEX ";
-   }
-   else if (opCodes == (int) OpCode6502::DEY)
-   {
-      listingData += "DEY ";
-   }
-   else
-   {
-      listingData += "DEC ";
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::andOperation(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "AND ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::orOperation(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "ORA ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::xorOperation(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "EOR ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::shiftLeft(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "ASL ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   // Special case for "ASL A" instruction
-   if (opCodes == (int) OpCode6502::ASL_A_IMPLIED)
-   {
-      listingData += "A";
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::shiftRight(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "LSR ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   // Special case for "LSR A" instruction
-   if (opCodes == (int) OpCode6502::LSR_A)
-   {
-      listingData += "A";
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::rotateLeft(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "ROL ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   // Special case for "ROL A" instruction
-   if (opCodes == (int) OpCode6502::ROL_A)
-   {
-      listingData += "A";
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::rotateRight(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "ROR ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   // Special case for "ROR A" instruction
-   if (opCodes == (int) OpCode6502::ROR_A)
-   {
-      listingData += "A";
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::push(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   if (opCodes == (uint8_t) OpCode6502::PHP)
-   {
-      listingData += "PHP";
-   }
-   else
-   {
-      listingData += "PHA";
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::pull(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   if (opCodes == (uint8_t) OpCode6502::PLP)
-   {
-      listingData += "PLP";
-   }
-   else
-   {
-      listingData += "PLA";
-   }
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::jump(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "JMP ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-
-   if (opCodes == (int) OpCode6502::JMP_ABSOLUTE)
-   {
-      addJumpLabelStatement(instAddr, "label");
-   }
-}
-
-void Disassembler6502::jumpSubroutine(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "JSR ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-
-   addJumpLabelStatement(instAddr, "sub");
-}
-
-void Disassembler6502::returnFromInterrupt(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "RTI";
-
-   theListing[instAddr] = listingData;
-
-   halt();
-}
-
-void Disassembler6502::returnFromSubroutine(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "RTS";
-
-   theListing[instAddr] = listingData;
-
-   halt();
-}
-
-void Disassembler6502::bitTest(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "BIT ";
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::compare(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   uint8_t upperNibble = opCodes & 0xf0;
-   if (upperNibble == 0xe0)
-   {
-      // CPX (compare X)
-      listingData += "CPX ";
-   }
-   else if (upperNibble == 0xc0)
-   {
-      // CPY (compare Y)
-      listingData += "CPY ";
-   }
-   else
-   {
-      // CMP (compare A)
-      listingData += "CMP ";
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::clear(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   OpCode6502 oc = (OpCode6502) opCodes;
-   switch (oc)
-   {
-   case OpCode6502::CLC:
-      listingData += "CLC ";
-      break;
-
-   case OpCode6502::CLI:
-      listingData += "CLI ";
-      break;
-
-   case OpCode6502::CLV:
-      listingData += "CLV ";
-      break;
-
-   case OpCode6502::CLD:
-      listingData += "CLD ";
-      break;
-
-   default:
-      listingData += "<ERROR>";
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::set(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   OpCode6502 oc = (OpCode6502) opCodes;
-   switch (oc)
-   {
-   case OpCode6502::SEC:
-      listingData += "SEC ";
-      break;
-
-   case OpCode6502::SEI:
-      listingData += "SEI ";
-      break;
-
-   case OpCode6502::SED:
-      listingData += "SED ";
-      break;
-
-   default:
-      listingData += "<ERROR>";
-   }
-
-   listingData += getOperandText(instAddr, opCodes);
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::noOp(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "NOP";
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::breakOperation(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-   listingData += "BRK";
-
-   theListing[instAddr] = listingData;
-}
-
-void Disassembler6502::branch(CpuAddress instAddr, uint8_t opCodes)
-{
-   std::string listingData;
-   printAddress(&listingData, instAddr);
-   printOpCodes(&listingData, instAddr, opCodes);
-
-   OpCode6502 oc = (OpCode6502) opCodes;
-   switch(oc)
-   {
-   case OpCode6502::BPL_REL:
-      listingData += "BPL ";
-      break;
-
-   case OpCode6502::BMI_REL:
-      listingData += "BMI ";
-      break;
-
-   case OpCode6502::BVC_REL:
-      listingData += "BVC ";
-      break;
-
-   case OpCode6502::BVS_REL:
-      listingData += "BVS ";
-      break;
-
-   case OpCode6502::BCC_REL:
-      listingData += "BCC ";
-      break;
-
-   case OpCode6502::BCS_REL:
-      listingData += "BCS ";
-      break;
-
-   case OpCode6502::BNE_REL:
-      listingData += "BNE ";
-      break;
-
-   case OpCode6502::BEQ_REL:
-      listingData += "BEQ ";
-      break;
-
-   default:
-      listingData += "<error> ";
-   }
-
-   listingData += addBranchLabelStatement(instAddr);
-
-   theListing[instAddr] = listingData;
-}
-
-std::string Disassembler6502::getOperandText(CpuAddress addr, uint8_t opCode)
-{
-   OpCodeAddressMode mode = ADDRESS_MODE[opCode];
-
-   switch(mode)
-   {
-   case OpCodeAddressMode::IMMEDIATE:
-      return getImmediateOpText(addr);
-
-   case OpCodeAddressMode::ABSOLUTE:
-      return getAbsoluteOpText(addr);
-
-   case OpCodeAddressMode::ABSOLUTE_ZERO_PAGE:
-      return getAbsoluteZeroOpText(addr);
-
-   case OpCodeAddressMode::IMPLIED:
-      // These instructions have no operand
-      return "";
-
-   case OpCodeAddressMode::INDEXED:
-      return getIndexedOpText(addr);
-
-   case OpCodeAddressMode::INDEXED_ZERO_PAGE:
-      return getIndexedZeroPageOpText(addr);
-
-   case OpCodeAddressMode::INDIRECT:
-      return getIndirectOpText(addr);
-
-   case OpCodeAddressMode::RELATIVE:
-      return getRelativeOpText(addr);
-
-   case OpCodeAddressMode::INDIRECT_INDEXED:
-      return getIndirectIndexedOpText(addr);
-
-   case OpCodeAddressMode::INDEXED_INDIRECT:
-      return getIndexedIndirectOpText(addr);
-
-   case OpCodeAddressMode::INVALID:
-      LOG_WARNING() << "OpCode" << Utils::toHex8(opCode) << "is not valid op code for 6502 (@" << addressToString(addr) << ")";
-      return "<ERROR>";
-      break;
-
-   default:
-      LOG_FATAL() << "Internal error when getting operand for op code" << Utils::toHex8(opCode);
-
-   }
-
-   return "<ERROR2>";
-}
-
-std::string Disassembler6502::getImmediateOpText(CpuAddress addr)
-{
-   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed, no memory device for address" << addressToString(addr + 1);
-      return 0;
-   }
-
-   char buf[10];
-   snprintf(buf, 10, "#$%02x", mem->read8(addr + 1));
-
-   return buf;
-}
-
-std::string Disassembler6502::getAbsoluteOpText(CpuAddress addr)
-{
-   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   char buf[10];
-   snprintf(buf, 10, "$%04x", mem->read16(addr + 1));
-
-   return buf;
-}
-
-std::string Disassembler6502::getAbsoluteZeroOpText(CpuAddress addr)
-{
-   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   char buf[10];
-   snprintf(buf, 10, "$%02x", mem->read8(addr + 1));
-
-   return buf;
-}
-
-std::string Disassembler6502::getIndexedOpText(CpuAddress addr)
-{
-   // Some of these instructions use the X register for indexing, and some Y
-   MemoryDev* mem = theMemoryController->getDevice(addr);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   uint8_t opCode = mem->read8(addr);
-
-   uint16_t addressToIndex = mem->read16(addr+1);
-
-   uint8_t lowNibble = opCode & 0x0f;
-
-   char buf[10];
-   // Operations that index with why have a lower nibble of 0x09, with the exception of LDX abs, Y (BE)
-   if ( (lowNibble == 0x09) || (opCode == 0xbe) )
-   {
-      snprintf(buf, 10, "$%04x, Y", addressToIndex);
-   }
-   else
-   {
-      snprintf(buf, 10, "$%04x, X", addressToIndex);
-   }
-
-   return buf;
-}
-
-std::string Disassembler6502::getIndexedZeroPageOpText(CpuAddress addr)
-{
-   // Some of these instructions use the X register for indexing, and some Y
-   MemoryDev* mem = theMemoryController->getDevice(addr);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   OpCode6502 opCode = (OpCode6502) mem->read8(addr);
-
-   uint16_t addressToIndex = 0x00ff & mem->read8(addr+1);
-
-   char buf[10];
-   // Operations that index with why have a lower nibble of 0x09, with the exception of LDX abs, Y (BE)
-   if ( (opCode == OpCode6502::STX_Y_ABSOLUTE_ZERO_PAGE) ||
-        (opCode == OpCode6502::LDX_Y_ABSOLUTE_ZERO_PAGE) )
-   {
-      snprintf(buf, 10, "$%02x, Y", addressToIndex);
-   }
-   else
-   {
-      snprintf(buf, 10, "$%02x, X", addressToIndex);
-   }
-
-   return buf;
-}
-
-std::string Disassembler6502::getIndirectOpText(CpuAddress addr)
-{
-   MemoryDev* mem = theMemoryController->getDevice(addr);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   uint16_t addressInOperand = mem->read16(addr+1);
-
-   char buf[10];
-   snprintf(buf, 10, "($%02x)", addressInOperand);
-
-   return buf;
-}
-
-std::string Disassembler6502::getRelativeOpText(CpuAddress addr)
-{
-   return "not implemented";
-}
-
-std::string Disassembler6502::getIndirectIndexedOpText(CpuAddress addr)
-{
-   // These are always with the X register
-   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   char buf[20];
-   snprintf(buf, 20, "($%02x, X)", mem->read8(addr + 1));
-
-   return buf;
-}
-
-std::string Disassembler6502::getIndexedIndirectOpText(CpuAddress addr)
-{
-   // These are always with the Y register
-   MemoryDev* mem = theMemoryController->getDevice(addr + 1);
-
-   if (mem == 0)
-   {
-      halt();
-      LOG_WARNING() << "Decoding failed (failed during operand fetch), no memory device for address" << addressToString(addr + 1);
-      return "<FAIL>";
-   }
-
-   char buf[20];
-   snprintf(buf, 20, "($%02x), Y", mem->read8(addr + 1));
-
-   return buf;
-}
-
 
 void Disassembler6502::updatePc(uint8_t bytesIncrement)
 {
-   // LOG_DEBUG() << "PC Incrementing" << (int) bytesIncrement;
+   LOG_DEBUG() << "PC Incrementing" << (int) bytesIncrement;
    thePc += bytesIncrement;
+}
+
+void Disassembler6502::addDisassemblerListing(OpCodeInfo* oci)
+{
+   std::string listingText;
+
+
+   if (thePrintOpCodeFlag)
+   {
+      printOpCodes(&listingText, thePc, oci->theOpCode);
+   }
+
+   listingText += oci->theMnemonicDisass;
+   listingText += " ";
+
+   uint8_t op2, op3;
+
+
+   // Need to print out some disassembly based on the addressing mode now
+   switch(gOpCodes[oci->theOpCode].theAddrMode)
+   {
+   case IMPLIED:
+      // Do nothing
+      break;
+
+   case IMMEDIATE:
+      listingText += "#$";
+      listingText += Utils::toHex8(theOpCode2, false);
+      break;
+
+   case RELATIVE:
+
+      listingText += "*";
+
+      if ((theOpCode2 & 0x80)== 0x80)
+      {
+         // Negative jump
+
+         listingText += "-";
+         // 2's complement
+         uint8_t op2 = theOpCode2 - 1;
+         op2 = ~op2;
+         listingText += Utils::toHex8(op2, false);
+      }
+      else
+      {
+         // Positive jump
+         listingText += "+";
+         listingText += Utils::toHex8(theOpCode2, false);
+      }
+
+      break;
+
+   case INDIRECT:
+      listingText += "($";
+      listingText += Utils::toHex8(theOpCode3, false);
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += ")";
+      break;
+
+   case INDIRECT_X:
+      listingText += "($";
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += ",X)";
+      break;
+
+   case INDIRECT_Y:
+      listingText += "($";
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += "),Y";
+      break;
+
+   case ABSOLUTE:
+      listingText += "$";
+      listingText += Utils::toHex8(theOpCode3, false);
+      listingText += Utils::toHex8(theOpCode2, false);
+      break;
+
+   case ZERO_PAGE:
+      listingText += "$";
+      listingText += Utils::toHex8(theOpCode2, false);
+      break;
+
+   case ABS_ZP_X:
+      listingText += "$";
+      listingText += Utils::toHex8(theOpCode3, false);
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += ",X";
+      break;
+
+   case ABS_ZP_Y:
+      listingText += "$";
+      listingText += Utils::toHex8(theOpCode3, false);
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += ",Y";
+      break;
+
+   case ZERO_PAGE_X:
+      listingText += "$";
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += ",X";
+      break;
+
+   case ZERO_PAGE_Y:
+      listingText += "$";
+      listingText += Utils::toHex8(theOpCode2, false);
+      listingText += ",Y";
+      break;
+
+   }
+
+   theListing[thePc] = listingText;
+}
+
+void Disassembler6502::preHandlerHook(OpCodeInfo* oci)
+{
+   // This is where sub-classes will do sub-class specific behavior if necessary
+   addDisassemblerListing(oci);
+}
+
+void Disassembler6502::postHandlerHook(OpCodeInfo* oci)
+{
+   // This is where sub-classes will do sub-class specific behavior if necessary
+}
+
+
+void Disassembler6502::handler_and(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for and";
+   addDisassemblerListing(oci);
+}
+
+void Disassembler6502::handler_bvs(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for bvs";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_sec(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sec";
+}
+
+void Disassembler6502::handler_rol(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for rol";
+}
+
+void Disassembler6502::handler_pla(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for pla";
+}
+
+void Disassembler6502::handler_anc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for anc";
+}
+
+void Disassembler6502::handler_rti(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for rti";
+}
+
+void Disassembler6502::handler_arr(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for arr";
+}
+
+void Disassembler6502::handler_rra(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for rra";
+}
+
+void Disassembler6502::handler_bvc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for bvc";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_sax(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sax";
+}
+
+void Disassembler6502::handler_lsr(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for lsr";
+}
+
+void Disassembler6502::handler_rts(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for rts";
+}
+
+void Disassembler6502::handler_inx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for inx";
+}
+
+void Disassembler6502::handler_ror(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for ror";
+}
+
+void Disassembler6502::handler_ldx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for ldx";
+}
+
+void Disassembler6502::handler_alr(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for alr";
+}
+
+void Disassembler6502::handler_ahx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for ahx";
+}
+
+void Disassembler6502::handler_sei(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sei";
+}
+
+void Disassembler6502::handler_iny(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for iny";
+}
+
+void Disassembler6502::handler_inc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for inc";
+}
+
+void Disassembler6502::handler_cli(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for cli";
+}
+
+void Disassembler6502::handler_beq(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for beq";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_cpy(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for cpy";
+}
+
+void Disassembler6502::handler_cld(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for cld";
+}
+
+void Disassembler6502::handler_txs(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for txs";
+}
+
+void Disassembler6502::handler_tas(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for tas";
+}
+
+void Disassembler6502::handler_clc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for clc";
+}
+
+void Disassembler6502::handler_adc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for adc";
+}
+
+void Disassembler6502::handler_tsx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for tsx";
+}
+
+void Disassembler6502::handler_xaa(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for xaa";
+}
+
+void Disassembler6502::handler_clv(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for clv";
+}
+
+void Disassembler6502::handler_asl(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for asl";
+}
+
+void Disassembler6502::handler_jmp(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for jmp";
+}
+
+void Disassembler6502::handler_bne(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for bne";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_ldy(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for ldy";
+}
+
+void Disassembler6502::handler_axs(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for axs";
+}
+
+void Disassembler6502::handler_plp(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for plp";
+}
+
+void Disassembler6502::handler_tax(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for tax";
+}
+
+void Disassembler6502::handler_pha(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for pha";
+}
+
+void Disassembler6502::handler_bmi(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for bmi";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_rla(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for rla";
+}
+
+void Disassembler6502::handler_tya(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for tya";
+}
+
+void Disassembler6502::handler_tay(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for tay";
+}
+
+void Disassembler6502::handler_sbc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sbc";
+}
+
+void Disassembler6502::handler_lax(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for lax";
+}
+
+void Disassembler6502::handler_txa(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for txa";
+}
+
+void Disassembler6502::handler_jsr(OpCodeInfo* oci)
+{
+   // Is this the absolute address insturction?
+   if (oci->theAddrMode == ABSOLUTE)
+   {
+      uint16_t targetAddr;
+
+      targetAddr = ((uint16_t) theOpCode3 << 8) + (uint16_t) theOpCode2 + oci->theNumBytes;
+
+      std::string label = addJumpLabelStatement(targetAddr, "sub");
+
+      std::string newListing = theListing[thePc];
+      newListing += " ; ";
+      newListing += label;
+      theListing[thePc] = newListing;
+
+      LOG_DEBUG() << "Non-Empty handler for jsr to target @" << Utils::toHex16(targetAddr);
+   }
+   else
+   {
+      LOG_DEBUG() << "Empty handler for jsr";
+   }
+}
+
+void Disassembler6502::handler_kil(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for kil";
+}
+
+void Disassembler6502::handler_bit(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for bit";
+}
+
+void Disassembler6502::handler_php(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for php";
+}
+
+void Disassembler6502::handler_nop(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for nop";
+}
+
+void Disassembler6502::handler_dcp(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for dcp";
+}
+
+void Disassembler6502::handler_ora(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for ora";
+}
+
+void Disassembler6502::handler_dex(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for dex";
+}
+
+void Disassembler6502::handler_dey(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for dey";
+}
+
+void Disassembler6502::handler_dec(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for dec";
+}
+
+void Disassembler6502::handler_sed(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sed";
+}
+
+void Disassembler6502::handler_sta(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sta";
+}
+
+void Disassembler6502::handler_sre(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sre";
+}
+
+void Disassembler6502::handler_shx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for shx";
+}
+
+void Disassembler6502::handler_shy(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for shy";
+}
+
+void Disassembler6502::handler_bpl(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-Empty handler for bpl";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_bcc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for bcc";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
+}
+
+void Disassembler6502::handler_cpx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for cpx";
+}
+
+void Disassembler6502::handler_eor(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for eor";
+}
+
+void Disassembler6502::handler_lda(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for lda";
+}
+
+void Disassembler6502::handler_slo(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for slo";
+}
+
+void Disassembler6502::handler_las(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for las";
+}
+
+void Disassembler6502::handler_isc(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for isc";
+}
+
+void Disassembler6502::handler_brk(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for brk";
+}
+
+void Disassembler6502::handler_cmp(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for cmp";
+}
+
+void Disassembler6502::handler_stx(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for stx";
+}
+
+void Disassembler6502::handler_sty(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Empty handler for sty";
+}
+
+void Disassembler6502::handler_bcs(OpCodeInfo* oci)
+{
+   LOG_DEBUG() << "Non-empty handler for bcs";
+
+   std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
+   theListing[thePc] += " ; ";
+   theListing[thePc] += branchName;
 }

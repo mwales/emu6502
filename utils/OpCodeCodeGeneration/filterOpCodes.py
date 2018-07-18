@@ -127,10 +127,14 @@ FlagEnum = { 'N': "FLG_NEG ",
 	     'Z': "FLG_ZERO",
 	     'C': "FLG_CARY",
 	     "........": "FLG_NONE"}
+
+handlersToCreate = set()
       
 # Now we need to output everything to the output file
 for opCode in MainDict.keys():
    CurInst = MainDict[opCode]
+
+   handlersToCreate.add(CurInst['Mnemonic'].lower())
 
    print("OUT: {} = {}".format(hex(opCode), CurInst))
 
@@ -173,4 +177,19 @@ for opCode in MainDict.keys():
 
    print(macroText)
    outputFile.write(macroText + "\n")
+
+outputFile.write("\n\n\n")
+outputFile.write("/***   CREATING HANDLER BLANK FUNCTIONS ***/\n");
+for singleHandler in handlersToCreate:
+   outputFile.write("void ClassName::handler_{}(OpCodeInfo* oci)\n".format(singleHandler))
+   outputFile.write("{\n");
+   outputFile.write('   printf("Empty handler for {}");\n'.format(singleHandler))
+   outputFile.write("}\n\n");
+
+
+outputFile.write("\n\n\n")
+outputFile.write("/***   CREATING HANDLER DECLERATIONS ***/\n\n");
+for singleHandler in handlersToCreate:
+   outputFile.write("   virtual void handler_{}(OpCodeInfo* oci) = 0;\n".format(singleHandler))
+
 

@@ -3,6 +3,8 @@
 
 #include "Decoder.h"
 
+#include <stdint.h>
+
 /**
  * MOS 6502 instruction decoding.  This class is abstract because it will not implement the halt()
  * operation
@@ -13,78 +15,100 @@ public:
 
     virtual void start(CpuAddress address) = 0;
 
+   // I want these handlers to be protected, but then i guess you can't function pointers to them
+   // then, maybe I will bring in the Cpu6501Defines.h code into this class...
+
+   // All of the op code handler functions (auto-generated code below)
+   virtual void handler_and(OpCodeInfo* oci) = 0;
+   virtual void handler_bvs(OpCodeInfo* oci) = 0;
+   virtual void handler_sec(OpCodeInfo* oci) = 0;
+   virtual void handler_rol(OpCodeInfo* oci) = 0;
+   virtual void handler_pla(OpCodeInfo* oci) = 0;
+   virtual void handler_anc(OpCodeInfo* oci) = 0;
+   virtual void handler_rti(OpCodeInfo* oci) = 0;
+   virtual void handler_arr(OpCodeInfo* oci) = 0;
+   virtual void handler_rra(OpCodeInfo* oci) = 0;
+   virtual void handler_bvc(OpCodeInfo* oci) = 0;
+   virtual void handler_sax(OpCodeInfo* oci) = 0;
+   virtual void handler_lsr(OpCodeInfo* oci) = 0;
+   virtual void handler_rts(OpCodeInfo* oci) = 0;
+   virtual void handler_inx(OpCodeInfo* oci) = 0;
+   virtual void handler_ror(OpCodeInfo* oci) = 0;
+   virtual void handler_ldx(OpCodeInfo* oci) = 0;
+   virtual void handler_alr(OpCodeInfo* oci) = 0;
+   virtual void handler_ahx(OpCodeInfo* oci) = 0;
+   virtual void handler_sei(OpCodeInfo* oci) = 0;
+   virtual void handler_iny(OpCodeInfo* oci) = 0;
+   virtual void handler_inc(OpCodeInfo* oci) = 0;
+   virtual void handler_cli(OpCodeInfo* oci) = 0;
+   virtual void handler_beq(OpCodeInfo* oci) = 0;
+   virtual void handler_cpy(OpCodeInfo* oci) = 0;
+   virtual void handler_cld(OpCodeInfo* oci) = 0;
+   virtual void handler_txs(OpCodeInfo* oci) = 0;
+   virtual void handler_tas(OpCodeInfo* oci) = 0;
+   virtual void handler_clc(OpCodeInfo* oci) = 0;
+   virtual void handler_adc(OpCodeInfo* oci) = 0;
+   virtual void handler_tsx(OpCodeInfo* oci) = 0;
+   virtual void handler_xaa(OpCodeInfo* oci) = 0;
+   virtual void handler_clv(OpCodeInfo* oci) = 0;
+   virtual void handler_asl(OpCodeInfo* oci) = 0;
+   virtual void handler_jmp(OpCodeInfo* oci) = 0;
+   virtual void handler_bne(OpCodeInfo* oci) = 0;
+   virtual void handler_ldy(OpCodeInfo* oci) = 0;
+   virtual void handler_axs(OpCodeInfo* oci) = 0;
+   virtual void handler_plp(OpCodeInfo* oci) = 0;
+   virtual void handler_tax(OpCodeInfo* oci) = 0;
+   virtual void handler_pha(OpCodeInfo* oci) = 0;
+   virtual void handler_bmi(OpCodeInfo* oci) = 0;
+   virtual void handler_rla(OpCodeInfo* oci) = 0;
+   virtual void handler_tya(OpCodeInfo* oci) = 0;
+   virtual void handler_tay(OpCodeInfo* oci) = 0;
+   virtual void handler_sbc(OpCodeInfo* oci) = 0;
+   virtual void handler_lax(OpCodeInfo* oci) = 0;
+   virtual void handler_txa(OpCodeInfo* oci) = 0;
+   virtual void handler_jsr(OpCodeInfo* oci) = 0;
+   virtual void handler_kil(OpCodeInfo* oci) = 0;
+   virtual void handler_bit(OpCodeInfo* oci) = 0;
+   virtual void handler_php(OpCodeInfo* oci) = 0;
+   virtual void handler_nop(OpCodeInfo* oci) = 0;
+   virtual void handler_dcp(OpCodeInfo* oci) = 0;
+   virtual void handler_ora(OpCodeInfo* oci) = 0;
+   virtual void handler_dex(OpCodeInfo* oci) = 0;
+   virtual void handler_dey(OpCodeInfo* oci) = 0;
+   virtual void handler_dec(OpCodeInfo* oci) = 0;
+   virtual void handler_sed(OpCodeInfo* oci) = 0;
+   virtual void handler_sta(OpCodeInfo* oci) = 0;
+   virtual void handler_sre(OpCodeInfo* oci) = 0;
+   virtual void handler_shx(OpCodeInfo* oci) = 0;
+   virtual void handler_shy(OpCodeInfo* oci) = 0;
+   virtual void handler_bpl(OpCodeInfo* oci) = 0;
+   virtual void handler_bcc(OpCodeInfo* oci) = 0;
+   virtual void handler_cpx(OpCodeInfo* oci) = 0;
+   virtual void handler_eor(OpCodeInfo* oci) = 0;
+   virtual void handler_lda(OpCodeInfo* oci) = 0;
+   virtual void handler_slo(OpCodeInfo* oci) = 0;
+   virtual void handler_las(OpCodeInfo* oci) = 0;
+   virtual void handler_isc(OpCodeInfo* oci) = 0;
+   virtual void handler_brk(OpCodeInfo* oci) = 0;
+   virtual void handler_cmp(OpCodeInfo* oci) = 0;
+   virtual void handler_stx(OpCodeInfo* oci) = 0;
+   virtual void handler_sty(OpCodeInfo* oci) = 0;
+   virtual void handler_bcs(OpCodeInfo* oci) = 0;
+   // End of auto generated code
+
 protected:
 
-    virtual void decode(CpuAddress address);
+   virtual void decode(CpuAddress address);
 
-    virtual void load(CpuAddress instAddr, uint8_t opCodes) = 0;
+   virtual void updatePc(uint8_t bytesIncrement) = 0;
 
-    virtual void store(CpuAddress instAddr, uint8_t opCodes) = 0;
+   virtual void preHandlerHook(OpCodeInfo* oci);
 
-    virtual void transfer(CpuAddress instAddr, uint8_t opCodes) = 0;
+   virtual void postHandlerHook(OpCodeInfo* oci);
 
-    virtual void add(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void subtract(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void increment(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void decrement(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void andOperation(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void orOperation(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void xorOperation(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void shiftLeft(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void shiftRight(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void rotateLeft(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void rotateRight(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void push(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void pull(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void jump(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void jumpSubroutine(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void returnFromInterrupt(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void returnFromSubroutine(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void bitTest(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void compare(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void clear(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void set(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void noOp(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void breakOperation(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void branch(CpuAddress instAddr, uint8_t opCodes) = 0;
-
-    virtual void updatePc(uint8_t bytesIncrement) = 0;
-
-   // Addressing mode specific instructions
-   virtual uint8_t getOperand(CpuAddress addr, uint8_t opCode);
-   virtual uint8_t getImmediateOperand(CpuAddress addr);
-   virtual uint8_t getAbsoluteOperand(CpuAddress addr);
-   virtual uint8_t getAbsoluteZeroPageOperand(CpuAddress addr);
-   virtual uint8_t getIndexedOperand(CpuAddress addr);
-   virtual uint8_t getIndexedZeroPageOperand(CpuAddress addr);
-   virtual uint8_t getIndirectIndexedOperand(CpuAddress addr);
-   virtual uint8_t getIndexedIndirectOperand(CpuAddress addr);
-
-   virtual uint16_t getRelativeOperand(CpuAddress addr);
-   virtual uint16_t getIndirectOperand(CpuAddress addr);
+   /// When decoding, these are the extra bytes of an op code (not always used)
+   uint8_t theOpCode2;
+   uint8_t theOpCode3;
 
 };
 

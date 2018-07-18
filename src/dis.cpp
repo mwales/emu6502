@@ -130,9 +130,7 @@ int main(int argc, char* argv[])
 
    dis.start(baseAddress);
 
-
    dis.printDisassembly();
-
 
    return 0;
 }

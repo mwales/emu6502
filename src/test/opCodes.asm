@@ -32,14 +32,14 @@
    ASL $4400
    ASL $4400,X
    ; BIT (test BITs)
-fart  BIT $44
+   BIT $44
    BIT $4400
 
    ; Branch instructions
    BPL fart
    BMI fart
    BVC fart
-   BVS fart
+fart BVS fart
    BCC fart
    BCS fart
    BNE fart

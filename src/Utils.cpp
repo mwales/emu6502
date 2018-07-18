@@ -5,29 +5,43 @@ Utils::Utils()
 
 }
 
-std::string Utils::toHex8(uint8_t val)
+std::string Utils::toHex8(uint8_t val, bool withPrefix)
 {
    char buf[5];
-   snprintf(buf, 5, "0x%02x", val);
+
+   if (withPrefix)
+      snprintf(buf, 5, "0x%02x", val);
+   else
+      snprintf(buf, 5, "%02x", val);
+
    buf[4] = 0;
 
    return buf;
 }
 
 
-std::string Utils::toHex16(uint16_t val)
+std::string Utils::toHex16(uint16_t val, bool withPrefix)
 {
    char buf[7];
-   snprintf(buf, 7, "0x%04x", val);
+
+   if(withPrefix)
+      snprintf(buf, 7, "0x%04x", val);
+   else
+      snprintf(buf, 7, "%04x", val);
+
    buf[6] = 0;
 
    return buf;
 }
 
-std::string Utils::toHex32(uint32_t val)
+std::string Utils::toHex32(uint32_t val, bool withPrefix)
 {
    char buf[11];
-   snprintf(buf, 11, "0x%08x", val);
+
+   if(withPrefix)
+      snprintf(buf, 11, "0x%08x", val);
+   else
+      snprintf(buf, 11, "%08x", val);
    buf[10] = 0;
 
    return buf;
