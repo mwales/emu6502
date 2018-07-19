@@ -55,11 +55,25 @@ enum AddressMode6502
 #define FLG_NONE 0x00
 #define FLG_CARY 0x01
 #define FLG_ZERO 0x02
-#define FLG_DECI 0x04
-#define FLG_INTD 0x08
-// #define FLG_  0x10
-#define FLG_OVFL 0x20
-#define FLG_NEG  0x40
+#define FLG_INTD 0x04
+#define FLG_DECI 0x08
+#define FLG_BKPT 0x10
+// #define FLG_  0x20
+#define FLG_OVFL 0x40
+#define FLG_NEG  0x80
+
+typedef struct StatusRegStruct
+{
+   uint8_t theCarryFlag:1;
+   uint8_t theZeroFlag:1;
+   uint8_t theInterruptFlag:1;
+   uint8_t theBCDFlag:1;
+   uint8_t theBreakpointFlag:1;
+   uint8_t theNotUsedFlag:1;
+   uint8_t theOverflowFlag:1;
+   uint8_t theSignFlag:1;
+
+} StatusReg;
 
 
 typedef struct OpCodeInfoStruct

@@ -128,10 +128,14 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
 
 ## Build Instructions
 
-A C++ compiler with C++11 support is required.  I test with gcc and clang.  If you have them
-installed, run the build.sh from the src directory.
+Build system is based on CMake. To build the emulator and disassembler:
 
-At this time, this only builds the disassembler, emulator not started.
+```
+mkdir build
+cd build
+cmake ../
+make -j8
+```
 
 ## Disassembler
 
@@ -171,5 +175,28 @@ To disassemble:
 ```
 
 ## Emulator
+
+### Debugger design
+
+I don't want to clutter up the emulator with the debugger / menu system.  I
+think I'm going to make it a remote control system over a socket, then I can
+create a proper Qt based GUI for the debugger.  This should probably also
+help with making a machine learning type of system for the emulator as well.
+
+Commands for the emulator's debugger
+
+* RegisterDump() - Dump all the registers.  X, Y, Accumulator, Status, PC, SP
+* RegisterWrite(registerName, registerValue)
+* MemoryWrite(address, numBytes, data)
+* MemoryRead(address, numBytes)
+* Breakpoint(address)
+* BreakpointRemove(addresss)
+* Step(numInstructions)
+* Continue
+* Pause
+* SaveState(filename) - Prefix RAM indicates save in memory based dictionary
+* LoadState(filename) - Prefix RAM indicates save in memory based dictionary
+* MemDev(ioctl, numBytes, dataBuffer) - Who knows what commands we will need these
+     these things to support
 
 
