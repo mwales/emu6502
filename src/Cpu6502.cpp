@@ -2,14 +2,46 @@
 #include "Logger.h"
 #include "Utils.h"
 
+#include "DebugServer.h"
+#include "MemoryController.h"
 
 
-Cpu6502::Cpu6502()
+
+Cpu6502::Cpu6502(MemoryController* ctrlr):
+   Decoder6502(),
+
+   theDebugger(nullptr)
+{
+   theMemoryController = ctrlr;
+}
+
+Cpu6502::~Cpu6502()
+{
+   if (theDebugger != nullptr)
+   {
+      delete theDebugger;
+   }
+}
+
+void Cpu6502::enableDebugger(uint16_t portNumber)
+{
+   if (theDebugger == nullptr)
+   {
+      LOG_DEBUG() << "Enabling debugger on port " << portNumber;
+      theDebugger = new DebugServer(this, portNumber);
+   }
+   else
+   {
+      LOG_WARNING() << "Debugger was already running!";
+   }
+}
+
+void Cpu6502::start(CpuAddress address)
 {
 
 }
 
-void Cpu6502::start(CpuAddress address)
+void Cpu6502::halt()
 {
 
 }

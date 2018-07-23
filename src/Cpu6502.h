@@ -3,12 +3,19 @@
 
 #include "Decoder6502.h"
 
+class DebugServer;
+class MemoryController;
+
 class Cpu6502 : public Decoder6502
 {
 public:
-    Cpu6502();
+    Cpu6502(MemoryController* ctrlr);
+
+    ~Cpu6502();
 
     virtual void start(CpuAddress address);
+
+    void enableDebugger(uint16_t portNumber);
 
     // All of the op code handler functions (auto-generated code below)
     virtual void handler_and(OpCodeInfo* oci);
@@ -88,15 +95,21 @@ public:
     virtual void handler_bcs(OpCodeInfo* oci);
     // End of auto generated code
 
+    virtual void halt();
+
 protected:
 
     virtual void updatePc(uint8_t bytesIncrement);
 
+    // Core emulator registers
     uint8_t theRegX;
     uint8_t theRegY;
+    uint8_t theAccum;
+    uint8_t theStackPtr;
+    StatusReg theStatusReg;
+    CpuAddress thePc;
 
-    CpuAddress theStackPointer;
-
+    DebugServer* theDebugger;
 
 
 };
