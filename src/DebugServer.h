@@ -29,6 +29,23 @@ protected:
 
    int debugServerSocketThread();
 
+   /**
+    * Sends a framed message to the debugger client.  The frame contains a 2-byte message length
+    * field on the front of the message
+    *
+    * @note The message length sent over the wire doesn't account for 2 bytes of the frame header
+    *
+    * @param msgLen Number of bytes in the frame
+    * @param buffer Frame data
+    */
+   void sendResponse(int msgLen, uint8_t const * const buffer);
+
+   void processCommand(uint16_t commandLen, uint16_t command);
+
+   void versionCommand();
+
+   void quitCommand();
+
    Cpu6502* theCpu;
 
    uint16_t thePortNumber;

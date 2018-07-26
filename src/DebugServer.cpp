@@ -119,6 +119,32 @@ int DebugServer::debugServerSocketThread()
 
          LOG_DEBUG() << "Received a header.  Frame Size = " << numBytesFrame
                      << " and command = " << command;
+
+         int bytesReceived = 0;
+         int bytesReceivedTotal = 0;
+         while(bytesReceivedTotal < numBytesFrame)
+         {
+            bytesReceived = SDLNet_TCP_Recv(theClientSocket,
+                                            theRxDataBuffer + bytesReceivedTotal,
+                                            numBytesFrame - bytesReceivedTotal);
+
+            if (bytesReceived <= 0)
+            {
+               LOG_WARNING() << "Error.  Only received " << bytesReceivedTotal
+                             << "bytes of frame with " << numBytesFrame << " bytes";
+               closeExistingConnection("Truncated frame");
+               break;
+            }
+
+            bytesReceivedTotal += bytesReceived;
+         }
+
+         LOG_DEBUG() << "Received full frame of " << numBytesFrame << "bytes, cmd = "
+                     << command;
+
+         processCommand(numBytesFrame, command);
+
+
       }
 
    }
@@ -126,6 +152,61 @@ int DebugServer::debugServerSocketThread()
    LOG_DEBUG() << "Debugger thread now exitting";
 
    return 0;
+}
+
+void DebugServer::sendResponse(int msgLen, uint8_t const * const buffer)
+{
+   // We need a buffer larger the msgLen to hold the length value we need to send back
+   uint8_t* txBuffer = (uint8_t*) malloc(msgLen + 2);
+   SDLNet_Write16(msgLen, txBuffer);
+   memcpy(txBuffer + 2, buffer, msgLen);
+
+   // Send the buffer
+   int bytesSent = SDLNet_TCP_Send(theClientSocket, txBuffer, msgLen + 2);
+
+   if  (bytesSent != msgLen + 2)
+   {
+      LOG_WARNING() << "Failed to send response.  " << bytesSent << " bytes send of message length "
+                    << (msgLen + 2);
+      closeExistingConnection("Failed to send message to the client");
+   }
+   else
+   {
+      LOG_DEBUG() << "Sent a " << bytesSent << " byte message to the debugger client";
+   }
+
+   // Free the memory of the buffer we created
+   free(txBuffer);
+}
+
+void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
+{
+   switch(command)
+   {
+   case 1: // VERSION
+      versionCommand();
+      break;
+
+   case 2: // QUIT
+      quitCommand();
+      break;
+
+   default:
+      LOG_WARNING() << "Command " << command << " is not implemented!";
+   }
+}
+
+void DebugServer::versionCommand()
+{
+   LOG_DEBUG() << "Version command sent by the debugger client";
+
+   char const * versionString = "Emulator Version 0.0";
+   sendResponse(strlen(versionString), (uint8_t*) versionString);
+}
+
+void DebugServer::quitCommand()
+{
+   LOG_DEBUG() << "Exit emulator command sent by debugger client";
 }
 
 

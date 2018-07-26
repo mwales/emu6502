@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
          emu.enableDebugger(debuggerPort);
 
 
-      SDL_Delay(10000);
+      SDL_Delay(100000);
    }
 
    shutdownSdl();
