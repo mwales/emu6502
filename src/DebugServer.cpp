@@ -1,5 +1,6 @@
 #include "DebugServer.h"
 #include "Logger.h"
+#include "Cpu6502.h"
 
 DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum):
    theCpu(cpu),
@@ -8,7 +9,8 @@ DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum):
    theServerThread(nullptr),
    theClientSocket(nullptr),
    theRunningFlag(true),
-   theNumberBytesToRx(-1)
+   theNumberBytesToRx(-1),
+   theDebuggerBlockEmulatorFlag(true)
 {
    theSocketSet = SDLNet_AllocSocketSet(4);
 
@@ -58,6 +60,11 @@ bool DebugServer::startDebugServer()
 
 void DebugServer::debugHook()
 {
+   while (theDebuggerBlockEmulatorFlag)
+   {
+      LOG_DEBUG() << "Emulator blocked on debugger";
+      SDL_Delay(5000);
+   }
 
 }
 
@@ -65,6 +72,11 @@ int DebugServer::debugServerThreadEntry(void* debuggerInstance)
 {
    DebugServer* instance = (DebugServer*) debuggerInstance;
    return instance->debugServerSocketThread();
+}
+
+void DebugServer::emulatorHalt()
+{
+
 }
 
 int DebugServer::debugServerSocketThread()
@@ -200,13 +212,17 @@ void DebugServer::versionCommand()
 {
    LOG_DEBUG() << "Version command sent by the debugger client";
 
-   char const * versionString = "Emulator Version 0.0";
+   char const * versionString = "6502 Emulator Version 0.0 (No System)";
    sendResponse(strlen(versionString), (uint8_t*) versionString);
 }
 
 void DebugServer::quitCommand()
 {
    LOG_DEBUG() << "Exit emulator command sent by debugger client";
+   theCpu->exitEmulation();
+
+   // unblock the emulator so it can exit
+   theDebuggerBlockEmulatorFlag = false;
 }
 
 

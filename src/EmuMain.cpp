@@ -69,7 +69,8 @@ int main(int argc, char* argv[])
    uint16_t debuggerPort = 0;
    bool debuggerEnabled = false;
 
-   std::vector<CpuAddress> executionEntryPoints;
+   CpuAddress executionEntryPoint = 0;
+   bool jumpAddressSet = false;
 
    int optIndex;
 
@@ -102,7 +103,8 @@ int main(int argc, char* argv[])
       {
          CpuAddress addr = Utils::parseUInt16(optarg);
          LOG_DEBUG() << "Execution Entry Point:" << addressToString(addr);
-         executionEntryPoints.push_back(addr);
+         executionEntryPoint = addr;
+         jumpAddressSet = true;
          break;
       }
 
@@ -149,8 +151,10 @@ int main(int argc, char* argv[])
       if (debuggerEnabled)
          emu.enableDebugger(debuggerPort);
 
+       if (!jumpAddressSet)
+          executionEntryPoint = baseAddress;
 
-      SDL_Delay(100000);
+      emu.start(executionEntryPoint);
    }
 
    shutdownSdl();

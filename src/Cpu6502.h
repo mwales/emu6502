@@ -17,6 +17,11 @@ public:
 
     void enableDebugger(uint16_t portNumber);
 
+    /**
+     * Called from debugger to have the emulator exit
+     */
+    void exitEmulation();
+
     // All of the op code handler functions (auto-generated code below)
     virtual void handler_and(OpCodeInfo* oci);
     virtual void handler_bvs(OpCodeInfo* oci);
@@ -110,6 +115,10 @@ protected:
     CpuAddress thePc;
 
     DebugServer* theDebugger;
+
+    bool theRunFlag;
+
+    uint64_t theNumClocks;
 
 
 };

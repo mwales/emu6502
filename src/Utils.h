@@ -4,6 +4,12 @@
 #include <iostream>
 #include <stdint.h>
 
+/**
+ * Standalone utility functions
+ *
+ * @todo Need to create a toCpuAddress and parseCpuAddress #define that calls the appropriate
+ *       methods / macro
+ */
 class Utils
 {
 

@@ -9,10 +9,18 @@
 
 Cpu6502::Cpu6502(MemoryController* ctrlr):
    Decoder6502(),
-
-   theDebugger(nullptr)
+   theRegX(0),
+   theRegY(0),
+   theAccum(0),
+   theStackPtr(0),
+   thePc(0),
+   theDebugger(nullptr),
+   theRunFlag(true),
+   theNumClocks(0)
 {
    theMemoryController = ctrlr;
+
+   memset(&theStatusReg, 0, sizeof(StatusReg));
 }
 
 Cpu6502::~Cpu6502()
@@ -36,19 +44,54 @@ void Cpu6502::enableDebugger(uint16_t portNumber)
    }
 }
 
+void Cpu6502::exitEmulation()
+{
+   theRunFlag = false;
+}
+
 void Cpu6502::start(CpuAddress address)
 {
+   // Do a bunch of architecutre specific setup stuff here if necessary
+
+   thePc = address;
+
+   while(true)
+   {
+      // If there is a debugger, do the debugger hook
+      if (theDebugger != nullptr)
+      {
+         theDebugger->debugHook();
+      }
+
+      if (!theRunFlag)
+         break;
+
+      decode(thePc);
+   }
+
+   LOG_DEBUG() << "Emulator exitting (run flag false)";
 
 }
 
 void Cpu6502::halt()
 {
+   if (theDebugger != nullptr)
+   {
+      LOG_DEBUG() << "Emulator halting (debugger attached)";
+      theDebugger->emulatorHalt();
+   }
+   else
+   {
+      LOG_WARNING() << "Emulator halting (no debugger)";
+      theRunFlag = false;
+   }
 
 }
 
 void Cpu6502::updatePc(uint8_t bytesIncrement)
 {
-
+   // Check clock cycles
+   theNumClocks++;
 }
 
 

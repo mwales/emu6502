@@ -23,6 +23,9 @@ public:
 
    static int debugServerThreadEntry(void* debuggerInstance);
 
+   void emulatorHalt();
+
+
 protected:
 
    void closeExistingConnection(char const * reason);
@@ -66,7 +69,7 @@ protected:
 
    SDLNet_SocketSet theSocketSet;
 
-
+   bool theDebuggerBlockEmulatorFlag;
 
 };
 
