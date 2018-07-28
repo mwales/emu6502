@@ -6,13 +6,14 @@
 #include <vector>
 
 class Cpu6502;
+class MemoryController;
 
 #define DEBUGGER_MAX_MSG_LEN  2048
 
 class DebugServer
 {
 public:
-   DebugServer(Cpu6502* cpu, uint16_t portNum);
+   DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memController);
 
    ~DebugServer();
 
@@ -49,7 +50,11 @@ protected:
 
    void quitCommand();
 
+   void disassembleCommand(uint16_t commandLen);
+
    Cpu6502* theCpu;
+
+   MemoryController* theMemoryController;
 
    uint16_t thePortNumber;
 

@@ -25,6 +25,17 @@ public:
 
    void addDisassemblerListing(OpCodeInfo* oci);
 
+   std::string disassembleInstruction(OpCodeInfo* oci);
+
+   /**
+    * Returns a short code listing (intended use by the debugger)
+    * @param addr Address to start disassembly listing at
+    * @param numInstructions Num instructions to disassemble
+    * @return Code listing with address and opcodes
+    */
+   std::string debugListing(CpuAddress addr, int numInstructions);
+
+
 protected:
 
    // All the virtual void methods inherited from parent decoder
@@ -113,6 +124,8 @@ protected:
    virtual void updatePc(uint8_t bytesIncrement);
 
    void printOpCodes(std::string* listingText, CpuAddress addr, int opCode);
+
+   std::string getOpCodeString(CpuAddress addr);
 
    void printAddress(std::string* listingText, CpuAddress addr);
 

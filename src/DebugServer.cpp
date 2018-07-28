@@ -1,9 +1,13 @@
 #include "DebugServer.h"
 #include "Logger.h"
 #include "Cpu6502.h"
+#include "Cpu6502Defines.h"
+#include "MemoryController.h"
+#include "Disassembler6502.h"
 
-DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum):
+DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memController):
    theCpu(cpu),
+   theMemoryController(memController),
    thePortNumber(portNum),
    theServerSocket(nullptr),
    theServerThread(nullptr),
@@ -203,6 +207,10 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       quitCommand();
       break;
 
+   case 3: // LIST
+      disassembleCommand(commandLen);
+      break;
+
    default:
       LOG_WARNING() << "Command " << command << " is not implemented!";
    }
@@ -223,6 +231,45 @@ void DebugServer::quitCommand()
 
    // unblock the emulator so it can exit
    theDebuggerBlockEmulatorFlag = false;
+}
+
+void DebugServer::disassembleCommand(uint16_t commandLen)
+{
+   // Command body should have address for listing, and number instructions to return
+   int expectedLen = sizeof(uint8_t) + sizeof(CpuAddress) + sizeof(uint16_t);
+
+   if (commandLen != expectedLen)
+   {
+      // They didn't a command of the expected length
+      char const * malformedDisassCommandString = "List command data is malformed";
+      sendResponse(strlen(malformedDisassCommandString), (uint8_t*) malformedDisassCommandString);
+      return;
+   }
+
+   // Pull the address from the command data
+   uint8_t flags = theRxDataBuffer[0];
+   CpuAddress addr = (CpuAddress) SDLNet_Read16(theRxDataBuffer + 1);
+   uint16_t numInstructionsCommand = SDLNet_Read16(theRxDataBuffer + 3);
+
+   // LOG_DEBUG() << "Disassemble command sent by debugger client.  Address = " << Utils::toHex16(addr)
+   //             << ", num instructions = " << numInstructionsCommand;
+   // LOG_DEBUG() << "FLAGS: " << (flags & 0x1 ? "ADDRESS_PROVIDED" : "NO_ADDRESS_PROVIDED")
+   //             << "   " << (flags & 0x2 ? "NUM_INS_PROVIDED" : "NO_NUM_INS_PROVIDED");
+
+   // The default number of instructions is 5, unless user has ever specified how many
+   static int numIns = 5;
+   if (flags & 2)
+      numIns = numInstructionsCommand;
+
+   CpuAddress disassAddr = theCpu->getPc();
+   if (flags & 1)
+      disassAddr = addr;
+
+   Disassembler6502 dis(theMemoryController);
+   dis.includeOpCodes(true);
+   std::string listing = dis.debugListing(disassAddr, numIns);
+
+   sendResponse(listing.length(), (uint8_t*) listing.c_str());
 }
 
 

@@ -51,11 +51,11 @@ class DbgClient(cmd2.Cmd):
         frameHeader = self.s.recv(2)
 
         frameSize = struct.unpack("!H", frameHeader)[0]
-        print("Frame header, indicates message of {} bytes to be received".format(frameSize))
+        # print("Frame header, indicates message of {} bytes to be received".format(frameSize))
 
         if (frameSize > 0):
             retData = self.s.recv(frameSize)
-            print("Received {} frame bytes".format(len(retData)))
+            # print("Received {} frame bytes".format(len(retData)))
             return retData
         else:
             print("No data in frame to receive, return empty string")
@@ -75,6 +75,7 @@ class DbgClient(cmd2.Cmd):
 
         emuVersion = self.receiveMessage()
         print("Emulator: {}".format(emuVersion))
+	print("Client: Python 6502 Debug Client v0.0")
 
     def do_shutdown(self, args):
         """
@@ -82,7 +83,38 @@ class DbgClient(cmd2.Cmd):
         """
         self.sendHeader(2, 0)
 
+    def do_disass(self, args):
+        """
+	Disassembles code
 
+	disass [address] [numInstructinos]
+
+	Address is always interpreted as hexadecimal
+	"""
+
+        argList = args.split()
+        
+	if (len(argList) == 0):
+	    flags = 0     # no address, no num instructions
+	    address = 0
+	    num = 0
+	elif(len(argList) == 1):
+	    flags = 1
+	    address = int(argList[0], 16)
+	    num = 0
+	else:
+	    flags = 3
+	    address = int(argList[0], 16)
+            num = int(argList[1])
+
+	print("Sending disassemble command(flags = {}, address = {}, numInstructions = {}".format(flags, hex(address), num))
+
+	self.sendHeader(3, 5)
+	msgData = struct.pack("!BHH", flags, address, num)
+	self.s.send(msgData)
+
+	rsp = self.receiveMessage()
+	print("Listing:\n{}".format(rsp))
 
 
 if (__name__ == "__main__"):

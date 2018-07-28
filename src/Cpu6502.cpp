@@ -36,7 +36,7 @@ void Cpu6502::enableDebugger(uint16_t portNumber)
    if (theDebugger == nullptr)
    {
       LOG_DEBUG() << "Enabling debugger on port " << portNumber;
-      theDebugger = new DebugServer(this, portNumber);
+      theDebugger = new DebugServer(this, portNumber, theMemoryController);
    }
    else
    {
@@ -94,7 +94,17 @@ void Cpu6502::updatePc(uint8_t bytesIncrement)
    theNumClocks++;
 }
 
+void Cpu6502::getRegisters(uint8_t* regX, uint8_t* regY, uint8_t* accum)
+{
+   *regX = theRegX;
+   *regY = theRegY;
+   *accum = theAccum;
+}
 
+uint8_t Cpu6502::getPc()
+{
+   return thePc;
+}
 
 
 /***   CREATING HANDLER BLANK FUNCTIONS ***/

@@ -118,45 +118,46 @@ void Disassembler6502::includeAddress(bool val)
 
 void Disassembler6502::printOpCodes(std::string* listingText, CpuAddress addr, int opCode)
 {
-   // opcode fmt:                     "xx xx xx  "
-   char const * const EMPTY_OP_CODE = "          ";
-   const int OP_CODE_TEXT_LEN = 11;
-   char opCodeText[OP_CODE_TEXT_LEN];
+   listingText->append(getOpCodeString(addr));
+}
 
-   int numOpCodes = 1;
+std::string Disassembler6502::getOpCodeString(CpuAddress addr)
+{
    if (!thePrintOpCodeFlag)
+      return "";
+
+   // opcode fmt:                     "xx xx xx  "
+   std::string retVal;
+
+   uint8_t opCode = theMemoryController->getDevice(addr)->read8(addr);
+   int numOpCodes = gOpCodes[opCode].theNumBytes;
+
+   retVal += Utils::toHex8(opCode, false);
+   retVal += " ";
+
+   if (numOpCodes >= 2)
    {
-      numOpCodes = 0;
+      retVal += Utils::toHex8(theMemoryController->getDevice(addr+1)->read8(addr+1), false);
+      retVal += " ";
    }
    else
    {
-      numOpCodes = gOpCodes[opCode].theNumBytes;
+      retVal += "   ";
    }
 
-   switch(numOpCodes)
+   if (numOpCodes >= 3)
    {
-   case 1:
-      snprintf(opCodeText, OP_CODE_TEXT_LEN, "%02x        ", theMemoryController->getDevice(addr)->read8(addr));
-      break;
-
-   case 2:
-      snprintf(opCodeText, OP_CODE_TEXT_LEN, "%02x %02x     ", theMemoryController->getDevice(addr)->read8(addr),
-               theMemoryController->getDevice(addr+1)->read8(addr+1));
-      break;
-
-   case 3:
-      snprintf(opCodeText, OP_CODE_TEXT_LEN, "%02x %02x %02x  ", theMemoryController->getDevice(addr)->read8(addr),
-               theMemoryController->getDevice(addr + 1)->read8(addr + 1),
-               theMemoryController->getDevice(addr + 2)->read8(addr + 2));
-      break;
-
-   case 0:
-   default:
-      strncpy(opCodeText, EMPTY_OP_CODE, OP_CODE_TEXT_LEN);
+      retVal += Utils::toHex8(theMemoryController->getDevice(addr+2)->read8(addr+2), false);
+      retVal += " ";
+   }
+   else
+   {
+      retVal += "   ";
    }
 
-   listingText->append(opCodeText);
+   retVal += "    ";
 
+   return retVal;
 }
 
 void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
@@ -166,6 +167,30 @@ void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
       listingText->append(addressToString(addr));
       *listingText += "   ";
    }
+}
+
+std::string Disassembler6502::debugListing(CpuAddress addr, int numInstructions)
+{
+   CpuAddress nextAddress = addr;
+   LOG_DEBUG() << "Debug listing start =" << addressToString(nextAddress);
+   std::ostringstream oss;
+
+   theDeadEndFlag = false;
+   thePc = nextAddress;
+
+   while(!theDeadEndFlag && numInstructions)
+   {
+      CpuAddress addressOfInstruction = thePc;
+
+      decode(thePc);
+      numInstructions--;
+
+      oss << Utils::toHex16(addressOfInstruction, false) << "\t";
+      oss << theListing[addressOfInstruction] << "\n";
+   }
+
+   return oss.str();
+
 }
 
 std::string Disassembler6502::addJumpLabelStatement(CpuAddress destAddr, char const * const prefix)
@@ -204,6 +229,11 @@ void Disassembler6502::updatePc(uint8_t bytesIncrement)
 }
 
 void Disassembler6502::addDisassemblerListing(OpCodeInfo* oci)
+{
+   theListing[thePc] = disassembleInstruction(oci);
+}
+
+std::string Disassembler6502::disassembleInstruction(OpCodeInfo* oci)
 {
    std::string listingText;
 
@@ -312,7 +342,7 @@ void Disassembler6502::addDisassemblerListing(OpCodeInfo* oci)
 
    }
 
-   theListing[thePc] = listingText;
+   return listingText;
 }
 
 void Disassembler6502::preHandlerHook(OpCodeInfo* oci)

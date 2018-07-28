@@ -7,10 +7,10 @@ set(COMMON_FILES Decoder6502.cpp
                  Cpu6502Defines.cpp
                  Logger.cpp
                  MemoryDev.cpp
-                 Utils.cpp)
+                 Utils.cpp
+                 Disassembler6502.cpp)
 
-set(DISASS_FILES Disassembler6502.cpp
-                 DisMain.cpp)
+set(DISASS_FILES DisMain.cpp)
 
 set(EMULAT_FILES Cpu6502.cpp
                  DebugServer.cpp

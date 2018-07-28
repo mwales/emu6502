@@ -188,6 +188,9 @@ Commands for the emulator's debugger
 * 0x01 About - Emulator returns a string about it's version (Basically a test / 
        heartbeat message
 * 0x02 Exit - Tells the emulator to shutdown
+* 0x03 List(flags, address, numInstruction) - Disassemble some instructions. Flag 0x1 indicates
+     the address is provided.  0x02 indicates the numInstructions are provided.  flags is 8bit, 
+     address is sizeof address, numinstructions is 16-bit
 * RegisterDump() - Dump all the registers.  X, Y, Accumulator, Status, PC, SP
 * RegisterWrite(registerName, registerValue)
 * MemoryWrite(address, numBytes, data)
@@ -201,5 +204,4 @@ Commands for the emulator's debugger
 * LoadState(filename) - Prefix RAM indicates save in memory based dictionary
 * MemDev(ioctl, numBytes, dataBuffer) - Who knows what commands we will need these
      these things to support
-* List(address, numInstruction) - Disassemble some instructions
 

@@ -102,6 +102,9 @@ public:
 
     virtual void halt();
 
+    void getRegisters(uint8_t* regX, uint8_t* retY, uint8_t* accum);
+    uint8_t getPc();
+
 protected:
 
     virtual void updatePc(uint8_t bytesIncrement);
