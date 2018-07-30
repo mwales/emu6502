@@ -56,7 +56,7 @@ protected:
 
    void dumpRegistersCommand();
 
-   void stepCommand();
+   void stepCommand(uint16_t commandLen);
 
    void continueCommand();
 
@@ -72,8 +72,6 @@ protected:
 
    SDL_Thread* theServerThread;
 
-   //SDL_Thread* theClientMgr;
-
    TCPsocket theClientSocket;
 
    /// This is set to zero when the debugger needs to exit, application closing
@@ -85,11 +83,7 @@ protected:
 
    SDLNet_SocketSet theSocketSet;
 
-   // bool theDebuggerBlockEmulatorFlag;
-
-   /// set to -1 to run forever, 0 the emulator stops, finite number is num instrutions left to execute
-   // SDL_atomic_t theNumInsToRun;
-
+   /// This is given by emulator thread to let the debugger know the emulator halted
    SDL_sem* theEmulatorHaltedSem;
 
    DebuggerState theDebuggerState;

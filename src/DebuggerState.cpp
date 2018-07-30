@@ -1,6 +1,16 @@
 #include "DebuggerState.h"
 #include "Logger.h"
 
+#define DSTATE_DEBUG_LOGGING
+
+#ifdef DSTATE_DEBUG_LOGGING
+   #define DSTATE_DEBUG   LOG_DEBUG
+   #define DSTATE_WARNING LOG_WARNING
+#else
+   #define DSTATE_DEBUG   if(0) LOG_DEBUG
+   #define DSTATE_WARNING if(0) LOG_WARNING
+#endif
+
 DebuggerState::DebuggerState():
    theStepCount(0),
    theHaltFired(false),
@@ -11,7 +21,7 @@ DebuggerState::DebuggerState():
 
 bool DebuggerState::emulatorDebugHook()
 {
-   LOG_DEBUG() << "DebuggerState::emualtorDebugHook";
+   DSTATE_DEBUG() << "DebuggerState::emualtorDebugHook";
 
    SDL_SemWait(theLock);
 
@@ -19,12 +29,16 @@ bool DebuggerState::emulatorDebugHook()
    {
       theStepCount--;\
       SDL_SemPost(theLock);
-      return false;
+
+      DSTATE_DEBUG() << "  emulatorDebugHook has " << theStepCount << " finite steps left";
+      return true;
    }
 
    if (theStepCount == -1)
    {
       SDL_SemPost(theLock);
+
+      DSTATE_DEBUG() << "  emulatorDebugHook is in run forever mode";
       return true;
    }
 
@@ -35,6 +49,8 @@ bool DebuggerState::emulatorDebugHook()
 
       theHaltFired = true;
 
+      DSTATE_DEBUG() << "  emulatorDebugHook detected a fresh halt";
+
       // @todo WE need to fire the halt
       theHaltCallback(theHaltCallbackValue);
 
@@ -44,6 +60,9 @@ bool DebuggerState::emulatorDebugHook()
    {
       // We already halted before
       SDL_SemPost(theLock);
+
+      DSTATE_DEBUG() << "  emulatorDebugHook halted, but not a fresh halt";
+
       return false;
    }
 

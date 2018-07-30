@@ -5,6 +5,17 @@
 #include "MemoryController.h"
 #include "Disassembler6502.h"
 
+// Uncomment below for debug output from this class
+#define DEBUG_SERVER_DEBUG 1
+
+#ifdef DEBUG_SERVER_DEBUG
+   #define DS_DEBUG   LOG_DEBUG
+   #define DS_WARNING LOG_WARNING
+#else
+   #define DS_DEBUG   if(0) LOG_DEBUG
+   #define DS_WARNING if(0) LOG_WARNING
+#endif
+
 DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memController):
    theCpu(cpu),
    theMemoryController(memController),
@@ -14,16 +25,15 @@ DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memCo
    theClientSocket(nullptr),
    theRunningFlag(true),
    theNumberBytesToRx(-1)
-   //theDebuggerBlockEmulatorFlag(true)
 {
+   DS_DEBUG() << "DebugServer constructed, portNum = " << portNum;
+
    theSocketSet = SDLNet_AllocSocketSet(4);
 
    theEmulatorHaltedSem = SDL_CreateSemaphore(0);
 
    theDebuggerState.registerEmulatorHaltedCallback(DebugServer::emulatorHalt, this);
    theDebuggerState.haltEmulator();
-
-   //SDL_AtomicSet(theNumInsToRun, 0);
 
    startDebugServer();
 }
@@ -38,7 +48,7 @@ DebugServer::~DebugServer()
       int status;
       SDL_WaitThread(theServerThread, &status);
 
-      LOG_DEBUG() << "Debugger thread exitted with code " << status;
+      DS_DEBUG() << "Debugger thread exitted with code " << status;
    }
 
    SDLNet_TCP_Close(theServerSocket);
@@ -52,14 +62,14 @@ bool DebugServer::startDebugServer()
    IPaddress ip;
    if (SDLNet_ResolveHost(&ip, NULL, thePortNumber) != 0)
    {
-      LOG_WARNING() << "ResolveHost call failed:" << SDLNet_GetError();
+      DS_WARNING() << "ResolveHost call failed:" << SDLNet_GetError();
       return false;
    }
 
    theServerSocket = SDLNet_TCP_Open(&ip);
    if (!theServerSocket)
    {
-      LOG_WARNING() << "TCP Open call failed:" << SDLNet_GetError();
+      DS_WARNING() << "TCP Open call failed:" << SDLNet_GetError();
       return false;
    }
 
@@ -73,46 +83,9 @@ void DebugServer::debugHook()
 {
    while(!theDebuggerState.emulatorDebugHook())
    {
-      LOG_DEBUG() << "Emulator not executing";
+      DS_DEBUG() << "Emulator not executing";
       SDL_Delay(5000);
    }
-
-   /*
-    * while (theDebuggerBlockEmulatorFlag)
-   {
-      if (SDL_AtomicGet(theNumInsToRun)!= 0)
-      {
-         // We must have freshly halted / been commanded to halt
-         LOG_DEBUG() << "Emulator halted!";
-
-         SDL_SemPost(theEmulatorHaltedSem);
-
-         SDL_AtomicSet(theNumInsToRun, 0);
-      }
-
-      LOG_DEBUG() << "Emulator blocked on debugger";
-      SDL_Delay(5000);
-   }
-
-   int numIns = SDL_AtomicGet(theNumInsToRun);
-   if (numIns == -1)
-   {
-      // We are running forever
-      return
-   }
-   else if (numIns > 1)
-   {
-      // Running finite number of instructions
-      SDL_AtomicAdd(theNumInsToRun, -1);
-      return;
-   }
-
-   // We are going to halt after the next instruction
-   SDL_AtomicSet(theNumInsToRun, -1);
-   theDebuggerBlockEmulatorFlag = true;
-   */
-
-
 }
 
 int DebugServer::debugServerThreadEntry(void* debuggerInstance)
@@ -123,7 +96,7 @@ int DebugServer::debugServerThreadEntry(void* debuggerInstance)
 
 void DebugServer::emulatorHalt(void* thisPtr)
 {
-   LOG_DEBUG() << "DebugServer::emulatorHalt called";
+   DS_DEBUG() << "DebugServer::emulatorHalt called";
 
    DebugServer* ds = (DebugServer*) thisPtr;
 
@@ -132,11 +105,11 @@ void DebugServer::emulatorHalt(void* thisPtr)
 
 int DebugServer::debugServerSocketThread()
 {
-   LOG_DEBUG() << "Starting thread to listen for connections!";
+   DS_DEBUG() << "Starting thread to listen for connections!";
 
    while(theRunningFlag)
    {
-      LOG_DEBUG() << "Debugger Loop Iteration Start";
+      DS_DEBUG() << "Debugger Loop Iteration Start";
 
       TCPsocket newConnection;
       newConnection = SDLNet_TCP_Accept(theServerSocket);
@@ -144,7 +117,7 @@ int DebugServer::debugServerSocketThread()
       if (newConnection)
       {
          // We just got a new connection!
-         LOG_DEBUG() << "Accepted a new debugger connection";
+         DS_DEBUG() << "Accepted a new debugger connection";
 
          theNumberBytesToRx = -1;
          memset(theRxDataBuffer, 0, DEBUGGER_MAX_MSG_LEN);
@@ -180,8 +153,8 @@ int DebugServer::debugServerSocketThread()
          uint16_t numBytesFrame = SDLNet_Read16(theRxDataBuffer);
          uint16_t command = SDLNet_Read16(theRxDataBuffer + 2);
 
-         LOG_DEBUG() << "Received a header.  Frame Size = " << numBytesFrame
-                     << " and command = " << command;
+         DS_DEBUG() << "Received a header.  Frame Size = " << numBytesFrame
+                    << " and command = " << command;
 
          int bytesReceived = 0;
          int bytesReceivedTotal = 0;
@@ -193,8 +166,8 @@ int DebugServer::debugServerSocketThread()
 
             if (bytesReceived <= 0)
             {
-               LOG_WARNING() << "Error.  Only received " << bytesReceivedTotal
-                             << "bytes of frame with " << numBytesFrame << " bytes";
+               DS_WARNING() << "Error.  Only received " << bytesReceivedTotal
+                            << "bytes of frame with " << numBytesFrame << " bytes";
                closeExistingConnection("Truncated frame");
                break;
             }
@@ -202,8 +175,8 @@ int DebugServer::debugServerSocketThread()
             bytesReceivedTotal += bytesReceived;
          }
 
-         LOG_DEBUG() << "Received full frame of " << numBytesFrame << "bytes, cmd = "
-                     << command;
+         DS_DEBUG() << "Received full frame of " << numBytesFrame << "bytes, cmd = "
+                    << command;
 
          processCommand(numBytesFrame, command);
 
@@ -217,22 +190,23 @@ int DebugServer::debugServerSocketThread()
          // the take was successsful, the emulator just halted
          if (theClientSocket)\
          {
+            DS_DEBUG() << "Emulator halted, sending register dump to debugger client";
             dumpRegistersCommand();
          }
          else
          {
-            LOG_DEBUG() << "Emulator halted, no debugger client to alert";
+            DS_DEBUG() << "Emulator halted, no debugger client to alert";
          }
       }
       else if (semTakeResult != SDL_MUTEX_TIMEDOUT)
       {
          // We didn't take the semaphore, and instead encountered an error, how sad
-         LOG_WARNING() << "Halt semaphore take attempt had an error in the debugger thread; " << SDL_GetError();
+         DS_WARNING() << "Halt semaphore take attempt had an error in the debugger thread; " << SDL_GetError();
       }
 
    }
 
-   LOG_DEBUG() << "Debugger thread now exitting";
+   DS_DEBUG() << "Debugger thread now exitting";
 
    return 0;
 }
@@ -249,13 +223,13 @@ void DebugServer::sendResponse(int msgLen, uint8_t const * const buffer)
 
    if  (bytesSent != msgLen + 2)
    {
-      LOG_WARNING() << "Failed to send response.  " << bytesSent << " bytes send of message length "
-                    << (msgLen + 2);
+      DS_WARNING() << "Failed to send response.  " << bytesSent << " bytes send of message length "
+                   << (msgLen + 2);
       closeExistingConnection("Failed to send message to the client");
    }
    else
    {
-      LOG_DEBUG() << "Sent a " << bytesSent << " byte message to the debugger client";
+      DS_DEBUG() << "Sent a " << bytesSent << " byte message to the debugger client";
    }
 
    // Free the memory of the buffer we created
@@ -283,7 +257,7 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       break;
 
    case 5: // STEP
-      stepCommand();
+      stepCommand(commandLen);
       break;
 
    case 6: // HALT
@@ -295,13 +269,13 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       break;
 
    default:
-      LOG_WARNING() << "Command " << command << " is not implemented!";
+      DS_WARNING() << "Command " << command << " is not implemented!";
    }
 }
 
 void DebugServer::versionCommand()
 {
-   LOG_DEBUG() << "Version command sent by the debugger client";
+   DS_DEBUG() << "Version command sent by the debugger client";
 
    char const * versionString = "6502 Emulator Version 0.0 (No System)";
    sendResponse(strlen(versionString), (uint8_t*) versionString);
@@ -309,11 +283,10 @@ void DebugServer::versionCommand()
 
 void DebugServer::quitCommand()
 {
-   LOG_DEBUG() << "Exit emulator command sent by debugger client";
+   DS_DEBUG() << "Exit emulator command sent by debugger client";
    theCpu->exitEmulation();
 
    // unblock the emulator so it can exit
-   //theDebuggerBlockEmulatorFlag = false;
    theDebuggerState.runEmulator();
 }
 
@@ -335,10 +308,10 @@ void DebugServer::disassembleCommand(uint16_t commandLen)
    CpuAddress addr = (CpuAddress) SDLNet_Read16(theRxDataBuffer + 1);
    uint16_t numInstructionsCommand = SDLNet_Read16(theRxDataBuffer + 3);
 
-   // LOG_DEBUG() << "Disassemble command sent by debugger client.  Address = " << Utils::toHex16(addr)
-   //             << ", num instructions = " << numInstructionsCommand;
-   // LOG_DEBUG() << "FLAGS: " << (flags & 0x1 ? "ADDRESS_PROVIDED" : "NO_ADDRESS_PROVIDED")
-   //             << "   " << (flags & 0x2 ? "NUM_INS_PROVIDED" : "NO_NUM_INS_PROVIDED");
+   // DS_DEBUG() << "Disassemble command sent by debugger client.  Address = " << Utils::toHex16(addr)
+   //            << ", num instructions = " << numInstructionsCommand;
+   // DS_DEBUG() << "FLAGS: " << (flags & 0x1 ? "ADDRESS_PROVIDED" : "NO_ADDRESS_PROVIDED")
+   //            << "   " << (flags & 0x2 ? "NUM_INS_PROVIDED" : "NO_NUM_INS_PROVIDED");
 
    // The default number of instructions is 5, unless user has ever specified how many
    static int numIns = 5;
@@ -358,6 +331,8 @@ void DebugServer::disassembleCommand(uint16_t commandLen)
 
 void DebugServer::dumpRegistersCommand()
 {
+   DS_DEBUG() << "Dump registers command (or internally generated)";
+
    // Going to return X, Y, Accum, StackPointer, PC, StatusReg, Padding, NumClocksHigh, NumClocksLow
    const int MSG_LEN = 8 + 8;
 
@@ -386,40 +361,39 @@ void DebugServer::dumpRegistersCommand()
    SDLNet_Write32(lowClocks, msgBuf + 12);
 
    sendResponse(16, msgBuf);
-
 }
 
-void DebugServer::stepCommand()
+void DebugServer::stepCommand(uint16_t commandLen)
 {
-   LOG_DEBUG() << "Step command received from debugger client";
-   //SDL_AtomicSet(theNumInsToRun, 3);
-   //theDebuggerBlockEmulatorFlag = false;
-   theDebuggerState.stepEmulator(2);
+   int stepCount = 1;
+   if (commandLen != 2)
+   {
+      DS_WARNING() << "Debugger client didn't give us step size, we assume 1.  Fix client";
+   }
+   else
+   {
+      stepCount = SDLNet_Read16(theRxDataBuffer);
+   }
+
+   DS_DEBUG() << "Step command received from debugger client, step count = " << stepCount;
+   theDebuggerState.stepEmulator(stepCount);
 }
 
 void DebugServer::continueCommand()
 {
-   LOG_DEBUG() << "Continue command received from debugger client";
-   //SDL_AtomicSet
-   //theDebuggerBlockEmulatorFlag = false;
-   //SDL_AtomicSet(theNumInsToRun, -1);
+   DS_DEBUG() << "Continue command received from debugger client";
    theDebuggerState.runEmulator();
-
 }
 
 void DebugServer::haltCommand()
 {
-   LOG_DEBUG() << "Halt command received from debugger client";
-   //SDL_AtomicSet(theNumInsToRun, -1);
-   //theDebuggerBlockEmulatorFlag = true;
+   DS_DEBUG() << "Halt command received from debugger client";
    theDebuggerState.haltEmulator();
 }
 
 void DebugServer::closeExistingConnection(char const * reason)
 {
-   LOG_DEBUG() << "DebugServer::closeExistingConnection called";
-
-   LOG_WARNING() << "Closing existing debugger client connection: " << reason;
+   DS_WARNING() << "Closing existing debugger client connection: " << reason;
    SDLNet_TCP_DelSocket(theSocketSet, theClientSocket);
    SDLNet_TCP_Close(theClientSocket);
    theClientSocket = nullptr;

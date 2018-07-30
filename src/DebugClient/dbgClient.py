@@ -132,13 +132,25 @@ class DbgClient(cmd2.Cmd):
         self.sendHeader(4,0)
 	self.receiveRegisterData()
 
-    def do_step(self, args):
+    def do_step(self, argList):
         """
 	Step the debugger some finite number of instructions.
 	
 	Default is 1 instruction, or you can provide number of instructions to step
 	"""
-	self.sendHeader(5,0)
+	args = argList.split()
+	if (len(args) == 0):
+	   stepCount = 1
+	else:
+	   stepCount = int(args[0], 16)
+
+	print("Stepping {} (0x{}) steps".format(stepCount, prettyhex(stepCount, 16)))
+	
+	self.sendHeader(5,2)
+
+        msgBody = struct.pack("!H", stepCount)
+	self.s.send(msgBody)
+
 	self.receiveRegisterData()
 
     def do_halt(self, args):

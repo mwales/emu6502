@@ -192,15 +192,15 @@ Commands for the emulator's debugger
      the address is provided.  0x02 indicates the numInstructions are provided.  flags is 8bit, 
      address is sizeof address, numinstructions is 16-bit
 * 0x04 RegisterDump() - Dump all the registers.  X, Y, Accumulator, Status, PC, SP
-* 0x05 Step(numInstructions)
+* 0x05 Step(numInstructions) - Steps the emulator a finite number of instructions (16-bit)
+* 0x06 Halt
+* 0x07 Continue
 * RegisterWrite(registerName, registerValue)
 * MemoryWrite(address, numBytes, data)
 * MemoryRead(address, numBytes)
 * Breakpoint(address)
 * BreakpointRemove(addresss)
 * BreakpointList
-* 0x07 Continue
-* 0x06 Halt
 * SaveState(filename) - Prefix RAM indicates save in memory based dictionary
 * LoadState(filename) - Prefix RAM indicates save in memory based dictionary
 * MemDev(ioctl, numBytes, dataBuffer) - Who knows what commands we will need these
