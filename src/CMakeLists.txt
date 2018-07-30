@@ -14,6 +14,7 @@ set(DISASS_FILES DisMain.cpp)
 
 set(EMULAT_FILES Cpu6502.cpp
                  DebugServer.cpp
+                 DebuggerState.cpp
                  EmuMain.cpp)
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
@@ -33,7 +34,7 @@ target_link_libraries(emu6502 ${SDL2_LIBRARIES})
 target_link_libraries(emu6502 ${SDL2_net_LIBRARIES})
 
 # Modern C++ support
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --std=c++11 -Wall")
 
 
 MESSAGE("Compiler flags=${CMAKE_CXX_FLAGS}")

@@ -8,6 +8,14 @@ import cmd2
 import socket
 import struct
 
+def prettyhex(number, numBits):
+    hexNumber = hex(number)[2:]
+
+    numChars = numBits / 4
+    numCharsToAdd = numChars - len(hexNumber) 
+
+    return "0" * numCharsToAdd + hexNumber
+
 def main(argv):
     if (len(argv) != 3):
         print("Usage:  {} ip port".format(argv[0]))
@@ -115,6 +123,71 @@ class DbgClient(cmd2.Cmd):
 
 	rsp = self.receiveMessage()
 	print("Listing:\n{}".format(rsp))
+
+    def do_regs(self, args):
+        """
+	Dumps the registers
+	"""
+
+        self.sendHeader(4,0)
+	self.receiveRegisterData()
+
+    def do_step(self, args):
+        """
+	Step the debugger some finite number of instructions.
+	
+	Default is 1 instruction, or you can provide number of instructions to step
+	"""
+	self.sendHeader(5,0)
+	self.receiveRegisterData()
+
+    def do_halt(self, args):
+        """
+	Halt the emulator so we can debug
+	"""
+        self.sendHeader(6,0)
+	self.receiveRegisterData()
+
+    def do_continue(self, args):
+        """
+	Continue emulator execution
+	"""
+
+        self.sendHeader(7,0)
+        self.receiveRegisterData()
+   
+    def receiveRegisterData(self):
+	rspData = self.receiveMessage()
+
+	# Going to return X, Y, Accum, StackPointer, PC, statusReg, Padding, NumClocksHigh, NumClocksLow
+	   
+        (x, y, accum, sp, pc, status, padding, numClkHigh, numClkLow) = struct.unpack("!BBBBHBBLL", rspData)
+
+	print(" X={}   Y={}    A={}".format(prettyhex(x, 8), prettyhex(y, 8), prettyhex(accum, 8)))
+	print("SP={}  PC={}".format(prettyhex(sp, 8), prettyhex(pc, 16)))
+
+        statusFlags = []
+	if (status & 0x01):
+	    statusFlags.append("FLG_CARY")
+	if (status & 0x02):
+	    statusFlags.append("FLG_ZERO")
+	if (status & 0x04):
+	    statusFlags.append("FLG_INTD")
+	if (status & 0x08):
+	    statusFlags.append("FLG_DECI")
+	if (status & 0x10):
+	    statsuFlags.append("FLG_BKPT")
+	if (status & 0x40):
+	    statusFlags.append("FLG_OVFL")
+        if (status & 0x80):
+	    statusFlags.append("FLG_NEG")
+
+	print("SR={} = {}".format(prettyhex(status, 8), " | ".join(statusFlags)))
+
+        print("Num Clocks = {}{}".format(prettyhex(numClkHigh, 32), prettyhex(numClkLow, 32)))
+
+
+
 
 
 if (__name__ == "__main__"):

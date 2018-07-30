@@ -15,7 +15,7 @@ Disassembler6502::Disassembler6502(MemoryController* memCtrl):
 {
    theMemoryController = memCtrl;
 
-   constructCpuGlobals();
+
 }
 
 void Disassembler6502::start(CpuAddress address)

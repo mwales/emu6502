@@ -146,6 +146,8 @@ int main(int argc, char* argv[])
    MemoryController memControl;
    memControl.addNewDevice( (MemoryDev*) &programData);
 
+   constructCpuGlobals();
+
    {
       Cpu6502 emu(&memControl);
 

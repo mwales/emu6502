@@ -13,7 +13,7 @@ class Decoder6502 : public Decoder
 {
 public:
 
-    virtual void start(CpuAddress address) = 0;
+   virtual void start(CpuAddress address) = 0;
 
    // I want these handlers to be protected, but then i guess you can't function pointers to them
    // then, maybe I will bring in the Cpu6501Defines.h code into this class...

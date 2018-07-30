@@ -57,6 +57,8 @@ void Cpu6502::start(CpuAddress address)
 
    while(true)
    {
+      LOG_DEBUG() << "Cpu6502::start start of the loop executing";
+
       // If there is a debugger, do the debugger hook
       if (theDebugger != nullptr)
       {
@@ -65,6 +67,8 @@ void Cpu6502::start(CpuAddress address)
 
       if (!theRunFlag)
          break;
+
+      SDL_Delay(2000);
 
       decode(thePc);
    }
@@ -78,7 +82,7 @@ void Cpu6502::halt()
    if (theDebugger != nullptr)
    {
       LOG_DEBUG() << "Emulator halting (debugger attached)";
-      theDebugger->emulatorHalt();
+      theDebugger->emulatorHalt((void*) theDebugger);
    }
    else
    {
@@ -91,6 +95,7 @@ void Cpu6502::halt()
 void Cpu6502::updatePc(uint8_t bytesIncrement)
 {
    // Check clock cycles
+   LOG_DEBUG() << "CLOCK CYCLE";
    theNumClocks++;
 }
 
@@ -101,9 +106,26 @@ void Cpu6502::getRegisters(uint8_t* regX, uint8_t* regY, uint8_t* accum)
    *accum = theAccum;
 }
 
-uint8_t Cpu6502::getPc()
+CpuAddress Cpu6502::getPc()
 {
    return thePc;
+}
+
+uint8_t Cpu6502::getStackPointer()
+{
+   return theStackPtr;
+}
+
+uint8_t Cpu6502::getStatusReg()
+{
+   uint8_t retVal;
+   memcpy(&retVal, &theStatusReg, sizeof(StatusReg));
+   return retVal;
+}
+
+uint64_t Cpu6502::getInstructionCount()
+{
+   return theNumClocks;
 }
 
 

@@ -2,8 +2,10 @@
 #define DEBUG_SERVER_H
 
 #include <stdint.h>
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include <vector>
+#include "DebuggerState.h"
 
 class Cpu6502;
 class MemoryController;
@@ -24,7 +26,7 @@ public:
 
    static int debugServerThreadEntry(void* debuggerInstance);
 
-   void emulatorHalt();
+   static void emulatorHalt(void* thisPtr);
 
 
 protected:
@@ -52,6 +54,14 @@ protected:
 
    void disassembleCommand(uint16_t commandLen);
 
+   void dumpRegistersCommand();
+
+   void stepCommand();
+
+   void continueCommand();
+
+   void haltCommand();
+
    Cpu6502* theCpu;
 
    MemoryController* theMemoryController;
@@ -66,6 +76,7 @@ protected:
 
    TCPsocket theClientSocket;
 
+   /// This is set to zero when the debugger needs to exit, application closing
    bool theRunningFlag;
 
    int theNumberBytesToRx;
@@ -74,7 +85,14 @@ protected:
 
    SDLNet_SocketSet theSocketSet;
 
-   bool theDebuggerBlockEmulatorFlag;
+   // bool theDebuggerBlockEmulatorFlag;
+
+   /// set to -1 to run forever, 0 the emulator stops, finite number is num instrutions left to execute
+   // SDL_atomic_t theNumInsToRun;
+
+   SDL_sem* theEmulatorHaltedSem;
+
+   DebuggerState theDebuggerState;
 
 };
 

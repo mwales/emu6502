@@ -102,8 +102,13 @@ public:
 
     virtual void halt();
 
-    void getRegisters(uint8_t* regX, uint8_t* retY, uint8_t* accum);
-    uint8_t getPc();
+    // CPU State Getters
+
+    void       getRegisters(uint8_t* regX, uint8_t* retY, uint8_t* accum);
+    CpuAddress getPc();
+    uint8_t    getStackPointer();
+    uint8_t    getStatusReg();
+    uint64_t   getInstructionCount();
 
 protected:
 

@@ -8,6 +8,8 @@
 
 void Decoder6502::decode(CpuAddress address)
 {
+   LOG_DEBUG() << "Decoder6502::decode(" << Utils::toHex16(address) << ")";
+
    MemoryDev* mem = theMemoryController->getDevice(address);
 
    if (mem == 0)
@@ -44,9 +46,11 @@ void Decoder6502::decode(CpuAddress address)
 void Decoder6502::preHandlerHook(OpCodeInfo* oci)
 {
    // This is where sub-classes will do sub-class specific behavior if necessary
+   LOG_DEBUG() << "Decoder6502::preHandlerHook called";
 }
 
 void Decoder6502::postHandlerHook(OpCodeInfo* oci)
 {
    // This is where sub-classes will do sub-class specific behavior if necessary
+   LOG_DEBUG() << "Decoder6502::postHandlerHook called";
 }

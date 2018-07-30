@@ -13,10 +13,17 @@ DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memCo
    theServerThread(nullptr),
    theClientSocket(nullptr),
    theRunningFlag(true),
-   theNumberBytesToRx(-1),
-   theDebuggerBlockEmulatorFlag(true)
+   theNumberBytesToRx(-1)
+   //theDebuggerBlockEmulatorFlag(true)
 {
    theSocketSet = SDLNet_AllocSocketSet(4);
+
+   theEmulatorHaltedSem = SDL_CreateSemaphore(0);
+
+   theDebuggerState.registerEmulatorHaltedCallback(DebugServer::emulatorHalt, this);
+   theDebuggerState.haltEmulator();
+
+   //SDL_AtomicSet(theNumInsToRun, 0);
 
    startDebugServer();
 }
@@ -64,11 +71,47 @@ bool DebugServer::startDebugServer()
 
 void DebugServer::debugHook()
 {
-   while (theDebuggerBlockEmulatorFlag)
+   while(!theDebuggerState.emulatorDebugHook())
    {
+      LOG_DEBUG() << "Emulator not executing";
+      SDL_Delay(5000);
+   }
+
+   /*
+    * while (theDebuggerBlockEmulatorFlag)
+   {
+      if (SDL_AtomicGet(theNumInsToRun)!= 0)
+      {
+         // We must have freshly halted / been commanded to halt
+         LOG_DEBUG() << "Emulator halted!";
+
+         SDL_SemPost(theEmulatorHaltedSem);
+
+         SDL_AtomicSet(theNumInsToRun, 0);
+      }
+
       LOG_DEBUG() << "Emulator blocked on debugger";
       SDL_Delay(5000);
    }
+
+   int numIns = SDL_AtomicGet(theNumInsToRun);
+   if (numIns == -1)
+   {
+      // We are running forever
+      return
+   }
+   else if (numIns > 1)
+   {
+      // Running finite number of instructions
+      SDL_AtomicAdd(theNumInsToRun, -1);
+      return;
+   }
+
+   // We are going to halt after the next instruction
+   SDL_AtomicSet(theNumInsToRun, -1);
+   theDebuggerBlockEmulatorFlag = true;
+   */
+
 
 }
 
@@ -78,9 +121,13 @@ int DebugServer::debugServerThreadEntry(void* debuggerInstance)
    return instance->debugServerSocketThread();
 }
 
-void DebugServer::emulatorHalt()
+void DebugServer::emulatorHalt(void* thisPtr)
 {
+   LOG_DEBUG() << "DebugServer::emulatorHalt called";
 
+   DebugServer* ds = (DebugServer*) thisPtr;
+
+   SDL_SemPost(ds->theEmulatorHaltedSem);
 }
 
 int DebugServer::debugServerSocketThread()
@@ -163,6 +210,26 @@ int DebugServer::debugServerSocketThread()
 
       }
 
+      // Check for fresh halts from the emulator
+      int semTakeResult = SDL_SemTryWait(theEmulatorHaltedSem);
+      if (semTakeResult == 0)
+      {
+         // the take was successsful, the emulator just halted
+         if (theClientSocket)\
+         {
+            dumpRegistersCommand();
+         }
+         else
+         {
+            LOG_DEBUG() << "Emulator halted, no debugger client to alert";
+         }
+      }
+      else if (semTakeResult != SDL_MUTEX_TIMEDOUT)
+      {
+         // We didn't take the semaphore, and instead encountered an error, how sad
+         LOG_WARNING() << "Halt semaphore take attempt had an error in the debugger thread; " << SDL_GetError();
+      }
+
    }
 
    LOG_DEBUG() << "Debugger thread now exitting";
@@ -211,6 +278,22 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       disassembleCommand(commandLen);
       break;
 
+   case 4: // dump registers
+      dumpRegistersCommand();
+      break;
+
+   case 5: // STEP
+      stepCommand();
+      break;
+
+   case 6: // HALT
+      haltCommand();
+      break;
+
+   case 7: // CONTINUE
+      continueCommand();
+      break;
+
    default:
       LOG_WARNING() << "Command " << command << " is not implemented!";
    }
@@ -230,7 +313,8 @@ void DebugServer::quitCommand()
    theCpu->exitEmulation();
 
    // unblock the emulator so it can exit
-   theDebuggerBlockEmulatorFlag = false;
+   //theDebuggerBlockEmulatorFlag = false;
+   theDebuggerState.runEmulator();
 }
 
 void DebugServer::disassembleCommand(uint16_t commandLen)
@@ -272,9 +356,69 @@ void DebugServer::disassembleCommand(uint16_t commandLen)
    sendResponse(listing.length(), (uint8_t*) listing.c_str());
 }
 
+void DebugServer::dumpRegistersCommand()
+{
+   // Going to return X, Y, Accum, StackPointer, PC, StatusReg, Padding, NumClocksHigh, NumClocksLow
+   const int MSG_LEN = 8 + 8;
+
+   uint8_t msgBuf[MSG_LEN];
+
+   uint8_t regX, regY, accum;
+   theCpu->getRegisters(&regX, &regY, &accum);
+
+   msgBuf[0] = regX;
+   msgBuf[1] = regY;
+   msgBuf[2] = accum;
+   msgBuf[3] = theCpu->getStackPointer();
+
+   CpuAddress pc = theCpu->getPc();
+
+   SDLNet_Write16(pc, msgBuf + 4);
+
+   msgBuf[6] = theCpu->getStatusReg();
+   msgBuf[7] = 0;
+
+   uint64_t numClocks = theCpu->getInstructionCount();
+   uint32_t highClocks = (numClocks >> 32);
+   uint32_t lowClocks = (numClocks & 0xfffffff);
+
+   SDLNet_Write32(highClocks, msgBuf + 8);
+   SDLNet_Write32(lowClocks, msgBuf + 12);
+
+   sendResponse(16, msgBuf);
+
+}
+
+void DebugServer::stepCommand()
+{
+   LOG_DEBUG() << "Step command received from debugger client";
+   //SDL_AtomicSet(theNumInsToRun, 3);
+   //theDebuggerBlockEmulatorFlag = false;
+   theDebuggerState.stepEmulator(2);
+}
+
+void DebugServer::continueCommand()
+{
+   LOG_DEBUG() << "Continue command received from debugger client";
+   //SDL_AtomicSet
+   //theDebuggerBlockEmulatorFlag = false;
+   //SDL_AtomicSet(theNumInsToRun, -1);
+   theDebuggerState.runEmulator();
+
+}
+
+void DebugServer::haltCommand()
+{
+   LOG_DEBUG() << "Halt command received from debugger client";
+   //SDL_AtomicSet(theNumInsToRun, -1);
+   //theDebuggerBlockEmulatorFlag = true;
+   theDebuggerState.haltEmulator();
+}
 
 void DebugServer::closeExistingConnection(char const * reason)
 {
+   LOG_DEBUG() << "DebugServer::closeExistingConnection called";
+
    LOG_WARNING() << "Closing existing debugger client connection: " << reason;
    SDLNet_TCP_DelSocket(theSocketSet, theClientSocket);
    SDLNet_TCP_Close(theClientSocket);
