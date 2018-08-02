@@ -112,6 +112,8 @@ int main(int argc, char* argv[])
 
    LOG_DEBUG() << "Disassemling " << filename << " at address " << addressToString(baseAddress);
 
+   constructCpuGlobals();
+
    RomMemory programData(filename, baseAddress);
 
    MemoryController memControl;

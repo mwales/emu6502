@@ -256,9 +256,6 @@ std::string Disassembler6502::disassembleInstruction(OpCodeInfo* oci)
    listingText += oci->theMnemonicDisass;
    listingText += " ";
 
-   uint8_t op2, op3;
-
-
    // Need to print out some disassembly based on the addressing mode now
    switch(gOpCodes[oci->theOpCode].theAddrMode)
    {

@@ -363,7 +363,32 @@ void Cpu6502::emulatorWrite(CpuAddress addr, uint8_t val)
 /***   CREATING HANDLER BLANK FUNCTIONS ***/
 void Cpu6502::handler_and(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for and";
+   CPU_DEBUG() << "AND Handler";
+
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      theAccum &= theOperandVal;
+   }
+   else
+   {
+      theAccum &= emulatorRead(theOperandAddr);
+   }
+
+   if (theAccum == 0)
+      theStatusReg.theZeroFlag = 1;
+
+   if (theAccum & 0x80)
+      theStatusReg.theSignFlag = 1;
+
+   if (thePageBoundaryCrossedFlag)
+   {
+      if ( (oci->theAddrMode == ABSOLUTE_X) ||
+           (oci->theAddrMode == ABSOLUTE_Y) ||
+           (oci->theAddrMode == INDIRECT_Y) )
+      {
+         theAddrModeExtraClockCycle = 1;
+      }
+   }
 }
 
 void Cpu6502::handler_bvs(OpCodeInfo* oci)
@@ -676,7 +701,32 @@ void Cpu6502::handler_dcp(OpCodeInfo* oci)
 
 void Cpu6502::handler_ora(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for ora";
+   CPU_DEBUG() << "ORA Handler";
+
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      theAccum |= theOperandVal;
+   }
+   else
+   {
+      theAccum |= emulatorRead(theOperandAddr);
+   }
+
+   if (theAccum == 0)
+      theStatusReg.theZeroFlag = 1;
+
+   if (theAccum & 0x80)
+      theStatusReg.theSignFlag = 1;
+
+   if (thePageBoundaryCrossedFlag)
+   {
+      if ( (oci->theAddrMode == ABSOLUTE_X) ||
+           (oci->theAddrMode == ABSOLUTE_Y) ||
+           (oci->theAddrMode == INDIRECT_Y) )
+      {
+         theAddrModeExtraClockCycle = 1;
+      }
+   }
 }
 
 void Cpu6502::handler_dex(OpCodeInfo* oci)
@@ -738,7 +788,32 @@ void Cpu6502::handler_cpx(OpCodeInfo* oci)
 
 void Cpu6502::handler_eor(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for eor";
+   CPU_DEBUG() << "EOR Handler";
+
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      theAccum ^= theOperandVal;
+   }
+   else
+   {
+      theAccum ^= emulatorRead(theOperandAddr);
+   }
+
+   if (theAccum == 0)
+      theStatusReg.theZeroFlag = 1;
+
+   if (theAccum & 0x80)
+      theStatusReg.theSignFlag = 1;
+
+   if (thePageBoundaryCrossedFlag)
+   {
+      if ( (oci->theAddrMode == ABSOLUTE_X) ||
+           (oci->theAddrMode == ABSOLUTE_Y) ||
+           (oci->theAddrMode == INDIRECT_Y) )
+      {
+         theAddrModeExtraClockCycle = 1;
+      }
+   }
 }
 
 void Cpu6502::handler_lda(OpCodeInfo* oci)
