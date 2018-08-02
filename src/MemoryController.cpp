@@ -80,6 +80,7 @@ MemoryDev* MemoryController::getDevice(CpuAddress address)
    }
 
    // No matching device found
+   LOG_WARNING() << "Memory Controller has no device for address " << Utils::toHex16(address);
    return nullptr;
 }
 

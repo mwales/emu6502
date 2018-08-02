@@ -8,6 +8,16 @@
 #include "MemoryDev.h"
 #include "MemoryController.h"
 
+// Uncomment to turn on disassembler trace debug
+// #define DISASS_TRACE
+
+#ifdef DISASS_TRACE
+   #define DISASS_DEBUG LOG_DEBUG
+   #define DISASS_WARNING   LOG_WARNING
+#else
+   #define DISASS_DEBUG     if(0) LOG_DEBUG
+   #define DISASS_WARNING   if(0) LOG_WARNING
+#endif
 
 Disassembler6502::Disassembler6502(MemoryController* memCtrl):
    thePrintOpCodeFlag(false),
@@ -26,7 +36,7 @@ void Disassembler6502::start(CpuAddress address)
    {
       CpuAddress nextAddress = theEntryPoints.back();
       theEntryPoints.pop_back();
-      LOG_DEBUG() << "Next Entry Point =" << addressToString(nextAddress);
+      DISASS_DEBUG() << "Next Entry Point =" << addressToString(nextAddress);
 
       if (theListing.find(nextAddress) == theListing.end())
       {
@@ -47,7 +57,7 @@ void Disassembler6502::start(CpuAddress address)
       }
       else
       {
-         LOG_DEBUG() << "Entry point @" << addressToString(nextAddress) << "already analyzed";
+         DISASS_DEBUG() << "Entry point @" << addressToString(nextAddress) << "already analyzed";
       }
    }
 }
@@ -172,7 +182,7 @@ void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
 std::string Disassembler6502::debugListing(CpuAddress addr, int numInstructions)
 {
    CpuAddress nextAddress = addr;
-   LOG_DEBUG() << "Debug listing start =" << addressToString(nextAddress);
+   DISASS_DEBUG() << "Debug listing start =" << addressToString(nextAddress);
    std::ostringstream oss;
 
    theDeadEndFlag = false;
@@ -201,7 +211,7 @@ std::string Disassembler6502::addJumpLabelStatement(CpuAddress destAddr, char co
 
    theLabels[destAddr] = buf;
 
-   LOG_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(destAddr);
+   DISASS_DEBUG() << "Adding an entry point for disassembly @ " << addressToString(destAddr);
    theEntryPoints.push_back(destAddr);
 
    return buf;
@@ -224,7 +234,7 @@ std::string Disassembler6502::addBranchLabelFromRelativeOffset(uint8_t offset)
 
 void Disassembler6502::updatePc(uint8_t bytesIncrement)
 {
-   LOG_DEBUG() << "PC Incrementing" << (int) bytesIncrement;
+   DISASS_DEBUG() << "PC Incrementing" << (int) bytesIncrement;
    thePc += bytesIncrement;
 }
 
@@ -314,14 +324,14 @@ std::string Disassembler6502::disassembleInstruction(OpCodeInfo* oci)
       listingText += Utils::toHex8(theOpCode2, false);
       break;
 
-   case ABS_ZP_X:
+   case ABSOLUTE_X:
       listingText += "$";
       listingText += Utils::toHex8(theOpCode3, false);
       listingText += Utils::toHex8(theOpCode2, false);
       listingText += ",X";
       break;
 
-   case ABS_ZP_Y:
+   case ABSOLUTE_Y:
       listingText += "$";
       listingText += Utils::toHex8(theOpCode3, false);
       listingText += Utils::toHex8(theOpCode2, false);
@@ -359,13 +369,13 @@ void Disassembler6502::postHandlerHook(OpCodeInfo* oci)
 
 void Disassembler6502::handler_and(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for and";
+   DISASS_DEBUG() << "Empty handler for and";
    addDisassemblerListing(oci);
 }
 
 void Disassembler6502::handler_bvs(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for bvs";
+   DISASS_DEBUG() << "Non-empty handler for bvs";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -374,42 +384,42 @@ void Disassembler6502::handler_bvs(OpCodeInfo* oci)
 
 void Disassembler6502::handler_sec(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sec";
+   DISASS_DEBUG() << "Empty handler for sec";
 }
 
 void Disassembler6502::handler_rol(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for rol";
+   DISASS_DEBUG() << "Empty handler for rol";
 }
 
 void Disassembler6502::handler_pla(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for pla";
+   DISASS_DEBUG() << "Empty handler for pla";
 }
 
 void Disassembler6502::handler_anc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for anc";
+   DISASS_DEBUG() << "Empty handler for anc";
 }
 
 void Disassembler6502::handler_rti(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for rti";
+   DISASS_DEBUG() << "Empty handler for rti";
 }
 
 void Disassembler6502::handler_arr(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for arr";
+   DISASS_DEBUG() << "Empty handler for arr";
 }
 
 void Disassembler6502::handler_rra(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for rra";
+   DISASS_DEBUG() << "Empty handler for rra";
 }
 
 void Disassembler6502::handler_bvc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for bvc";
+   DISASS_DEBUG() << "Non-empty handler for bvc";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -418,67 +428,67 @@ void Disassembler6502::handler_bvc(OpCodeInfo* oci)
 
 void Disassembler6502::handler_sax(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sax";
+   DISASS_DEBUG() << "Empty handler for sax";
 }
 
 void Disassembler6502::handler_lsr(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for lsr";
+   DISASS_DEBUG() << "Empty handler for lsr";
 }
 
 void Disassembler6502::handler_rts(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for rts";
+   DISASS_DEBUG() << "Empty handler for rts";
 }
 
 void Disassembler6502::handler_inx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for inx";
+   DISASS_DEBUG() << "Empty handler for inx";
 }
 
 void Disassembler6502::handler_ror(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for ror";
+   DISASS_DEBUG() << "Empty handler for ror";
 }
 
 void Disassembler6502::handler_ldx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for ldx";
+   DISASS_DEBUG() << "Empty handler for ldx";
 }
 
 void Disassembler6502::handler_alr(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for alr";
+   DISASS_DEBUG() << "Empty handler for alr";
 }
 
 void Disassembler6502::handler_ahx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for ahx";
+   DISASS_DEBUG() << "Empty handler for ahx";
 }
 
 void Disassembler6502::handler_sei(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sei";
+   DISASS_DEBUG() << "Empty handler for sei";
 }
 
 void Disassembler6502::handler_iny(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for iny";
+   DISASS_DEBUG() << "Empty handler for iny";
 }
 
 void Disassembler6502::handler_inc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for inc";
+   DISASS_DEBUG() << "Empty handler for inc";
 }
 
 void Disassembler6502::handler_cli(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for cli";
+   DISASS_DEBUG() << "Empty handler for cli";
 }
 
 void Disassembler6502::handler_beq(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for beq";
+   DISASS_DEBUG() << "Non-empty handler for beq";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -487,62 +497,62 @@ void Disassembler6502::handler_beq(OpCodeInfo* oci)
 
 void Disassembler6502::handler_cpy(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for cpy";
+   DISASS_DEBUG() << "Empty handler for cpy";
 }
 
 void Disassembler6502::handler_cld(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for cld";
+   DISASS_DEBUG() << "Empty handler for cld";
 }
 
 void Disassembler6502::handler_txs(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for txs";
+   DISASS_DEBUG() << "Empty handler for txs";
 }
 
 void Disassembler6502::handler_tas(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for tas";
+   DISASS_DEBUG() << "Empty handler for tas";
 }
 
 void Disassembler6502::handler_clc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for clc";
+   DISASS_DEBUG() << "Empty handler for clc";
 }
 
 void Disassembler6502::handler_adc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for adc";
+   DISASS_DEBUG() << "Empty handler for adc";
 }
 
 void Disassembler6502::handler_tsx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for tsx";
+   DISASS_DEBUG() << "Empty handler for tsx";
 }
 
 void Disassembler6502::handler_xaa(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for xaa";
+   DISASS_DEBUG() << "Empty handler for xaa";
 }
 
 void Disassembler6502::handler_clv(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for clv";
+   DISASS_DEBUG() << "Empty handler for clv";
 }
 
 void Disassembler6502::handler_asl(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for asl";
+   DISASS_DEBUG() << "Empty handler for asl";
 }
 
 void Disassembler6502::handler_jmp(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for jmp";
+   DISASS_DEBUG() << "Empty handler for jmp";
 }
 
 void Disassembler6502::handler_bne(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for bne";
+   DISASS_DEBUG() << "Non-empty handler for bne";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -551,32 +561,32 @@ void Disassembler6502::handler_bne(OpCodeInfo* oci)
 
 void Disassembler6502::handler_ldy(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for ldy";
+   DISASS_DEBUG() << "Empty handler for ldy";
 }
 
 void Disassembler6502::handler_axs(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for axs";
+   DISASS_DEBUG() << "Empty handler for axs";
 }
 
 void Disassembler6502::handler_plp(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for plp";
+   DISASS_DEBUG() << "Empty handler for plp";
 }
 
 void Disassembler6502::handler_tax(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for tax";
+   DISASS_DEBUG() << "Empty handler for tax";
 }
 
 void Disassembler6502::handler_pha(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for pha";
+   DISASS_DEBUG() << "Empty handler for pha";
 }
 
 void Disassembler6502::handler_bmi(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for bmi";
+   DISASS_DEBUG() << "Non-empty handler for bmi";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -585,32 +595,32 @@ void Disassembler6502::handler_bmi(OpCodeInfo* oci)
 
 void Disassembler6502::handler_rla(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for rla";
+   DISASS_DEBUG() << "Empty handler for rla";
 }
 
 void Disassembler6502::handler_tya(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for tya";
+   DISASS_DEBUG() << "Empty handler for tya";
 }
 
 void Disassembler6502::handler_tay(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for tay";
+   DISASS_DEBUG() << "Empty handler for tay";
 }
 
 void Disassembler6502::handler_sbc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sbc";
+   DISASS_DEBUG() << "Empty handler for sbc";
 }
 
 void Disassembler6502::handler_lax(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for lax";
+   DISASS_DEBUG() << "Empty handler for lax";
 }
 
 void Disassembler6502::handler_txa(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for txa";
+   DISASS_DEBUG() << "Empty handler for txa";
 }
 
 void Disassembler6502::handler_jsr(OpCodeInfo* oci)
@@ -629,87 +639,87 @@ void Disassembler6502::handler_jsr(OpCodeInfo* oci)
       newListing += label;
       theListing[thePc] = newListing;
 
-      LOG_DEBUG() << "Non-Empty handler for jsr to target @" << Utils::toHex16(targetAddr);
+      DISASS_DEBUG() << "Non-Empty handler for jsr to target @" << Utils::toHex16(targetAddr);
    }
    else
    {
-      LOG_DEBUG() << "Empty handler for jsr";
+      DISASS_DEBUG() << "Empty handler for jsr";
    }
 }
 
 void Disassembler6502::handler_kil(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for kil";
+   DISASS_DEBUG() << "Empty handler for kil";
 }
 
 void Disassembler6502::handler_bit(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for bit";
+   DISASS_DEBUG() << "Empty handler for bit";
 }
 
 void Disassembler6502::handler_php(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for php";
+   DISASS_DEBUG() << "Empty handler for php";
 }
 
 void Disassembler6502::handler_nop(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for nop";
+   DISASS_DEBUG() << "Empty handler for nop";
 }
 
 void Disassembler6502::handler_dcp(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for dcp";
+   DISASS_DEBUG() << "Empty handler for dcp";
 }
 
 void Disassembler6502::handler_ora(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for ora";
+   DISASS_DEBUG() << "Empty handler for ora";
 }
 
 void Disassembler6502::handler_dex(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for dex";
+   DISASS_DEBUG() << "Empty handler for dex";
 }
 
 void Disassembler6502::handler_dey(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for dey";
+   DISASS_DEBUG() << "Empty handler for dey";
 }
 
 void Disassembler6502::handler_dec(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for dec";
+   DISASS_DEBUG() << "Empty handler for dec";
 }
 
 void Disassembler6502::handler_sed(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sed";
+   DISASS_DEBUG() << "Empty handler for sed";
 }
 
 void Disassembler6502::handler_sta(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sta";
+   DISASS_DEBUG() << "Empty handler for sta";
 }
 
 void Disassembler6502::handler_sre(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sre";
+   DISASS_DEBUG() << "Empty handler for sre";
 }
 
 void Disassembler6502::handler_shx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for shx";
+   DISASS_DEBUG() << "Empty handler for shx";
 }
 
 void Disassembler6502::handler_shy(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for shy";
+   DISASS_DEBUG() << "Empty handler for shy";
 }
 
 void Disassembler6502::handler_bpl(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-Empty handler for bpl";
+   DISASS_DEBUG() << "Non-Empty handler for bpl";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -718,7 +728,7 @@ void Disassembler6502::handler_bpl(OpCodeInfo* oci)
 
 void Disassembler6502::handler_bcc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for bcc";
+   DISASS_DEBUG() << "Non-empty handler for bcc";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";
@@ -727,57 +737,57 @@ void Disassembler6502::handler_bcc(OpCodeInfo* oci)
 
 void Disassembler6502::handler_cpx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for cpx";
+   DISASS_DEBUG() << "Empty handler for cpx";
 }
 
 void Disassembler6502::handler_eor(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for eor";
+   DISASS_DEBUG() << "Empty handler for eor";
 }
 
 void Disassembler6502::handler_lda(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for lda";
+   DISASS_DEBUG() << "Empty handler for lda";
 }
 
 void Disassembler6502::handler_slo(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for slo";
+   DISASS_DEBUG() << "Empty handler for slo";
 }
 
 void Disassembler6502::handler_las(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for las";
+   DISASS_DEBUG() << "Empty handler for las";
 }
 
 void Disassembler6502::handler_isc(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for isc";
+   DISASS_DEBUG() << "Empty handler for isc";
 }
 
 void Disassembler6502::handler_brk(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for brk";
+   DISASS_DEBUG() << "Empty handler for brk";
 }
 
 void Disassembler6502::handler_cmp(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for cmp";
+   DISASS_DEBUG() << "Empty handler for cmp";
 }
 
 void Disassembler6502::handler_stx(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for stx";
+   DISASS_DEBUG() << "Empty handler for stx";
 }
 
 void Disassembler6502::handler_sty(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Empty handler for sty";
+   DISASS_DEBUG() << "Empty handler for sty";
 }
 
 void Disassembler6502::handler_bcs(OpCodeInfo* oci)
 {
-   LOG_DEBUG() << "Non-empty handler for bcs";
+   DISASS_DEBUG() << "Non-empty handler for bcs";
 
    std::string branchName = addBranchLabelFromRelativeOffset(theOpCode2 + oci->theNumBytes);
    theListing[thePc] += " ; ";

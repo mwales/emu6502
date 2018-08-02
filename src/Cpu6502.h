@@ -114,6 +114,28 @@ protected:
 
     virtual void updatePc(uint8_t bytesIncrement);
 
+    void preHandlerHook(OpCodeInfo* oci);
+    void postHandlerHook(OpCodeInfo* oci);
+
+    /**
+     * Safely tries to read memory.  If their is no valid memory device for the
+     * address the emulator tried to execute, then execution is halted
+     * @param addr
+     * @return Data at the address, or 0xff during a failure.
+     */
+    uint8_t emulatorRead(CpuAddress addr);
+
+    /**
+     * Safely tries to write a byte of memory.  If their is no valid memory
+     * device for the address, the emulator is halted.
+     */
+    void emulatorWrite(CpuAddress addr, uint8_t val);
+
+    /// The preHandlerHook will set theOperandVal and theOperandAddr based on the
+    /// addressing mode
+    uint8_t    theOperandVal;
+    CpuAddress theOperandAddr;
+
     // Core emulator registers
     uint8_t theRegX;
     uint8_t theRegY;
@@ -122,13 +144,27 @@ protected:
     StatusReg theStatusReg;
     CpuAddress thePc;
 
+    /// The debugger if one is configured, else it is a nullptr
     DebugServer* theDebugger;
 
     bool theRunFlag;
 
+    /**
+     * The number of clock cycles the CPU has been on for
+     */
     uint64_t theNumClocks;
 
+    /**
+     * Extra clock cycles induced per instruction based on addressing modes
+     */
+    int theAddrModeExtraClockCycle;
 
+    /**
+     * If the memory address computed during an operation crossed over a page
+     * boundary, it might cause an extra clock cycle for the instruction to
+     * complete
+     */
+    bool thePageBoundaryCrossedFlag;
 };
 
 #endif // CPU6502_H

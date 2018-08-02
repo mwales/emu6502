@@ -62,6 +62,8 @@ protected:
 
    void haltCommand();
 
+   void memoryDumpCommand(uint16_t commandLen);
+
    Cpu6502* theCpu;
 
    MemoryController* theMemoryController;

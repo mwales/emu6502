@@ -16,6 +16,59 @@ def prettyhex(number, numBits):
 
     return "0" * numCharsToAdd + hexNumber
 
+def hexDump(dataAddr, data, numBytes):
+    dumpLineStart = dataAddr & 0xfff0
+    dumpLineEnd   = (dataAddr + numBytes - 1) | 0xf
+
+    dataEnd = dataAddr + numBytes
+
+    numDumpLines = (dumpLineEnd + 1 - dumpLineStart) / 16
+    retVal = ""
+    asciiLine = ""
+    print("Memory dump debug: dumpStart = {}, dumpEnd = {}".format(prettyhex(dumpLineStart, 16), prettyhex(dumpLineEnd, 16)))
+    for curAddr in range(dumpLineStart, dumpLineEnd + 1):
+       # Print out the address
+       if ( (curAddr & 0xfff0) == curAddr ):
+           # This is the beginning of a line, print address
+           retVal += prettyhex(curAddr, 16)
+	   retVal += "    "
+	   #print("Starting new line @ {}".format(prettyhex(curAddr, 16)))
+	   asciiLine = "    |"
+       
+       # Print out the data bytes
+       if ( (curAddr >= dataAddr) and (curAddr < dataEnd) ):
+           # print("Going to add char at address {}, index {} in data".format(prettyhex(curAddr, 16), curAddr - dataAddr))
+           
+	   ordVal = ord(data[curAddr - dataAddr])
+	   retVal += prettyhex(ordVal, 8)
+	   
+	   # add the character to teh ascii buf at the end of the line
+           if ( (ordVal >= 0x20) and (ordVal <= 0x7e) ):
+	       asciiLine += chr(ordVal)
+	   else:
+	       asciiLine += "."
+       else:
+           print("Address {} is a blank in the md".format(prettyhex(curAddr, 16)))
+           retVal += "  "
+	   asciiLine += " "
+
+       retVal += " "
+
+       # Print a space after the 8th byte for easy reading
+       if ( (curAddr & 0xf) == 0x7):
+           retVal += " "
+
+       #Print the line ending on the last character of the line
+       if ( (curAddr & 0xf) == 0xf):
+           asciiLine += "|"
+
+	   retVal += asciiLine
+
+           retVal += "\n"
+
+    return retVal
+
+
 def main(argv):
     if (len(argv) != 3):
         print("Usage:  {} ip port".format(argv[0]))
@@ -198,9 +251,45 @@ class DbgClient(cmd2.Cmd):
 
         print("Num Clocks = {}{}".format(prettyhex(numClkHigh, 32), prettyhex(numClkLow, 32)))
 
+    def do_md(self, argstr):
+        """
+	Memory dump.
 
+	md address [numbytes]
 
+	Defaults to dumping 0x100 bytes
+	"""
 
+        args = argstr.split()
+        
+	if (len(args) < 1):
+	    print("You need to specify an address")
+	    return
+
+	address = int(args[0], 16)
+	numBytes = 0x100
+	if (len(args) >= 2):
+	    numBytes = int(args[1], 16)
+
+	print("Requesting a memory dump of {} bytes at address {}".format(prettyhex(numBytes, 16), prettyhex(address, 16)))
+
+	self.sendHeader(8,4)
+
+	msgData = struct.pack("!HH", address, numBytes)
+	self.s.send(msgData)
+
+        rsp = self.receiveMessage()
+
+	(addrRx, bytesRx) = struct.unpack("!HH", rsp[0:4])
+	print("Received {} bytes from address {}".format(prettyhex(bytesRx, 16), prettyhex(addrRx, 16)))
+
+        dataBuf = rsp[4:]
+	if (len(dataBuf) < bytesRx):
+	    print("Didn't receive the number of bytes indicated in memory dump")
+	    return
+
+        hd = hexDump(addrRx, dataBuf, bytesRx)
+        print(hd)
 
 if (__name__ == "__main__"):
     main(sys.argv)

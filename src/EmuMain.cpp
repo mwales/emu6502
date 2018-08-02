@@ -5,6 +5,7 @@
 #include<unistd.h>
 #include<getopt.h>
 #include "RomMemory.h"
+#include "RamMemory.h"
 #include "MemoryController.h"
 #include "Cpu6502.h"
 #include "Logger.h"
@@ -143,8 +144,11 @@ int main(int argc, char* argv[])
 
    RomMemory programData(filename, baseAddress);
 
+   RamMemory ramData(0, 0x2000);
+
    MemoryController memControl;
    memControl.addNewDevice( (MemoryDev*) &programData);
+   memControl.addNewDevice( (MemoryDev*) &ramData);
 
    constructCpuGlobals();
 

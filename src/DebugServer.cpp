@@ -3,6 +3,7 @@
 #include "Cpu6502.h"
 #include "Cpu6502Defines.h"
 #include "MemoryController.h"
+#include "MemoryDev.h"
 #include "Disassembler6502.h"
 
 // Uncomment below for debug output from this class
@@ -83,8 +84,8 @@ void DebugServer::debugHook()
 {
    while(!theDebuggerState.emulatorDebugHook())
    {
-      DS_DEBUG() << "Emulator not executing";
-      SDL_Delay(5000);
+      // DS_DEBUG() << "Emulator not executing";
+      SDL_Delay(100);
    }
 }
 
@@ -109,7 +110,7 @@ int DebugServer::debugServerSocketThread()
 
    while(theRunningFlag)
    {
-      DS_DEBUG() << "Debugger Loop Iteration Start";
+      // DS_DEBUG() << "Debugger Loop Iteration Start";
 
       TCPsocket newConnection;
       newConnection = SDLNet_TCP_Accept(theServerSocket);
@@ -130,7 +131,7 @@ int DebugServer::debugServerSocketThread()
       }
 
       // Any activities on the sockets?
-      int activity = SDLNet_CheckSockets(theSocketSet, 1000);
+      int activity = SDLNet_CheckSockets(theSocketSet, 250);
 
       if (activity)
       {
@@ -268,6 +269,10 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       continueCommand();
       break;
 
+   case 8: // Memory Dump
+      memoryDumpCommand(commandLen);
+      break;
+
    default:
       DS_WARNING() << "Command " << command << " is not implemented!";
    }
@@ -389,6 +394,51 @@ void DebugServer::haltCommand()
 {
    DS_DEBUG() << "Halt command received from debugger client";
    theDebuggerState.haltEmulator();
+}
+
+void DebugServer::memoryDumpCommand(uint16_t commandLen)
+{
+   // We are expecting CpuAddress addr, and uint16_t len
+   if (commandLen != 4)
+   {
+      char const * mdErrorMessage = "Malformed memory dump command received from debugger client";
+      DS_WARNING() << mdErrorMessage;
+      sendResponse(strlen(mdErrorMessage), (uint8_t*) mdErrorMessage);
+      return;
+   }
+
+   CpuAddress addr = SDLNet_Read16(theRxDataBuffer);
+   uint16_t mdSize = SDLNet_Read16(theRxDataBuffer + 2);
+
+   DS_DEBUG() << "MemoryDump(" << Utils::toHex16(addr) << ", " << Utils::toHex16(mdSize)
+              << ") received";
+
+   uint8_t* rspBuf = (uint8_t*) malloc(mdSize + 4);
+   memset(rspBuf, 0, mdSize + 4);
+
+
+   for(int i = 0; i < mdSize; i++)
+   {
+      MemoryDev* memoryDevice = theMemoryController->getDevice(addr + i);
+      if (memoryDevice != nullptr)
+      {
+         rspBuf[i + 4] = theMemoryController->getDevice(addr + i)->read8(addr + i);
+      }
+      else
+      {
+         DS_WARNING() << "Memory dump tried to dump invalid memory at address "
+                      << Utils::toHex16(addr + i);
+
+         // We will truncate the buffer we resond with to the valid size
+         mdSize = i;
+         break;
+      }
+   }
+
+   SDLNet_Write16(addr, rspBuf);
+   SDLNet_Write16(mdSize, rspBuf + 2);
+
+   sendResponse(mdSize + 4, rspBuf);
 }
 
 void DebugServer::closeExistingConnection(char const * reason)

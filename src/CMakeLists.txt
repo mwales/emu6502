@@ -15,6 +15,7 @@ set(DISASS_FILES DisMain.cpp)
 set(EMULAT_FILES Cpu6502.cpp
                  DebugServer.cpp
                  DebuggerState.cpp
+                 RamMemory.cpp
                  EmuMain.cpp)
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)

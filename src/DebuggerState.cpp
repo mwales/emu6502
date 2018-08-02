@@ -1,7 +1,7 @@
 #include "DebuggerState.h"
 #include "Logger.h"
 
-#define DSTATE_DEBUG_LOGGING
+// #define DSTATE_DEBUG_LOGGING
 
 #ifdef DSTATE_DEBUG_LOGGING
    #define DSTATE_DEBUG   LOG_DEBUG

@@ -14,27 +14,6 @@ inline std::string addressToString(CpuAddress val)
 
 class Decoder6502;
 
-enum class OpCodeAddressModeOldModes
-{
-   IMMEDIATE = 0,       // 2 byte instruction  MNM #$xx
-   ABSOLUTE,            // 3 byte instruction  MNM $xxxx
-   ABSOLUTE_ZERO_PAGE,  // 2 byte instruction  MNM $xx
-   IMPLIED,             // 1 byte instruction  MNM
-   INDEXED,             // 3 byte instruction  MNM $xxxx, X
-   INDEXED_ZERO_PAGE,   // 2 byte instruction  MNM $xx, X
-   INDIRECT,            // 3 byte instruction  MNM ($xxxx)
-   RELATIVE,            // 2 byte instruction  MNM *+4
-   INDEXED_INDIRECT,    // 2 byte instruction  MNM ($xx, X)
-   INDIRECT_INDEXED,    // 2 byte instruction  MNM ($xx), Y
-   INVALID
-};
-
-
-
-//extern enum OpCodeAddressMode ADDRESS_MODE[];
-
-//extern int OP_CODE_LENGTH[];
-
 enum AddressMode6502
 {
    IMPLIED,
@@ -45,8 +24,8 @@ enum AddressMode6502
    INDIRECT_Y,
    ABSOLUTE,
    ZERO_PAGE,
-   ABS_ZP_X,
-   ABS_ZP_Y,
+   ABSOLUTE_X,
+   ABSOLUTE_Y,
    ZERO_PAGE_X,
    ZERO_PAGE_Y
 };

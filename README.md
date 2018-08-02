@@ -195,9 +195,10 @@ Commands for the emulator's debugger
 * 0x05 Step(numInstructions) - Steps the emulator a finite number of instructions (16-bit)
 * 0x06 Halt
 * 0x07 Continue
+* 0x08 MemoryRead(address, numBytes) - Address is CpuAddress size, numBytes is 16-bit.  Returns
+     address (CpuAddress size), num bytes (16-bits), then raw binary data
 * RegisterWrite(registerName, registerValue)
 * MemoryWrite(address, numBytes, data)
-* MemoryRead(address, numBytes)
 * Breakpoint(address)
 * BreakpointRemove(addresss)
 * BreakpointList
