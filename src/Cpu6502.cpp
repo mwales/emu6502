@@ -403,7 +403,52 @@ void Cpu6502::handler_sec(OpCodeInfo* oci)
 
 void Cpu6502::handler_rol(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for rol";
+   CPU_DEBUG() << "ROL Handler";
+
+   bool setCarryFlag;
+   bool setSignFlag;
+   bool setZeroFlag;
+
+   bool oldCarryFlag = theStatusReg.theCarryFlag;
+
+   if (oci->theAddrMode == IMPLIED)
+   {
+      // We are shifting the accumulator
+      setCarryFlag = theAccum & 0x80;
+      theAccum <<= 1;
+
+      if (oldCarryFlag)
+      {
+         // We shift in the value of the old carry flag
+         theAccum |= 0x01;
+      }
+
+      setSignFlag = theAccum & 0x80;
+      setZeroFlag = theAccum == 0;
+   }
+   else
+   {
+      // We are shifting a byte in memory
+      uint8_t val = emulatorRead(theOperandAddr);
+
+      setCarryFlag = val & 0x80;
+      val <<= 1;
+
+      if (oldCarryFlag)
+      {
+         // We shift in the value of the old carry flag
+         val |= 0x01;
+      }
+
+      emulatorWrite(theOperandAddr, val);
+
+      setSignFlag = val & 0x80;
+      setZeroFlag = val == 0;
+   }
+
+   theStatusReg.theCarryFlag = (setCarryFlag ? 1 : 0);
+   theStatusReg.theSignFlag = (setSignFlag ? 1 : 0);
+   theStatusReg.theZeroFlag = (setZeroFlag ? 1 : 0);
 }
 
 void Cpu6502::handler_pla(OpCodeInfo* oci)
@@ -443,7 +488,35 @@ void Cpu6502::handler_sax(OpCodeInfo* oci)
 
 void Cpu6502::handler_lsr(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for lsr";
+   CPU_DEBUG() << "LSR Handler";
+
+   bool setCarryFlag;
+   bool setZeroFlag;
+
+   if (oci->theAddrMode == IMPLIED)
+   {
+      // We are shifting the accumulator
+      setCarryFlag = theAccum & 0x01;
+      theAccum >>= 1;
+
+      setZeroFlag = theAccum == 0;
+   }
+   else
+   {
+      // We are shifting a byte in memory
+      uint8_t val = emulatorRead(theOperandAddr);
+
+      setCarryFlag = val & 0x01;
+      val >>= 1;
+
+      emulatorWrite(theOperandAddr, val);
+
+      setZeroFlag = val == 0;
+   }
+
+   theStatusReg.theCarryFlag = (setCarryFlag ? 1 : 0);
+   theStatusReg.theSignFlag = 0;
+   theStatusReg.theZeroFlag = (setZeroFlag ? 1 : 0);
 }
 
 void Cpu6502::handler_rts(OpCodeInfo* oci)
@@ -458,7 +531,52 @@ void Cpu6502::handler_inx(OpCodeInfo* oci)
 
 void Cpu6502::handler_ror(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for ror";
+   CPU_DEBUG() << "ROR Handler";
+
+   bool setCarryFlag;
+   bool setSignFlag;
+   bool setZeroFlag;
+
+   bool oldCarryFlag = theStatusReg.theCarryFlag;
+
+   if (oci->theAddrMode == IMPLIED)
+   {
+      // We are shifting the accumulator
+      setCarryFlag = theAccum & 0x01;
+      theAccum >>= 1;
+
+      if (oldCarryFlag)
+      {
+         // We shift in the value of the old carry flag
+         theAccum |= 0x80;
+      }
+
+      setSignFlag = theAccum & 0x80;
+      setZeroFlag = theAccum == 0;
+   }
+   else
+   {
+      // We are shifting a byte in memory
+      uint8_t val = emulatorRead(theOperandAddr);
+
+      setCarryFlag = val & 0x01;
+      val >>= 1;
+
+      if (oldCarryFlag)
+      {
+         // We shift in the value of the old carry flag
+         val |= 0x80;
+      }
+
+      emulatorWrite(theOperandAddr, val);
+
+      setSignFlag = val & 0x80;
+      setZeroFlag = val == 0;
+   }
+
+   theStatusReg.theCarryFlag = (setCarryFlag ? 1 : 0);
+   theStatusReg.theSignFlag = (setSignFlag ? 1 : 0);
+   theStatusReg.theZeroFlag = (setZeroFlag ? 1 : 0);
 }
 
 void Cpu6502::handler_ldx(OpCodeInfo* oci)
@@ -588,7 +706,38 @@ void Cpu6502::handler_clv(OpCodeInfo* oci)
 
 void Cpu6502::handler_asl(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for asl";
+   CPU_DEBUG() << "ASL Handler";
+
+   bool setCarryFlag;
+   bool setSignFlag;
+   bool setZeroFlag;
+
+   if (oci->theAddrMode == IMPLIED)
+   {
+      // We are shifting the accumulator
+      setCarryFlag = theAccum & 0x80;
+      theAccum <<= 1;
+
+      setSignFlag = theAccum & 0x80;
+      setZeroFlag = theAccum == 0;
+   }
+   else
+   {
+      // We are shifting a byte in memory
+      uint8_t val = emulatorRead(theOperandAddr);
+
+      setCarryFlag = val & 0x80;
+      val <<= 1;
+
+      emulatorWrite(theOperandAddr, val);
+
+      setSignFlag = val & 0x80;
+      setZeroFlag = val == 0;
+   }
+
+   theStatusReg.theCarryFlag = (setCarryFlag ? 1 : 0);
+   theStatusReg.theSignFlag = (setSignFlag ? 1 : 0);
+   theStatusReg.theZeroFlag = (setZeroFlag ? 1 : 0);
 }
 
 void Cpu6502::handler_jmp(OpCodeInfo* oci)
