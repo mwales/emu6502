@@ -506,7 +506,19 @@ void Cpu6502::handler_iny(OpCodeInfo* oci)
 
 void Cpu6502::handler_inc(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for inc";
+   CPU_DEBUG() << "INC Handler";
+
+   uint8_t val = emulatorRead(theOperandAddr);
+
+   val++;
+
+   emulatorWrite(theOperandAddr, val);
+
+   if (val == 0)
+      theStatusReg.theZeroFlag = 1;
+
+   if (val & 0x80)
+      theStatusReg.theSignFlag = 1;
 }
 
 void Cpu6502::handler_cli(OpCodeInfo* oci)
@@ -741,7 +753,19 @@ void Cpu6502::handler_dey(OpCodeInfo* oci)
 
 void Cpu6502::handler_dec(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for dec";
+   CPU_DEBUG() << "DEC Handler";
+
+   uint8_t val = emulatorRead(theOperandAddr);
+
+   val--;
+
+   emulatorWrite(theOperandAddr, val);
+
+   if (val == 0)
+      theStatusReg.theZeroFlag = 1;
+
+   if (val & 0x80)
+      theStatusReg.theSignFlag = 1;
 }
 
 void Cpu6502::handler_sed(OpCodeInfo* oci)
