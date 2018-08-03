@@ -89,7 +89,7 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
 | PHx | Push               |                         | Push A or (P)rocessor Flags onto stack |
 | PLx | Pull               |                         | Pull A or (P)rocessor Flags from stack |
 | JMP | Jump               |                         |               |
-| JSR | Jump Subroutine    |                         |               |
+| JSR | Jump Subroutine    |                         | Pushes return address - 1 |
 | RTI | Return from Intrpt |                         |               |
 | RTS | Return from Subrtn |                         |               |
 | BIT | Bit Test           |                         | Status Flags  |
@@ -125,6 +125,16 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
 11. Indexed Indirect (2-byte instruction). 1-byte operand is the offset from address read from the
     zero-page address specified in the op-code.  Example: LDA ($40),X ; Loads a memory address from
     address 0x0040, then adds X, then reads the memory address into accumulator.
+
+### Stack
+
+Stack is always in memory from 0x0100 - 0x01ff.  The bottom of the stack is 0x01ff, and it grows
+towards 0x0100.  If an address is pushed to the stack, the upper bits are pushed first, and the
+lower bits are then pushed afterwards.
+
+Very helpful info on this stack overflow post:
+
+https://stackoverflow.com/questions/21465200/6502-assembler-the-rts-command-and-the-stack
 
 ## Build Instructions
 

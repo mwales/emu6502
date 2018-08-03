@@ -30,7 +30,7 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
    theRegX(0),
    theRegY(0),
    theAccum(0),
-   theStackPtr(0),
+   theStackPtr(0xff),
    thePc(0),
    theDebugger(nullptr),
    theRunFlag(true),
@@ -521,7 +521,19 @@ void Cpu6502::handler_lsr(OpCodeInfo* oci)
 
 void Cpu6502::handler_rts(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for rts";
+   CPU_DEBUG() << "RTS Handler";
+
+   // Retrieve the new PC from the stack, lower address first, uppper address last
+
+   // Like my emulator, the real 6502 increments PC after this instruction to get
+   // the real PC for the next instruction
+   theStackPtr++;
+   uint8_t lowerAddress = emulatorRead(0x0100 + theStackPtr);
+   theStackPtr++;
+   uint8_t upperAddress = emulatorRead(0x0100 + theStackPtr);
+
+   thePc = upperAddress << 8;
+   thePc += lowerAddress;
 }
 
 void Cpu6502::handler_inx(OpCodeInfo* oci)
@@ -742,7 +754,29 @@ void Cpu6502::handler_asl(OpCodeInfo* oci)
 
 void Cpu6502::handler_jmp(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for jmp";
+   CPU_DEBUG() << "JMP Handler";
+
+   if (oci->theAddrMode == ABSOLUTE)
+   {
+      // The address is in the opcode directly
+
+      // We set PC to the address minus length of our own opcode since updatePc will
+      // increment PC after we run
+      thePc = theOperandAddr - oci->theNumBytes;
+   }
+   else
+   {
+      // The address in the memory pointed to by the opcode address
+      uint8_t lowerAddress = emulatorRead(theOperandAddr);
+      uint8_t upperAddress = emulatorRead(theOperandAddr + 1);
+
+      uint16_t targetAddr = upperAddress << 8;
+      targetAddr += lowerAddress;
+
+      thePc = targetAddr - oci->theNumBytes;
+   }
+
+   // No flags are affected
 }
 
 void Cpu6502::handler_bne(OpCodeInfo* oci)
@@ -832,7 +866,28 @@ void Cpu6502::handler_txa(OpCodeInfo* oci)
 
 void Cpu6502::handler_jsr(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for jsr";
+   CPU_DEBUG() << "JSR Handler";
+
+   // due to behavior of rts on 6502, the returns address has 1 byte subtracted
+   uint16_t addressToPush = thePc + oci->theNumBytes - 1;
+
+   uint8_t addressUpper = ((addressToPush >> 8) & 0x00ff);
+   uint8_t addressLower = addressToPush & 0x00ff;
+
+   if (theStackPtr == 0x0100)
+   {
+      // We are going to overflow the stack, wtg n00b
+      LOG_WARNING() << "6502 stack overflow @ addr " << addressToString(thePc)
+                    << " from a JSR instruction";
+   }
+
+   emulatorWrite(0x0100 + theStackPtr, addressUpper);
+   theStackPtr--;
+   emulatorWrite(0x0100 + theStackPtr, addressLower);
+   theStackPtr--;
+
+   // JSR is always an ABSOLUTE addressing mode instruction
+   thePc = theOperandAddr - oci->theNumBytes;
 }
 
 void Cpu6502::handler_kil(OpCodeInfo* oci)
