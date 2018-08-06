@@ -106,6 +106,11 @@ class DbgClient(cmd2.Cmd):
 
         self.s = s
 
+        self.lastResult = ""
+
+    def getLastResult(self):
+        return self.lastResult
+
     def sendHeader(self, opCode, messageLength):
         header = struct.pack("!HH", messageLength, opCode)
         self.s.send(header)
@@ -144,8 +149,11 @@ class DbgClient(cmd2.Cmd):
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.connect((ipAddress, portNum))
+            print("Connected")
+            self.lastResult = "Connected"
         except IOError as e:
             print("Failed to connect to the debugger server: {}".format(e.message))
+            self.lastResult = "Failed to Connect"
             return
 
     def do_about(self, args):
@@ -155,8 +163,10 @@ class DbgClient(cmd2.Cmd):
         self.sendHeader(1, 0)
 
         emuVersion = self.receiveMessage()
-        print("Emulator: {}".format(emuVersion))
-        print("Client: Python 6502 Debug Client v0.0")
+
+        self.lastResult = "Emulator: {}\n".format(emuVersion)
+        self.lastResult += "Client: Python 6502 Debug Client v0.0"
+        print(self.lastResult)
 
     def do_shutdown(self, args):
         """
@@ -194,8 +204,8 @@ class DbgClient(cmd2.Cmd):
         msgData = struct.pack("!BHH", flags, address, num)
         self.s.send(msgData)
 
-        rsp = self.receiveMessage()
-        print("Listing:\n{}".format(rsp))
+        self.lastResult = self.receiveMessage()
+        print("Listing:\n{}".format(self.lastResult))
 
 
     def do_regs(self, args):
@@ -249,8 +259,8 @@ class DbgClient(cmd2.Cmd):
 
         (x, y, accum, sp, pc, status, padding, numClkHigh, numClkLow) = struct.unpack("!BBBBHBBLL", rspData)
 
-        print(" X={}   Y={}    A={}".format(prettyhex(x, 8), prettyhex(y, 8), prettyhex(accum, 8)))
-        print("SP={}  PC={}".format(prettyhex(sp, 8), prettyhex(pc, 16)))
+        self.lastResult  = " X={}   Y={}    A={}\n".format(prettyhex(x, 8), prettyhex(y, 8), prettyhex(accum, 8))
+        self.lastResult += "SP={}  PC={}\n".format(prettyhex(sp, 8), prettyhex(pc, 16))
 
         statusFlags = []
         if (status & 0x01):
@@ -268,9 +278,11 @@ class DbgClient(cmd2.Cmd):
         if (status & 0x80):
             statusFlags.append("FLG_NEG")
 
-        print("SR={} = {}".format(prettyhex(status, 8), " | ".join(statusFlags)))
+        self.lastResult += "SR={} = {}\n".format(prettyhex(status, 8), " | ".join(statusFlags))
 
-        print("Num Clocks = {}{}".format(prettyhex(numClkHigh, 32), prettyhex(numClkLow, 32)))
+        self.lastResult += "Num Clocks = {}{}".format(prettyhex(numClkHigh, 32), prettyhex(numClkLow, 32))
+
+        print(self.lastResult)
 
     def do_md(self, argstr):
         """
@@ -284,7 +296,8 @@ class DbgClient(cmd2.Cmd):
         args = argstr.split()
         
         if (len(args) < 1):
-            print("You need to specify an address")
+            self.lastResult = "Memory Dump failed, no address specified"
+            print(self.lastResult)
             return
 
         address = int(args[0], 16)
@@ -309,8 +322,8 @@ class DbgClient(cmd2.Cmd):
             print("Didn't receive the number of bytes indicated in memory dump")
             return
 
-        hd = hexDump(addrRx, dataBuf, bytesRx)
-        print(hd)
+        self.lastResult = hexDump(addrRx, dataBuf, bytesRx)
+        print(self.lastResult)
 
 if (__name__ == "__main__"):
     main(sys.argv)
