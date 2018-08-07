@@ -90,6 +90,9 @@ protected:
 
    DebuggerState theDebuggerState;
 
+   /// Stepping into an emulator fault will try to send 2 dumps to the client
+   bool theRegisterDumpSentToClient;
+
 };
 
 #endif // DEBUG_SERVER_H

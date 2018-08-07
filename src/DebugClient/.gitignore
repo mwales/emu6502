@@ -1,0 +1,7 @@
+emulator_stderr.txt
+emulator_stdout.txt
+trace_output.txt
+.idea
+venv
+dbgClient.pyc
+

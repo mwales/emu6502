@@ -25,7 +25,8 @@ DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memCo
    theServerThread(nullptr),
    theClientSocket(nullptr),
    theRunningFlag(true),
-   theNumberBytesToRx(-1)
+   theNumberBytesToRx(-1),
+   theRegisterDumpSentToClient(false)
 {
    DS_DEBUG() << "DebugServer constructed, portNum = " << portNum;
 
@@ -189,7 +190,7 @@ int DebugServer::debugServerSocketThread()
       if (semTakeResult == 0)
       {
          // the take was successsful, the emulator just halted
-         if (theClientSocket)\
+         if (theClientSocket)
          {
             DS_DEBUG() << "Emulator halted, sending register dump to debugger client";
             dumpRegistersCommand();
@@ -338,6 +339,14 @@ void DebugServer::dumpRegistersCommand()
 {
    DS_DEBUG() << "Dump registers command (or internally generated)";
 
+   if (theRegisterDumpSentToClient)
+   {
+      DS_DEBUG() << "Dump already sent to client, not double dumping, nobody likes #2";
+      return;
+   }
+
+   theRegisterDumpSentToClient = true;
+
    // Going to return X, Y, Accum, StackPointer, PC, StatusReg, Padding, NumClocksHigh, NumClocksLow
    const int MSG_LEN = 8 + 8;
 
@@ -370,6 +379,9 @@ void DebugServer::dumpRegistersCommand()
 
 void DebugServer::stepCommand(uint16_t commandLen)
 {
+   /// We are expecting a register dump at the end of this command
+   theRegisterDumpSentToClient = false;
+
    int stepCount = 1;
    if (commandLen != 2)
    {
@@ -386,12 +398,18 @@ void DebugServer::stepCommand(uint16_t commandLen)
 
 void DebugServer::continueCommand()
 {
+   /// We are sorta expecting a register dump at the end of this command
+   theRegisterDumpSentToClient = false;
+
    DS_DEBUG() << "Continue command received from debugger client";
    theDebuggerState.runEmulator();
 }
 
 void DebugServer::haltCommand()
 {
+   /// We are expecting a register dump at the end of this command
+   theRegisterDumpSentToClient = false;
+
    DS_DEBUG() << "Halt command received from debugger client";
    theDebuggerState.haltEmulator();
 }

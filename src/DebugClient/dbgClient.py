@@ -320,6 +320,8 @@ class DbgClient(cmd2.Cmd):
         dataBuf = rsp[4:]
         if (len(dataBuf) < bytesRx):
             print("Didn't receive the number of bytes indicated in memory dump")
+            print("Raw Dump of Msg:")
+            print(rsp)
             return
 
         self.lastResult = hexDump(addrRx, dataBuf, bytesRx)
