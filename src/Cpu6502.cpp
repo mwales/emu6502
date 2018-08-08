@@ -359,6 +359,11 @@ void Cpu6502::emulatorWrite(CpuAddress addr, uint8_t val)
    }
 }
 
+/***** HELPER MACROS *****/
+#define UPDATE_SIGN_FLAG(regValue) if(regValue & 0x80) theStatusReg.theSignFlag = 1
+#define UPDATE_ZERO_FLAG(regValue) if(regValue == 0)   theStatusReg.theZeroFlag = 1
+
+#define UPDATE_SZ_FLAGS(regValue)   UPDATE_SIGN_FLAG(regValue); UPDATE_ZERO_FLAG(regValue)
 
 /***   CREATING HANDLER BLANK FUNCTIONS ***/
 void Cpu6502::handler_and(OpCodeInfo* oci)
@@ -374,11 +379,7 @@ void Cpu6502::handler_and(OpCodeInfo* oci)
       theAccum &= emulatorRead(theOperandAddr);
    }
 
-   if (theAccum == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (theAccum & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(theAccum);
 
    if (thePageBoundaryCrossedFlag)
    {
@@ -538,7 +539,9 @@ void Cpu6502::handler_rts(OpCodeInfo* oci)
 
 void Cpu6502::handler_inx(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for inx";
+   CPU_DEBUG() << "INX Handler";
+   theRegX++;
+   UPDATE_SZ_FLAGS(theRegX);
 }
 
 void Cpu6502::handler_ror(OpCodeInfo* oci)
@@ -602,11 +605,7 @@ void Cpu6502::handler_ldx(OpCodeInfo* oci)
       theRegX = emulatorRead(theOperandAddr);
    }
 
-   if (theRegX == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (theRegX & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(theRegX);
 
    if ( (oci->theAddrMode == ABSOLUTE_Y) && thePageBoundaryCrossedFlag)
    {
@@ -631,7 +630,9 @@ void Cpu6502::handler_sei(OpCodeInfo* oci)
 
 void Cpu6502::handler_iny(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for iny";
+   CPU_DEBUG() << "INY Handler";
+   theRegY++;
+   UPDATE_SZ_FLAGS(theRegY);
 }
 
 void Cpu6502::handler_inc(OpCodeInfo* oci)
@@ -644,11 +645,7 @@ void Cpu6502::handler_inc(OpCodeInfo* oci)
 
    emulatorWrite(theOperandAddr, val);
 
-   if (val == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (val & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(val);
 }
 
 void Cpu6502::handler_cli(OpCodeInfo* oci)
@@ -673,7 +670,8 @@ void Cpu6502::handler_cld(OpCodeInfo* oci)
 
 void Cpu6502::handler_txs(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for txs";
+   CPU_DEBUG() << "TXS Handler";
+   theStackPtr = theRegX;
 }
 
 void Cpu6502::handler_tas(OpCodeInfo* oci)
@@ -703,7 +701,9 @@ void Cpu6502::handler_adc(OpCodeInfo* oci)
 
 void Cpu6502::handler_tsx(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for tsx";
+   CPU_DEBUG() << "TSX Handler";
+   theRegX = theStackPtr;
+   UPDATE_SZ_FLAGS(theRegX);
 }
 
 void Cpu6502::handler_xaa(OpCodeInfo* oci)
@@ -797,11 +797,7 @@ void Cpu6502::handler_ldy(OpCodeInfo* oci)
       theRegY = emulatorRead(theOperandAddr);
    }
 
-   if (theRegY == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (theRegY & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(theRegY);
 
    if ( (oci->theAddrMode == ABSOLUTE_X) && thePageBoundaryCrossedFlag)
    {
@@ -821,7 +817,9 @@ void Cpu6502::handler_plp(OpCodeInfo* oci)
 
 void Cpu6502::handler_tax(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for tax";
+   CPU_DEBUG() << "TAX Handler";
+   theRegX = theAccum;
+   UPDATE_SZ_FLAGS(theRegX);
 }
 
 void Cpu6502::handler_pha(OpCodeInfo* oci)
@@ -841,12 +839,16 @@ void Cpu6502::handler_rla(OpCodeInfo* oci)
 
 void Cpu6502::handler_tya(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for tya";
+   CPU_DEBUG() << "TYA Handler";
+   theAccum = theRegY;
+   UPDATE_SZ_FLAGS(theAccum);
 }
 
 void Cpu6502::handler_tay(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for tay";
+   CPU_DEBUG() << "TAY Handler";
+   theRegY = theAccum;
+   UPDATE_SZ_FLAGS(theRegY);
 }
 
 void Cpu6502::handler_sbc(OpCodeInfo* oci)
@@ -861,7 +863,9 @@ void Cpu6502::handler_lax(OpCodeInfo* oci)
 
 void Cpu6502::handler_txa(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for txa";
+   CPU_DEBUG() << "TXA Handler";
+   theAccum = theRegX;
+   UPDATE_SZ_FLAGS(theAccum);
 }
 
 void Cpu6502::handler_jsr(OpCodeInfo* oci)
@@ -928,11 +932,7 @@ void Cpu6502::handler_ora(OpCodeInfo* oci)
       theAccum |= emulatorRead(theOperandAddr);
    }
 
-   if (theAccum == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (theAccum & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(theAccum);
 
    if (thePageBoundaryCrossedFlag)
    {
@@ -947,12 +947,16 @@ void Cpu6502::handler_ora(OpCodeInfo* oci)
 
 void Cpu6502::handler_dex(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for dex";
+   CPU_DEBUG() << "DEX Handler";
+   theRegX--;
+   UPDATE_SZ_FLAGS(theRegX);
 }
 
 void Cpu6502::handler_dey(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for dey";
+   CPU_DEBUG() << "DEY Handler";
+   theRegY--;
+   UPDATE_SZ_FLAGS(theRegY);
 }
 
 void Cpu6502::handler_dec(OpCodeInfo* oci)
@@ -965,11 +969,7 @@ void Cpu6502::handler_dec(OpCodeInfo* oci)
 
    emulatorWrite(theOperandAddr, val);
 
-   if (val == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (val & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(val);
 }
 
 void Cpu6502::handler_sed(OpCodeInfo* oci)
@@ -1027,11 +1027,7 @@ void Cpu6502::handler_eor(OpCodeInfo* oci)
       theAccum ^= emulatorRead(theOperandAddr);
    }
 
-   if (theAccum == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (theAccum & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(theAccum);
 
    if (thePageBoundaryCrossedFlag)
    {
@@ -1058,11 +1054,7 @@ void Cpu6502::handler_lda(OpCodeInfo* oci)
       theAccum = emulatorRead(theOperandAddr);
    }
 
-   if (theAccum == 0)
-      theStatusReg.theZeroFlag = 1;
-
-   if (theAccum & 0x80)
-      theStatusReg.theSignFlag = 1;
+   UPDATE_SZ_FLAGS(theAccum);
 
    if (thePageBoundaryCrossedFlag)
    {
