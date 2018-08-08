@@ -686,17 +686,44 @@ void Cpu6502::handler_clc(OpCodeInfo* oci)
 
 void Cpu6502::handler_adc(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for adc";
+   CPU_DEBUG() << "ADC Handler";
 
-   uint16_t val = (uint16_t) theAccum + (uint16_t) theOperandVal;
+   // Add the carry flag to the accumulator
+   uint16_t val = theAccum + theStatusReg.theCarryFlag;
 
-   if (val > 0xff)
+
+
+   if (oci->theAddrMode == IMMEDIATE)
    {
-      // We carried!
-      theStatusReg.theCarryFlag = 1;
+      CPU_DEBUG() << "A=" << Utils::toHex8(theAccum) << ", cf="
+                  << Utils::toHex8(theStatusReg.theCarryFlag) << ", sum=" << Utils::toHex8(val)
+                  << ", operandVal=" << Utils::toHex8(theOperandVal);
+      val += theOperandVal;
+   }
+   else
+   {
+      CPU_DEBUG() << "A=" << Utils::toHex8(theAccum) << ", cf="
+                  << Utils::toHex8(theStatusReg.theCarryFlag) << ", sum=" << Utils::toHex8(val)
+                  << ", *operandAddr=" <<  Utils::toHex8(emulatorRead(theOperandAddr));
+      val += emulatorRead(theOperandAddr);
    }
 
    theAccum = val & 0xff;
+   UPDATE_SZ_FLAGS(theAccum);
+
+   CPU_DEBUG() << "Val=" << Utils::toHex8(val) << ", accum=" << Utils::toHex8(theAccum);
+
+   theStatusReg.theCarryFlag = ( val & 0xff00 ? 1 : 0);
+
+   if (thePageBoundaryCrossedFlag)
+   {
+      if ( (oci->theAddrMode == ABSOLUTE_X) ||
+           (oci->theAddrMode == ABSOLUTE_Y) ||
+           (oci->theAddrMode == INDIRECT_Y) )
+      {
+         theAddrModeExtraClockCycle = 1;
+      }
+   }
 }
 
 void Cpu6502::handler_tsx(OpCodeInfo* oci)
@@ -853,7 +880,35 @@ void Cpu6502::handler_tay(OpCodeInfo* oci)
 
 void Cpu6502::handler_sbc(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for sbc";
+   CPU_DEBUG() << "SBC Handler";
+
+   // Subtract the not of the carry flag
+   uint16_t val = theAccum - 1;
+   val += theStatusReg.theCarryFlag;
+
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      val -= theOperandVal;
+   }
+   else
+   {
+      val -= emulatorRead(theOperandAddr);
+   }
+
+   theAccum = val & 0xff;
+   UPDATE_SZ_FLAGS(theAccum);
+
+   theStatusReg.theCarryFlag = ( val & 0xff00 ? 1 : 0);
+
+   if (thePageBoundaryCrossedFlag)
+   {
+      if ( (oci->theAddrMode == ABSOLUTE_X) ||
+           (oci->theAddrMode == ABSOLUTE_Y) ||
+           (oci->theAddrMode == INDIRECT_Y) )
+      {
+         theAddrModeExtraClockCycle = 1;
+      }
+   }
 }
 
 void Cpu6502::handler_lax(OpCodeInfo* oci)
