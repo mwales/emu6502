@@ -100,6 +100,8 @@ public:
     virtual void handler_bcs(OpCodeInfo* oci);
     // End of auto generated code
 
+    virtual void addition_operation(uint8_t operandValue, OpCodeInfo* oci);
+
     virtual void halt();
 
     // CPU State Getters

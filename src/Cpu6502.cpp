@@ -688,41 +688,13 @@ void Cpu6502::handler_adc(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "ADC Handler";
 
-   // Add the carry flag to the accumulator
-   uint16_t val = theAccum + theStatusReg.theCarryFlag;
-
-
-
    if (oci->theAddrMode == IMMEDIATE)
    {
-      CPU_DEBUG() << "A=" << Utils::toHex8(theAccum) << ", cf="
-                  << Utils::toHex8(theStatusReg.theCarryFlag) << ", sum=" << Utils::toHex8(val)
-                  << ", operandVal=" << Utils::toHex8(theOperandVal);
-      val += theOperandVal;
+      addition_operation(theOperandVal, oci);
    }
    else
    {
-      CPU_DEBUG() << "A=" << Utils::toHex8(theAccum) << ", cf="
-                  << Utils::toHex8(theStatusReg.theCarryFlag) << ", sum=" << Utils::toHex8(val)
-                  << ", *operandAddr=" <<  Utils::toHex8(emulatorRead(theOperandAddr));
-      val += emulatorRead(theOperandAddr);
-   }
-
-   theAccum = val & 0xff;
-   UPDATE_SZ_FLAGS(theAccum);
-
-   CPU_DEBUG() << "Val=" << Utils::toHex8(val) << ", accum=" << Utils::toHex8(theAccum);
-
-   theStatusReg.theCarryFlag = ( val & 0xff00 ? 1 : 0);
-
-   if (thePageBoundaryCrossedFlag)
-   {
-      if ( (oci->theAddrMode == ABSOLUTE_X) ||
-           (oci->theAddrMode == ABSOLUTE_Y) ||
-           (oci->theAddrMode == INDIRECT_Y) )
-      {
-         theAddrModeExtraClockCycle = 1;
-      }
+      addition_operation(emulatorRead(theOperandAddr), oci);
    }
 }
 
@@ -878,27 +850,31 @@ void Cpu6502::handler_tay(OpCodeInfo* oci)
    UPDATE_SZ_FLAGS(theRegY);
 }
 
-void Cpu6502::handler_sbc(OpCodeInfo* oci)
+void Cpu6502::addition_operation(uint8_t operandValue, OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "SBC Handler";
+   uint16_t sum = theAccum + operandValue + theStatusReg.theCarryFlag;
+   //uint8_t oldAccum = theAccum;
 
-   // Subtract the not of the carry flag
-   uint16_t val = theAccum - 1;
-   val += theStatusReg.theCarryFlag;
-
-   if (oci->theAddrMode == IMMEDIATE)
+   // Copied the code from Mesen emulator on the overflow flag cause I basically have no idea
+   if(~(theAccum ^ operandValue) & (theAccum ^ sum) & 0x80)
    {
-      val -= theOperandVal;
+      theStatusReg.theOverflowFlag = 1;
    }
    else
    {
-      val -= emulatorRead(theOperandAddr);
+      theStatusReg.theOverflowFlag = 0;
    }
 
-   theAccum = val & 0xff;
+   theAccum = sum & 0xff;
    UPDATE_SZ_FLAGS(theAccum);
 
-   theStatusReg.theCarryFlag = ( val & 0xff00 ? 1 : 0);
+   theStatusReg.theCarryFlag = (sum & 0xff00 ? 1 : 0);
+
+   // CPU_DEBUG() << "Addition inputs: operand=" << Utils::toHex8(operandValue)
+   //             << ", accum=" << Utils::toHex8(oldAccum)
+   //             << ", cf=" << Utils::toHex8(theStatusReg.theCarryFlag);
+   // CPU_DEBUG() << "Addition output: sum=" << Utils::toHex16(sum)
+   //             << ", accum=" << Utils::toHex8(theAccum);
 
    if (thePageBoundaryCrossedFlag)
    {
@@ -908,6 +884,23 @@ void Cpu6502::handler_sbc(OpCodeInfo* oci)
       {
          theAddrModeExtraClockCycle = 1;
       }
+   }
+}
+
+void Cpu6502::handler_sbc(OpCodeInfo* oci)
+{
+   CPU_DEBUG() << "SBC Handler";
+
+   // Strategy.  Just invert the operand and call addition.  Crazy, right...
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      // 1s complement
+      addition_operation(0xff ^ theOperandVal, oci);
+   }
+   else
+   {
+      // 1s complement
+      addition_operation(0xff ^ emulatorRead(theOperandAddr), oci);
    }
 }
 
