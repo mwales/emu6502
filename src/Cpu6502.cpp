@@ -232,7 +232,7 @@ void Cpu6502::preHandlerHook(OpCodeInfo* oci)
             theRelativeOperand = theOpCode2;
          }
 
-         theOperandAddr += theRelativeOperand;
+         theOperandAddr = theRelativeOperand + thePc;
 
          thePageBoundaryCrossedFlag = ( (thePc & 0xff00) != (theOperandAddr & 0xff00) );
 
@@ -653,16 +653,6 @@ void Cpu6502::handler_cli(OpCodeInfo* oci)
    CPU_DEBUG() << "Empty handler for cli";
 }
 
-void Cpu6502::handler_beq(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for beq";
-}
-
-void Cpu6502::handler_cpy(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for cpy";
-}
-
 void Cpu6502::handler_cld(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for cld";
@@ -778,9 +768,38 @@ void Cpu6502::handler_jmp(OpCodeInfo* oci)
    // No flags are affected
 }
 
+void Cpu6502::handler_beq(OpCodeInfo* oci)
+{
+   if (theStatusReg.theZeroFlag == 1)
+   {
+      CPU_DEBUG() << "BEQ Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BEQ Handler - Branch not taken";
+   }
+}
+
 void Cpu6502::handler_bne(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for bne";
+   if (theStatusReg.theZeroFlag == 0)
+   {
+      CPU_DEBUG() << "BNE Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BNE Handler - Branch not taken";
+   }
 }
 
 void Cpu6502::handler_ldy(OpCodeInfo* oci)
@@ -949,7 +968,14 @@ void Cpu6502::handler_kil(OpCodeInfo* oci)
 
 void Cpu6502::handler_bit(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for bit";
+   uint8_t val = emulatorRead(theOperandAddr);
+   val &= theAccum;
+
+   theStatusReg.theZeroFlag = (val == 0 ? 1 : 0);
+   theStatusReg.theOverflowFlag = ( val & 0x40 ? 1 : 0);
+   theStatusReg.theSignFlag = (val & 0x80 ? 1 : 0);
+
+   CPU_DEBUG() << "BIT Handler - *op & accum = " << Utils::toHex8(val);
 }
 
 void Cpu6502::handler_php(OpCodeInfo* oci)
@@ -1057,9 +1083,119 @@ void Cpu6502::handler_bcc(OpCodeInfo* oci)
    CPU_DEBUG() << "Empty handler for bcc";
 }
 
+void Cpu6502::handler_cmp(OpCodeInfo* oci)
+{
+   uint8_t val;
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      val = theOperandVal;
+   }
+   else
+   {
+      val = emulatorRead(theOperandAddr);
+   }
+
+   if (theAccum == val)
+   {
+      CPU_DEBUG() << "CMP Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 1;
+      theStatusReg.theSignFlag = 0;
+   }
+   else if (theAccum > val)
+   {
+      CPU_DEBUG() << "CMP Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theSignFlag = 0;
+   }
+   else
+   {
+      CPU_DEBUG() << "CMP Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 0;
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theSignFlag = 1;
+
+   }
+
+   if ( (oci->theAddrMode == ABSOLUTE_X) ||
+        (oci->theAddrMode == ABSOLUTE_Y) ||
+        (oci->theAddrMode == INDIRECT_Y) )
+   {
+      theAddrModeExtraClockCycle = 1;
+   }
+}
+
 void Cpu6502::handler_cpx(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for cpx";
+   uint8_t val;
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      val = theOperandVal;
+   }
+   else
+   {
+      val = emulatorRead(theOperandAddr);
+   }
+
+   if (theRegX == val)
+   {
+      CPU_DEBUG() << "CPX Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 1;
+      theStatusReg.theSignFlag = 0;
+   }
+   else if (theRegX > val)
+   {
+      CPU_DEBUG() << "CPX Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theSignFlag = 0;
+   }
+   else
+   {
+      CPU_DEBUG() << "CPX Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 0;
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theSignFlag = 1;
+
+   }
+}
+
+void Cpu6502::handler_cpy(OpCodeInfo* oci)
+{
+   uint8_t val;
+   if (oci->theAddrMode == IMMEDIATE)
+   {
+      val = theOperandVal;
+   }
+   else
+   {
+      val = emulatorRead(theOperandAddr);
+   }
+
+   if (theRegX == val)
+   {
+      CPU_DEBUG() << "CPY Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 1;
+      theStatusReg.theSignFlag = 0;
+   }
+   else if (theRegX > val)
+   {
+      CPU_DEBUG() << "CPY Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theSignFlag = 0;
+   }
+   else
+   {
+      CPU_DEBUG() << "CPY Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
+      theStatusReg.theCarryFlag = 0;
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theSignFlag = 1;
+
+   }
 }
 
 void Cpu6502::handler_eor(OpCodeInfo* oci)
@@ -1133,11 +1269,6 @@ void Cpu6502::handler_isc(OpCodeInfo* oci)
 void Cpu6502::handler_brk(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for brk";
-}
-
-void Cpu6502::handler_cmp(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for cmp";
 }
 
 void Cpu6502::handler_stx(OpCodeInfo* oci)

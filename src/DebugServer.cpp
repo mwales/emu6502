@@ -255,6 +255,7 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       break;
 
    case 4: // dump registers
+      theRegisterDumpSentToClient = false;
       dumpRegistersCommand();
       break;
 

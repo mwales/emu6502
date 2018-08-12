@@ -45,6 +45,8 @@ execute_test_case test03-bitshifts "f000 -d=0000 -d=0100"
 execute_test_case test04-jumpsret  "f000 -d=0000"
 execute_test_case test05-reginstrs "f000 -d=0000"
 execute_test_case test06-addsub    "f000 -d=0000 -d=0100"
+execute_test_case test07-cmpbeqbne "f000 -d=0000 -d=0100"
+execute_test_case test08-cpxybit   "f000 -d=0000 -d=0100"
 
 echo "All tests completed successfully"
 
