@@ -1125,6 +1125,31 @@ void Cpu6502::handler_rts(OpCodeInfo* oci)
    thePc += lowerAddress;
 }
 
+void Cpu6502::handler_rti(OpCodeInfo* oci)
+{
+   theStackPtr++;
+   uint8_t srVal = emulatorRead(0x0100 + theStackPtr);
+   uint8_t* statusReg = (uint8_t*) &theStatusReg;
+   *statusReg = srVal;
+
+   CPU_DEBUG() << "RTI Handler - Popped SR (" << Utils::toHex8(srVal) << ") from stack";
+
+   theStackPtr++;
+   uint8_t lowerAddress = emulatorRead(0x0100 + theStackPtr);
+   theStackPtr++;
+   uint8_t upperAddress = emulatorRead(0x0100 + theStackPtr);
+
+   thePc = upperAddress << 8;
+   thePc += lowerAddress;
+
+   CPU_DEBUG() << "RTI Handler - Popped PC (" << addressToString(thePc) << ") from stack, now SP ="
+               << Utils::toHex8(theStackPtr);
+
+   thePc -= oci->theNumBytes;
+}
+
+
+
 void Cpu6502::handler_beq(OpCodeInfo* oci)
 {
    if (theStatusReg.theZeroFlag == 1)
@@ -1314,11 +1339,6 @@ void Cpu6502::handler_plp(OpCodeInfo* oci)
 void Cpu6502::handler_anc(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for anc";
-}
-
-void Cpu6502::handler_rti(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for rti";
 }
 
 void Cpu6502::handler_arr(OpCodeInfo* oci)
