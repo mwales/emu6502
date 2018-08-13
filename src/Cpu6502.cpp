@@ -1267,22 +1267,44 @@ void Cpu6502::handler_bcs(OpCodeInfo* oci)
 
 void Cpu6502::handler_pha(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for pha";
+   emulatorWrite(0x0100 + theStackPtr, theAccum);
+   theStackPtr--;
+
+   CPU_DEBUG() << "PHA Handler - Pushed A (" << Utils::toHex8(theAccum) << ") onto stack, not SP="
+               << Utils::toHex8(theStackPtr);
 }
 
 void Cpu6502::handler_pla(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for pla";
+   theStackPtr++;
+   theAccum = emulatorRead(0x0100 + theStackPtr);
+
+
+   CPU_DEBUG() << "PHA Handler - Popped A (" << Utils::toHex8(theAccum) << ") from stack, now SP="
+               << Utils::toHex8(theStackPtr);
+
+   UPDATE_SZ_FLAGS(theAccum);
 }
 
 void Cpu6502::handler_php(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for php";
+   uint8_t* statusRegValue = (uint8_t*) &theStatusReg;
+   emulatorWrite(0x0100 + theStackPtr, *statusRegValue);
+   theStackPtr--;
+
+   CPU_DEBUG() << "PHP Handler - Pushed SR (" << Utils::toHex8(*statusRegValue) << ") onto stack, not SP="
+               << Utils::toHex8(theStackPtr);
 }
 
 void Cpu6502::handler_plp(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for plp";
+   theStackPtr++;
+   uint8_t srVal = emulatorRead(0x0100 + theStackPtr);
+   uint8_t* statusReg = (uint8_t*) &theStatusReg;
+   *statusReg = srVal;
+
+   CPU_DEBUG() << "PLP Handler - Popped SR (" << Utils::toHex8(srVal) << ") from stack, now SP="
+               << Utils::toHex8(theStackPtr);
 }
 
 /********************************************/
