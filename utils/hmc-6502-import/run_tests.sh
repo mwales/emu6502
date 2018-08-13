@@ -48,7 +48,7 @@ execute_test_case test06-addsub        "f000 -d=0000 -d=0100"
 execute_test_case test07-cmpbeqbne     "f000 -d=0000 -d=0100"
 execute_test_case test08-cpxybit       "f000 -d=0000 -d=0100"
 execute_test_case test09-otherbranches "f000 -d=0000 -d=0100"
-
+execute_test_case test10-flaginstrs    "f000 -d=0000"
 
 echo "All tests completed successfully"
 
