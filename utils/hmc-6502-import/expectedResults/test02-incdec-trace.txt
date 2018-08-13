@@ -1,38 +1,38 @@
 TRACE> f000	a9 ff        LDA #$ff                   X=00   Y=00    A=ff    SP=ff  PC=f002    Num Clocks = 0000000000000002    SR=80 = FLG_NEG
-TRACE> f002	a2 00        LDX #$00                   X=00   Y=00    A=ff    SP=ff  PC=f004    Num Clocks = 0000000000000004    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f004	85 90        STA $90                    X=00   Y=00    A=ff    SP=ff  PC=f006    Num Clocks = 0000000000000007    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f006	e6 90        INC $90                    X=00   Y=00    A=ff    SP=ff  PC=f008    Num Clocks = 000000000000000c    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f008	e6 90        INC $90                    X=00   Y=00    A=ff    SP=ff  PC=f00a    Num Clocks = 0000000000000011    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f00a	a5 90        LDA $90                    X=00   Y=00    A=01    SP=ff  PC=f00c    Num Clocks = 0000000000000014    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f00c	a6 90        LDX $90                    X=01   Y=00    A=01    SP=ff  PC=f00e    Num Clocks = 0000000000000017    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f00e	95 90        STA $90,X                  X=01   Y=00    A=01    SP=ff  PC=f010    Num Clocks = 000000000000001b    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f010	f6 90        INC $90,X                  X=01   Y=00    A=01    SP=ff  PC=f012    Num Clocks = 0000000000000021    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f012	b5 90        LDA $90,X                  X=01   Y=00    A=02    SP=ff  PC=f014    Num Clocks = 0000000000000025    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f014	a6 91        LDX $91                    X=02   Y=00    A=02    SP=ff  PC=f016    Num Clocks = 0000000000000028    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f016	9d 90 01     STA $0190,X                X=02   Y=00    A=02    SP=ff  PC=f019    Num Clocks = 000000000000002d    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f019	ee 92 01     INC $0192                  X=02   Y=00    A=02    SP=ff  PC=f01c    Num Clocks = 0000000000000033    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f01c	bd 90 01     LDA $0190,X                X=02   Y=00    A=03    SP=ff  PC=f01f    Num Clocks = 0000000000000037    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f01f	ae 92 01     LDX $0192                  X=03   Y=00    A=03    SP=ff  PC=f022    Num Clocks = 000000000000003b    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f022	9d 90 01     STA $0190,X                X=03   Y=00    A=03    SP=ff  PC=f025    Num Clocks = 0000000000000040    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f025	fe 90 01     INC $0190,X                X=03   Y=00    A=03    SP=ff  PC=f028    Num Clocks = 0000000000000047    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f028	bd 90 01     LDA $0190,X                X=03   Y=00    A=04    SP=ff  PC=f02b    Num Clocks = 000000000000004b    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f02b	ae 93 01     LDX $0193                  X=04   Y=00    A=04    SP=ff  PC=f02e    Num Clocks = 000000000000004f    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f02e	9d 70 01     STA $0170,X                X=04   Y=00    A=04    SP=ff  PC=f031    Num Clocks = 0000000000000054    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f031	de 70 01     DEC $0170,X                X=04   Y=00    A=04    SP=ff  PC=f034    Num Clocks = 000000000000005b    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f034	bd 70 01     LDA $0170,X                X=04   Y=00    A=03    SP=ff  PC=f037    Num Clocks = 000000000000005f    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f037	ae 74 01     LDX $0174                  X=03   Y=00    A=03    SP=ff  PC=f03a    Num Clocks = 0000000000000063    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f03a	9d 70 01     STA $0170,X                X=03   Y=00    A=03    SP=ff  PC=f03d    Num Clocks = 0000000000000068    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f03d	ce 73 01     DEC $0173                  X=03   Y=00    A=03    SP=ff  PC=f040    Num Clocks = 000000000000006e    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f040	bd 70 01     LDA $0170,X                X=03   Y=00    A=02    SP=ff  PC=f043    Num Clocks = 0000000000000072    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f043	ae 73 01     LDX $0173                  X=02   Y=00    A=02    SP=ff  PC=f046    Num Clocks = 0000000000000076    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f046	95 70        STA $70,X                  X=02   Y=00    A=02    SP=ff  PC=f048    Num Clocks = 000000000000007a    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f048	d6 70        DEC $70,X                  X=02   Y=00    A=02    SP=ff  PC=f04a    Num Clocks = 0000000000000080    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f04a	b5 70        LDA $70,X                  X=02   Y=00    A=01    SP=ff  PC=f04c    Num Clocks = 0000000000000084    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f04c	a6 72        LDX $72                    X=01   Y=00    A=01    SP=ff  PC=f04e    Num Clocks = 0000000000000087    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f04e	95 70        STA $70,X                  X=01   Y=00    A=01    SP=ff  PC=f050    Num Clocks = 000000000000008b    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f050	c6 71        DEC $71                    X=01   Y=00    A=01    SP=ff  PC=f052    Num Clocks = 0000000000000090    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f052	c6 71        DEC $71                    X=01   Y=00    A=01    SP=ff  PC=f054    Num Clocks = 0000000000000095    SR=82 = FLG_ZERO | FLG_NEG
-TRACE> f054                                         X=01   Y=00    A=01    SP=ff  PC=f054    Num Clocks = 0000000000000095    SR=82 = FLG_ZERO | FLG_NEG
+TRACE> f002	a2 00        LDX #$00                   X=00   Y=00    A=ff    SP=ff  PC=f004    Num Clocks = 0000000000000004    SR=02 = FLG_ZERO
+TRACE> f004	85 90        STA $90                    X=00   Y=00    A=ff    SP=ff  PC=f006    Num Clocks = 0000000000000007    SR=02 = FLG_ZERO
+TRACE> f006	e6 90        INC $90                    X=00   Y=00    A=ff    SP=ff  PC=f008    Num Clocks = 000000000000000c    SR=02 = FLG_ZERO
+TRACE> f008	e6 90        INC $90                    X=00   Y=00    A=ff    SP=ff  PC=f00a    Num Clocks = 0000000000000011    SR=00 = 
+TRACE> f00a	a5 90        LDA $90                    X=00   Y=00    A=01    SP=ff  PC=f00c    Num Clocks = 0000000000000014    SR=00 = 
+TRACE> f00c	a6 90        LDX $90                    X=01   Y=00    A=01    SP=ff  PC=f00e    Num Clocks = 0000000000000017    SR=00 = 
+TRACE> f00e	95 90        STA $90,X                  X=01   Y=00    A=01    SP=ff  PC=f010    Num Clocks = 000000000000001b    SR=00 = 
+TRACE> f010	f6 90        INC $90,X                  X=01   Y=00    A=01    SP=ff  PC=f012    Num Clocks = 0000000000000021    SR=00 = 
+TRACE> f012	b5 90        LDA $90,X                  X=01   Y=00    A=02    SP=ff  PC=f014    Num Clocks = 0000000000000025    SR=00 = 
+TRACE> f014	a6 91        LDX $91                    X=02   Y=00    A=02    SP=ff  PC=f016    Num Clocks = 0000000000000028    SR=00 = 
+TRACE> f016	9d 90 01     STA $0190,X                X=02   Y=00    A=02    SP=ff  PC=f019    Num Clocks = 000000000000002d    SR=00 = 
+TRACE> f019	ee 92 01     INC $0192                  X=02   Y=00    A=02    SP=ff  PC=f01c    Num Clocks = 0000000000000033    SR=00 = 
+TRACE> f01c	bd 90 01     LDA $0190,X                X=02   Y=00    A=03    SP=ff  PC=f01f    Num Clocks = 0000000000000037    SR=00 = 
+TRACE> f01f	ae 92 01     LDX $0192                  X=03   Y=00    A=03    SP=ff  PC=f022    Num Clocks = 000000000000003b    SR=00 = 
+TRACE> f022	9d 90 01     STA $0190,X                X=03   Y=00    A=03    SP=ff  PC=f025    Num Clocks = 0000000000000040    SR=00 = 
+TRACE> f025	fe 90 01     INC $0190,X                X=03   Y=00    A=03    SP=ff  PC=f028    Num Clocks = 0000000000000047    SR=00 = 
+TRACE> f028	bd 90 01     LDA $0190,X                X=03   Y=00    A=04    SP=ff  PC=f02b    Num Clocks = 000000000000004b    SR=00 = 
+TRACE> f02b	ae 93 01     LDX $0193                  X=04   Y=00    A=04    SP=ff  PC=f02e    Num Clocks = 000000000000004f    SR=00 = 
+TRACE> f02e	9d 70 01     STA $0170,X                X=04   Y=00    A=04    SP=ff  PC=f031    Num Clocks = 0000000000000054    SR=00 = 
+TRACE> f031	de 70 01     DEC $0170,X                X=04   Y=00    A=04    SP=ff  PC=f034    Num Clocks = 000000000000005b    SR=00 = 
+TRACE> f034	bd 70 01     LDA $0170,X                X=04   Y=00    A=03    SP=ff  PC=f037    Num Clocks = 000000000000005f    SR=00 = 
+TRACE> f037	ae 74 01     LDX $0174                  X=03   Y=00    A=03    SP=ff  PC=f03a    Num Clocks = 0000000000000063    SR=00 = 
+TRACE> f03a	9d 70 01     STA $0170,X                X=03   Y=00    A=03    SP=ff  PC=f03d    Num Clocks = 0000000000000068    SR=00 = 
+TRACE> f03d	ce 73 01     DEC $0173                  X=03   Y=00    A=03    SP=ff  PC=f040    Num Clocks = 000000000000006e    SR=00 = 
+TRACE> f040	bd 70 01     LDA $0170,X                X=03   Y=00    A=02    SP=ff  PC=f043    Num Clocks = 0000000000000072    SR=00 = 
+TRACE> f043	ae 73 01     LDX $0173                  X=02   Y=00    A=02    SP=ff  PC=f046    Num Clocks = 0000000000000076    SR=00 = 
+TRACE> f046	95 70        STA $70,X                  X=02   Y=00    A=02    SP=ff  PC=f048    Num Clocks = 000000000000007a    SR=00 = 
+TRACE> f048	d6 70        DEC $70,X                  X=02   Y=00    A=02    SP=ff  PC=f04a    Num Clocks = 0000000000000080    SR=00 = 
+TRACE> f04a	b5 70        LDA $70,X                  X=02   Y=00    A=01    SP=ff  PC=f04c    Num Clocks = 0000000000000084    SR=00 = 
+TRACE> f04c	a6 72        LDX $72                    X=01   Y=00    A=01    SP=ff  PC=f04e    Num Clocks = 0000000000000087    SR=00 = 
+TRACE> f04e	95 70        STA $70,X                  X=01   Y=00    A=01    SP=ff  PC=f050    Num Clocks = 000000000000008b    SR=00 = 
+TRACE> f050	c6 71        DEC $71                    X=01   Y=00    A=01    SP=ff  PC=f052    Num Clocks = 0000000000000090    SR=02 = FLG_ZERO
+TRACE> f052	c6 71        DEC $71                    X=01   Y=00    A=01    SP=ff  PC=f054    Num Clocks = 0000000000000095    SR=80 = FLG_NEG
+TRACE> f054                                         X=01   Y=00    A=01    SP=ff  PC=f054    Num Clocks = 0000000000000095    SR=80 = FLG_NEG
 
 0000    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
 0010    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|

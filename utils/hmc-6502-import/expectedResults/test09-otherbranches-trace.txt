@@ -1,0 +1,74 @@
+TRACE> f000	a9 54        LDA #$54                   X=00   Y=00    A=54    SP=ff  PC=f002    Num Clocks = 0000000000000002    SR=00 = 
+TRACE> f002	85 32        STA $32                    X=00   Y=00    A=54    SP=ff  PC=f004    Num Clocks = 0000000000000005    SR=00 = 
+TRACE> f004	a9 b3        LDA #$b3                   X=00   Y=00    A=b3    SP=ff  PC=f006    Num Clocks = 0000000000000007    SR=80 = FLG_NEG
+TRACE> f006	85 a1        STA $a1                    X=00   Y=00    A=b3    SP=ff  PC=f008    Num Clocks = 000000000000000a    SR=80 = FLG_NEG
+TRACE> f008	a9 87        LDA #$87                   X=00   Y=00    A=87    SP=ff  PC=f00a    Num Clocks = 000000000000000c    SR=80 = FLG_NEG
+TRACE> f00a	85 43        STA $43                    X=00   Y=00    A=87    SP=ff  PC=f00c    Num Clocks = 000000000000000f    SR=80 = FLG_NEG
+TRACE> f00c	a2 a1        LDX #$a1                   X=a1   Y=00    A=87    SP=ff  PC=f00e    Num Clocks = 0000000000000011    SR=80 = FLG_NEG
+TRACE> f00e	10 02        BPL *+02 ; branch_0xf012   X=a1   Y=00    A=87    SP=ff  PC=f010    Num Clocks = 0000000000000014    SR=80 = FLG_NEG
+TRACE> f010	a2 32        LDX #$32                   X=32   Y=00    A=87    SP=ff  PC=f012    Num Clocks = 0000000000000016    SR=00 = 
+TRACE> f012	b4 00        LDY $00,X                  X=32   Y=54    A=87    SP=ff  PC=f014    Num Clocks = 000000000000001a    SR=00 = 
+TRACE> f014	10 04        BPL *+04 ; branch_0xf01a   X=32   Y=54    A=87    SP=ff  PC=f01a    Num Clocks = 000000000000001e    SR=00 = 
+TRACE> f01a	30 02        BMI *+02 ; branch_0xf01e   X=32   Y=54    A=87    SP=ff  PC=f01c    Num Clocks = 0000000000000020    SR=00 = 
+TRACE> f01c	e9 03        SBC #$03                   X=32   Y=54    A=83    SP=ff  PC=f01e    Num Clocks = 0000000000000022    SR=81 = FLG_CARY | FLG_NEG
+TRACE> f01e	30 02        BMI *+02 ; branch_0xf022   X=32   Y=54    A=83    SP=ff  PC=f022    Num Clocks = 0000000000000025    SR=81 = FLG_CARY | FLG_NEG
+TRACE> f022	49 30        EOR #$30                   X=32   Y=54    A=b3    SP=ff  PC=f024    Num Clocks = 0000000000000027    SR=81 = FLG_CARY | FLG_NEG
+TRACE> f024	85 32        STA $32                    X=32   Y=54    A=b3    SP=ff  PC=f026    Num Clocks = 000000000000002a    SR=81 = FLG_CARY | FLG_NEG
+TRACE> f026	75 00        ADC $00,X                  X=32   Y=54    A=67    SP=ff  PC=f028    Num Clocks = 000000000000002e    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f028	50 02        BVC *+02 ; branch_0xf02c   X=32   Y=54    A=67    SP=ff  PC=f02a    Num Clocks = 0000000000000031    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f02a	a9 03        LDA #$03                   X=32   Y=54    A=03    SP=ff  PC=f02c    Num Clocks = 0000000000000033    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f02c	85 54        STA $54                    X=32   Y=54    A=03    SP=ff  PC=f02e    Num Clocks = 0000000000000036    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f02e	b6 00        LDX $00,Y                  X=03   Y=54    A=03    SP=ff  PC=f030    Num Clocks = 000000000000003a    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f030	75 51        ADC $51,X                  X=03   Y=54    A=07    SP=ff  PC=f032    Num Clocks = 000000000000003e    SR=00 = 
+TRACE> f032	50 02        BVC *+02 ; branch_0xf036   X=03   Y=54    A=07    SP=ff  PC=f036    Num Clocks = 0000000000000042    SR=00 = 
+TRACE> f036	75 40        ADC $40,X                  X=03   Y=54    A=8e    SP=ff  PC=f038    Num Clocks = 0000000000000046    SR=80 = FLG_NEG
+TRACE> f038	70 04        BVS *+04 ; branch_0xf03e   X=03   Y=54    A=8e    SP=ff  PC=f03a    Num Clocks = 0000000000000048    SR=80 = FLG_NEG
+TRACE> f03a	99 01 00     STA $0001,Y                X=03   Y=54    A=8e    SP=ff  PC=f03d    Num Clocks = 000000000000004d    SR=80 = FLG_NEG
+TRACE> f03d	65 55        ADC $55                    X=03   Y=54    A=1c    SP=ff  PC=f03f    Num Clocks = 0000000000000050    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f03f	70 02        BVS *+02 ; branch_0xf043   X=03   Y=54    A=1c    SP=ff  PC=f043    Num Clocks = 0000000000000053    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f043	69 f0        ADC #$f0                   X=03   Y=54    A=0d    SP=ff  PC=f045    Num Clocks = 0000000000000055    SR=01 = FLG_CARY
+TRACE> f045	90 04        BCC *+04 ; branch_0xf04b   X=03   Y=54    A=0d    SP=ff  PC=f047    Num Clocks = 0000000000000058    SR=01 = FLG_CARY
+TRACE> f047	85 60        STA $60                    X=03   Y=54    A=0d    SP=ff  PC=f049    Num Clocks = 000000000000005b    SR=01 = FLG_CARY
+TRACE> f049	65 43        ADC $43                    X=03   Y=54    A=95    SP=ff  PC=f04b    Num Clocks = 000000000000005e    SR=80 = FLG_NEG
+TRACE> f04b	90 02        BCC *+02 ; branch_0xf04f   X=03   Y=54    A=95    SP=ff  PC=f04f    Num Clocks = 0000000000000062    SR=80 = FLG_NEG
+TRACE> f04f	65 54        ADC $54                    X=03   Y=54    A=98    SP=ff  PC=f051    Num Clocks = 0000000000000065    SR=80 = FLG_NEG
+TRACE> f051	b0 04        BCS *+04 ; branch_0xf057   X=03   Y=54    A=98    SP=ff  PC=f053    Num Clocks = 0000000000000067    SR=80 = FLG_NEG
+TRACE> f053	69 87        ADC #$87                   X=03   Y=54    A=1f    SP=ff  PC=f055    Num Clocks = 0000000000000069    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f055	a6 60        LDX $60                    X=0d   Y=54    A=1f    SP=ff  PC=f057    Num Clocks = 000000000000006c    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f057	b0 02        BCS *+02 ; branch_0xf05b   X=0d   Y=54    A=1f    SP=ff  PC=f05b    Num Clocks = 000000000000006f    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f05b	95 73        STA $73,X                  X=0d   Y=54    A=1f    SP=ff  PC=f05d    Num Clocks = 0000000000000073    SR=41 = FLG_CARY | FLG_OVFL
+TRACE> f05d                                         X=0d   Y=54    A=1f    SP=ff  PC=f05d    Num Clocks = 0000000000000073    SR=41 = FLG_CARY | FLG_OVFL
+
+0000    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0010    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0020    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0030    00 00 b3 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0040    00 00 00 87 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0050    00 00 00 00 03 8e 00 00  00 00 00 00 00 00 00 00     |................|
+0060    0d 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0070    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0080    1f 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0090    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+00a0    00 b3 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+00b0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+00c0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+00d0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+00e0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+00f0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+
+0100    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0110    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0120    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0130    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0140    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0150    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0160    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0170    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0180    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+0190    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+01a0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+01b0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+01c0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+01d0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+01e0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|
+01f0    00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00     |................|

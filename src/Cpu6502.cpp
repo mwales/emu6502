@@ -360,8 +360,8 @@ void Cpu6502::emulatorWrite(CpuAddress addr, uint8_t val)
 }
 
 /***** HELPER MACROS *****/
-#define UPDATE_SIGN_FLAG(regValue) if(regValue & 0x80) theStatusReg.theSignFlag = 1
-#define UPDATE_ZERO_FLAG(regValue) if(regValue == 0)   theStatusReg.theZeroFlag = 1
+#define UPDATE_SIGN_FLAG(regValue) theStatusReg.theSignFlag = (regValue & 0x80 ? 1 : 0)
+#define UPDATE_ZERO_FLAG(regValue) theStatusReg.theZeroFlag = (regValue == 0 ? 1 : 0)
 
 #define UPDATE_SZ_FLAGS(regValue)   UPDATE_SIGN_FLAG(regValue); UPDATE_ZERO_FLAG(regValue)
 
@@ -390,11 +390,6 @@ void Cpu6502::handler_and(OpCodeInfo* oci)
          theAddrModeExtraClockCycle = 1;
       }
    }
-}
-
-void Cpu6502::handler_bvs(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for bvs";
 }
 
 void Cpu6502::handler_sec(OpCodeInfo* oci)
@@ -475,11 +470,6 @@ void Cpu6502::handler_arr(OpCodeInfo* oci)
 void Cpu6502::handler_rra(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for rra";
-}
-
-void Cpu6502::handler_bvc(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for bvc";
 }
 
 void Cpu6502::handler_sax(OpCodeInfo* oci)
@@ -802,6 +792,108 @@ void Cpu6502::handler_bne(OpCodeInfo* oci)
    }
 }
 
+void Cpu6502::handler_bpl(OpCodeInfo* oci)
+{
+   if (theStatusReg.theSignFlag == 0)
+   {
+      CPU_DEBUG() << "BPL Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BPL Handler - Branch not taken";
+   }
+}
+
+void Cpu6502::handler_bmi(OpCodeInfo* oci)
+{
+   if (theStatusReg.theSignFlag == 1)
+   {
+      CPU_DEBUG() << "BMI Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BMI Handler - Branch not taken";
+   }
+}
+
+void Cpu6502::handler_bvc(OpCodeInfo* oci)
+{
+   if (theStatusReg.theOverflowFlag == 0)
+   {
+      CPU_DEBUG() << "BVC Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BVC Handler - Branch not taken";
+   }
+}
+
+void Cpu6502::handler_bvs(OpCodeInfo* oci)
+{
+   if (theStatusReg.theOverflowFlag == 1)
+   {
+      CPU_DEBUG() << "BVS Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BVS Handler - Branch not taken";
+   }
+}
+
+void Cpu6502::handler_bcc(OpCodeInfo* oci)
+{
+   if (theStatusReg.theCarryFlag == 0)
+   {
+      CPU_DEBUG() << "BCC Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BCC Handler - Branch not taken";
+   }
+}
+
+void Cpu6502::handler_bcs(OpCodeInfo* oci)
+{
+   if (theStatusReg.theCarryFlag == 1)
+   {
+      CPU_DEBUG() << "BCS Handler - Branch taken to " << addressToString(theOperandAddr);
+
+      // Delay of +1 if branch taken, +2 if crossing boundary
+      theAddrModeExtraClockCycle = ( thePageBoundaryCrossedFlag ? 2 : 1);
+
+      thePc = theOperandAddr;
+   }
+   else
+   {
+      CPU_DEBUG() << "BCS Handler - Branch not taken";
+   }
+}
+
 void Cpu6502::handler_ldy(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "LDY Handler";
@@ -843,11 +935,6 @@ void Cpu6502::handler_tax(OpCodeInfo* oci)
 void Cpu6502::handler_pha(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for pha";
-}
-
-void Cpu6502::handler_bmi(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for bmi";
 }
 
 void Cpu6502::handler_rla(OpCodeInfo* oci)
@@ -1073,15 +1160,8 @@ void Cpu6502::handler_shy(OpCodeInfo* oci)
    CPU_DEBUG() << "Empty handler for shy";
 }
 
-void Cpu6502::handler_bpl(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for bpl";
-}
 
-void Cpu6502::handler_bcc(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for bcc";
-}
+
 
 void Cpu6502::handler_cmp(OpCodeInfo* oci)
 {
@@ -1285,10 +1365,6 @@ void Cpu6502::handler_sty(OpCodeInfo* oci)
    emulatorWrite(theOperandAddr, theRegY);
 }
 
-void Cpu6502::handler_bcs(OpCodeInfo* oci)
-{
-   CPU_DEBUG() << "Empty handler for bcs";
-}
 
 
 
