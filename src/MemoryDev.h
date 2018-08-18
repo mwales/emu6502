@@ -3,7 +3,12 @@
 
 #include<iostream>
 #include<stdint.h>
+#include<vector>
 #include "Cpu6502Defines.h"
+
+class MemoryDev;
+
+typedef MemoryDev* (*MemoryDeviceConstructor)(std::string instanceName);
 
 /**
  * Defines the interface and common functionality for all memory based subsystems of the emulator
@@ -11,6 +16,10 @@
 class MemoryDev
 {
 public:
+   MemoryDev(std::string const name);
+
+   virtual ~MemoryDev();
+
    std::string getName();
 
    virtual uint8_t read8(CpuAddress offset) = 0;
@@ -24,6 +33,23 @@ public:
    virtual CpuAddress getAddress();
 
    virtual CpuAddress getSize();
+
+   // Configuration Methods
+
+   virtual bool isFullyConfigured();
+
+   virtual std::vector<std::string> getIntConfigParams();
+
+   virtual std::vector<std::string> getStringConfigParams();
+
+   virtual void setIntConfigValue(std::string paramName, int value);
+   virtual void setStringConfigValue(std::string paramName, std::string value);
+
+   /**
+    * This should be called after configuration complete.  Initializes the memory to starting
+    * conditions
+    */
+   virtual void resetMemory() = 0;
 
    bool isAbsAddressValid(CpuAddress addr , bool haltOnError = true);
 

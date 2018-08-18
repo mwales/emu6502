@@ -9,6 +9,7 @@
 #include "MemoryController.h"
 #include "Cpu6502.h"
 #include "Logger.h"
+#include "MemoryConfig.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
@@ -17,11 +18,12 @@ void printUsage(char* appName)
 {
    std::cout << appName << " is 6502 emulator" << std::endl;
    std::cout << appName << " -f filename -b baseaddr [-d port] [-j addr] [-h]" << std::endl;
-   std::cout << "  -f --file       Filename of the file to disassemble" << std::endl;
+   std::cout << "  -f --file       Filename of binary data to load" << std::endl;
    std::cout << "  -b --baseaddr   Base address of the file to disassemble" << std::endl;
    std::cout << "  -d --debugger   Enable remote debugger (port number)" << std::endl;
    std::cout << "  -j --jump       Address to jump to when emulation starts" << std::endl;
    std::cout << "  -h --help       Show this help" << std::endl;
+   std::cout << "  -c --config     Configuration file" << std::endl;
    std::cout << std::endl;
 }
 
@@ -65,6 +67,7 @@ int main(int argc, char* argv[])
 
    // Default settings
    std::string filename   = "";
+   std::string configFilename = "";
    CpuAddress baseAddress = 0x0;
    bool baseAddressDefined = false;
    uint16_t debuggerPort = 0;
@@ -77,7 +80,7 @@ int main(int argc, char* argv[])
 
    while(true)
    {
-      char optChar = getopt_long(argc, argv, "f:b:j:d:h", long_options, &optIndex);
+      char optChar = getopt_long(argc, argv, "c:f:b:j:d:h", long_options, &optIndex);
 
       if (optChar == -1)
       {
@@ -123,6 +126,11 @@ int main(int argc, char* argv[])
          return 0;
       }
 
+      case 'c':
+         LOG_DEBUG() << "Config File:" << optarg;
+         configFilename = optarg;
+         break;
+
       default:
          std::cerr << "Invalid argument.  Use -h or --help to see usage" << std::endl;
       }
@@ -140,29 +148,77 @@ int main(int argc, char* argv[])
       return 1;
    }
 
-   LOG_DEBUG() << "Loading " << filename << " at address " << addressToString(baseAddress);
+   MemoryController* memControl = new MemoryController();
+   RomMemory* optionalRomMemory = nullptr;
 
-   RomMemory programData(filename, baseAddress);
+   if ( (filename != "") && baseAddressDefined)
+   {
+      // The user has specified they want to load a file directly into memory
+      optionalRomMemory = new RomMemory("User_CLI_Optional");
+      optionalRomMemory->setIntConfigValue("startAddress", baseAddress);
+      optionalRomMemory->setStringConfigValue("romFilename", filename);
 
-   RamMemory ramData(0, 0x2000);
+      if (optionalRomMemory->isFullyConfigured())
+      {
+         LOG_DEBUG() << "Adding optional CLI ROM memory to the memory controller";
+         optionalRomMemory->resetMemory();
+         memControl->addNewDevice(optionalRomMemory);
+      }
+      else
+      {
+         LOG_WARNING() << "Error adding the optional CLI ROM memory";
+      }
+   }
 
-   MemoryController memControl;
-   memControl.addNewDevice( (MemoryDev*) &programData);
-   memControl.addNewDevice( (MemoryDev*) &ramData);
+   if (configFilename.length() != 0)
+   {
+      MemoryConfig memConfig(memControl);
+
+      memConfig.registerMemoryDevice(RamMemory::getTypeName(), RamMemory::getMDC());
+      memConfig.registerMemoryDevice(RomMemory::getTypeName(), RomMemory::getMDC());
+
+      std::string errorStr;
+      std::string configData = Utils::loadFile(configFilename, errorStr);
+
+      if (errorStr.length() != 0)
+      {
+         LOG_WARNING() << "Error loading file " << configFilename << ": " << errorStr;
+      }
+      else
+      {
+         // LOG_DEBUG() << "Here lies the config data\n" << configData;
+         memConfig.parseConfig(configData);
+      }
+
+      if (memConfig.isStartAddressSet())
+      {
+         executionEntryPoint = memConfig.getStartAddress();
+         LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint << " from config";
+      }
+   }
 
    constructCpuGlobals();
 
+   Cpu6502 emu(memControl);
+
+   if (debuggerEnabled)
+      emu.enableDebugger(debuggerPort);
+
+   if (!jumpAddressSet)
    {
-      Cpu6502 emu(&memControl);
-
-      if (debuggerEnabled)
-         emu.enableDebugger(debuggerPort);
-
-       if (!jumpAddressSet)
-          executionEntryPoint = baseAddress;
-
-      emu.start(executionEntryPoint);
+      executionEntryPoint = baseAddress;
+      LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint << " from CLI options";
    }
+
+   // Start of emulation
+   emu.start(executionEntryPoint);
+
+   // Emulation complete, cleanup
+
+   delete memControl;
+
+   if(optionalRomMemory != nullptr)
+      delete optionalRomMemory;
 
    shutdownSdl();
 

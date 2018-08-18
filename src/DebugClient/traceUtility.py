@@ -44,7 +44,7 @@ def main(args):
 
 
     print("Going to spawn the emulator process")
-    spawnArgs = [ '../build/emu6502', "-f", binaryFile, "-b", hex(loadAddress), "-d", "6502"]
+    spawnArgs = [ '../build/emu6502', "-f", binaryFile, "-b", hex(loadAddress), "-d", "6502", "-c", "../configs/emudev.json"]
 
     emulatorStdOut = open("emulator_stdout.txt", "w+")
     emulatorStdErr = open("emulator_stderr.txt", "w+")

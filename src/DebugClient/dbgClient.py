@@ -72,12 +72,22 @@ def hexDump(dataAddr, data, numBytes):
 
 
 def main(argv):
-    if (len(argv) != 3):
-        print("Usage:  {} ip port".format(argv[0]))
-        return
+    # Defaults
+    ipAddress = "127.0.0.1"
+    portNum = 6502
 
-    ipAddress = argv[1]
-    portNum = int(argv[2])
+    for singleArg in argv:
+        if (singleArg.startswith("--ip=")):
+            ipAddress = singleArg[5:]
+            argv.remove(singleArg)
+            continue
+        if (singleArg.startswith("--port=")):
+            portNum = int(singleArg[7:])
+            argv.remove(singleArg)
+            continue
+        if ( (singleArg == "--help") or (singleArg == "-h") ):
+            print("Usage:  {} --ip=127.0.0.1 --port=6502".format(argv[0]))
+            return
 
     print("Attempting to connect to debug server {}:{}".format(ipAddress, portNum))
 
@@ -89,8 +99,6 @@ def main(argv):
         #return
 
     # Pop off the first 2 args, or cmd2 will try to parse them
-    sys.argv.pop(0)
-    sys.argv.pop(0)
 
     dc = DbgClient(s)
     dc.cmdloop()

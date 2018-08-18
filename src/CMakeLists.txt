@@ -16,7 +16,9 @@ set(EMULAT_FILES Cpu6502.cpp
                  DebugServer.cpp
                  DebuggerState.cpp
                  RamMemory.cpp
-                 EmuMain.cpp)
+                 EmuMain.cpp
+		 MemoryConfig.cpp
+		 cjson/cJSON.c)
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 
@@ -31,15 +33,15 @@ find_package(SDL2 REQUIRED)
 
 set(SDL2_net_LIBRARIES "-lSDL2_net")
 
+target_compile_definitions(emu6502 PRIVATE SDL_INCLUDED)
+
 target_link_libraries(emu6502 ${SDL2_LIBRARIES})
 target_link_libraries(emu6502 ${SDL2_net_LIBRARIES})
 
 # Modern C++ support
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --std=c++11 -Wall")
 
-
 MESSAGE("Compiler flags=${CMAKE_CXX_FLAGS}")
-
 
 
 

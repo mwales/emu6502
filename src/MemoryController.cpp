@@ -96,6 +96,16 @@ std::vector<MemoryRange> MemoryController::getOrderedRangeList()
    return retVal;
 }
 
+void MemoryController::resetAll()
+{
+   LOG_DEBUG() << "Reseting all memory devices";
+
+   for(auto md: theDevices)
+   {
+      md->resetMemory();
+   }
+}
+
 bool MemoryController::doRangesOverlap(MemoryRange dev1, MemoryRange dev2)
 {
    // [ dev1 ]

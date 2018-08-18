@@ -2,19 +2,25 @@
 #define RAMMEMORY_H
 
 #include "MemoryDev.h"
+#include <iostream>
 
 /**
- * A memory device that is initialized to all zeros.  The emulator Can read and
+ * A memory device that is initialized to all zeros.  The emulator can read and
  * write from it.
  */
 class RamMemory : public MemoryDev
 {
 public:
-   RamMemory(CpuAddress address, uint16_t size);
+   // Construction methods
 
-   ~RamMemory();
+   RamMemory(std::string name);
 
-   void setName(std::string name);
+   static MemoryDeviceConstructor getMDC();
+   static std::string getTypeName();
+
+   virtual ~RamMemory();
+
+   // Access methods
 
    virtual uint8_t read8(CpuAddress absAddr);
 
@@ -24,7 +30,22 @@ public:
 
    virtual bool write16(CpuAddress absAddr, uint16_t val);
 
+   // Configuration methods
+
+   virtual bool isFullyConfigured();
+
+   virtual std::vector<std::string> getIntConfigParams();
+
+   virtual std::vector<std::string> getStringConfigParams();
+
+   virtual void setIntConfigValue(std::string paramName, int value);
+   virtual void setStringConfigValue(std::string paramName, std::string value);
+
+   virtual void resetMemory();
+
 protected:
+
+   int theConfigFlags;
 
    uint8_t* theData;
 };

@@ -26,6 +26,8 @@ public:
    static uint16_t parseUInt16(std::string userInput, bool* success = nullptr);
    static uint32_t parseUInt32(std::string userInput, bool* success = nullptr);
 
+   static std::string loadFile(std::string& name, std::string& errorOut);
+
 
 protected:
 

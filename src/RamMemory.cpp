@@ -3,19 +3,36 @@
 
 #include "Logger.h"
 
-RamMemory::RamMemory(CpuAddress address, uint16_t size):
-   theData(0)
+#ifdef RAM_TRACE
+   #define RAM_DEBUG    LOG_DEBUG
+   #define RAM_WARNING  LOG_WARNING
+#else
+   #define RAM_DEBUG    if(0) LOG_DEBUG
+   #define RAM_WARNING  if(0) LOG_WARNING
+#endif
+
+// Static methods
+std::string RamMemory::getTypeName()
 {
-   theAddress = address;
-   theName = "RAM";
-   theSize = size;
+   return "RAM";
+}
 
-   theData = new uint8_t[theSize];
+MemoryDev* ramDeviceConstructor(std::string name)
+{
+   return new RamMemory(name);
+}
 
-   memset(theData, 0, theSize);
+MemoryDeviceConstructor RamMemory::getMDC()
+{
+   return ramDeviceConstructor;
+}
 
-   LOG_DEBUG() << "RAM INITIALIZED: " << theSize << " bytes "
-               << addressToString(theAddress) << "-" << addressToString(theAddress + theSize);
+RamMemory::RamMemory(std::string name):
+   MemoryDev(name),
+   theConfigFlags(0),
+   theData(nullptr)
+{
+   RAM_DEBUG() << "Created a RAM device: " << name;
 }
 
 RamMemory::~RamMemory()
@@ -25,11 +42,6 @@ RamMemory::~RamMemory()
       delete[] theData;
       theData = 0;
    }
-}
-
-void RamMemory::setName(std::string name)
-{
-   theName = name;
 }
 
 uint8_t RamMemory::read8(CpuAddress absAddr)
@@ -76,4 +88,66 @@ bool RamMemory::write16(CpuAddress absAddr, uint16_t val)
    return true;
 }
 
+// RAM configuration flags
+#define RAM_ADDR_CONFIG 0x01
+#define RAM_SIZE_CONFIG 0x02
+#define RAM_CONFIG_DONE (RAM_ADDR_CONFIG | RAM_SIZE_CONFIG)
 
+bool RamMemory::isFullyConfigured()
+{
+   return (theConfigFlags == RAM_CONFIG_DONE);
+}
+
+std::vector<std::string> RamMemory::getIntConfigParams()
+{
+   std::vector<std::string> retVal;
+   retVal.push_back("startAddress");
+   retVal.push_back("size");
+   return retVal;
+}
+
+std::vector<std::string> RamMemory::getStringConfigParams()
+{
+   std::vector<std::string> retVal;
+   return retVal;
+}
+
+void RamMemory::setIntConfigValue(std::string paramName, int value)
+{
+   if (paramName == "startAddress")
+   {
+      theAddress = value;
+      theConfigFlags |= RAM_ADDR_CONFIG;
+   }
+
+   if (paramName == "size")
+   {
+      theSize = value;
+      theConfigFlags |= RAM_SIZE_CONFIG;
+   }
+}
+
+void RamMemory::setStringConfigValue(std::string paramName, std::string value)
+{
+   // Purposely empty
+}
+
+void RamMemory::resetMemory()
+{
+   // If the object is completely configured, initialize itself properly
+   if (isFullyConfigured())
+   {
+      if (theData != nullptr)
+      {
+         LOG_WARNING() << "Reconfiguring RAM that was already initialized once";
+         delete[] theData;
+      }
+
+      theData = new uint8_t[theSize];
+      memset(theData, 0, theSize);
+
+      LOG_DEBUG() << "RAM INITIALIZED: " << theSize << " bytes "
+                  << addressToString(theAddress) << "-"
+                  << addressToString(theAddress + theSize);
+   }
+}

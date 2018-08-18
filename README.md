@@ -147,6 +147,14 @@ cmake ../
 make -j8
 ```
 
+### Dependencies
+
+* cJSON - MIT License - Dave Gamble - Source is included in my project and will
+  be built automatically.  This utility is for parsing JSON files
+* Catch2 - Boost License (It's only used for testing, not in the final binaries).
+  Very easy to use C++ unit testing framework
+* HMC-6502 - BSD License - I used some of the test roms for unit testing
+
 ## Disassembler
 
 This program can disassemble a single 64K ROM Image.  The filename of the binary and the base
@@ -216,4 +224,34 @@ Commands for the emulator's debugger
 * LoadState(filename) - Prefix RAM indicates save in memory based dictionary
 * MemDev(ioctl, numBytes, dataBuffer) - Who knows what commands we will need these
      these things to support
+
+### Configuration File
+
+During testing  and development of the emulator, I will probably need to configure
+different memory regions and periphereals depending on what I'm trying to accomplish.
+I'm going to try to have this as a configuration for the emulator, with some built in
+configuration for popular systems when the emulator is complete.
+
+Example / template configuration file
+
+```json
+{
+	"configName": "Emulator Development",
+	"devices": [
+		{
+			"type":"RAM",
+			"instanceName": "Main RAM",
+			"startAddress": 0,
+			"size": 8192
+		},
+		{
+			"type": "ROM",
+			"instanceName": "Program Data",
+			"startAddress": 61440
+		}
+	],
+	"startAddress": 61440
+}
+```
+
 

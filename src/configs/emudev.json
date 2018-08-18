@@ -1,0 +1,14 @@
+{
+	"configName": "Emulator Development",
+	"devices": [
+		{
+			"type":"RAM",
+			"instanceName": "Main RAM",
+			"startAddress": 0,
+			"size": 8192
+		}
+	],
+	"startAddress": 61440
+
+}
+

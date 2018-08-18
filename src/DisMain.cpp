@@ -114,7 +114,10 @@ int main(int argc, char* argv[])
 
    constructCpuGlobals();
 
-   RomMemory programData(filename, baseAddress);
+   RomMemory programData("Binary ROM");
+   programData.setIntConfigValue("startAddress", baseAddress);
+   programData.setStringConfigValue("romFilename", filename);
+   programData.resetMemory();
 
    MemoryController memControl;
    memControl.addNewDevice( (MemoryDev*) &programData);

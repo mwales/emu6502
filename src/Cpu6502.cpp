@@ -14,7 +14,7 @@
    #define CPU_WARNING  LOG_WARNING
 #else
    #define CPU_DEBUG    if(0) LOG_DEBUG
-   #define CPU_WARNING  if(0) CPU_WARNING LOG_WARNING
+   #define CPU_WARNING  if(0) LOG_WARNING
 #endif
 
 #ifdef ADDR_MODE_TRACE

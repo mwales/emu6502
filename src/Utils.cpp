@@ -1,5 +1,11 @@
 #include "Utils.h"
 
+#ifdef SDL_INCLUDED
+   #include <SDL2/SDL.h>
+   #include <SDL2/SDL_rwops.h>
+#endif
+
+
 Utils::Utils()
 {
 
@@ -98,3 +104,62 @@ uint32_t Utils::parseUInt32(std::string userInput, bool* success)
 
    return val;
 }
+
+#ifdef SDL_INCLUDED
+
+   std::string Utils::loadFile(std::string& name, std::string& errorOut)
+   {
+      std::string retVal;
+
+      SDL_RWops* f = SDL_RWFromFile(name.c_str(), "r");
+
+      if (f == NULL)
+      {
+         errorOut = SDL_GetError();
+         return retVal;
+      }
+
+      int fileSize = SDL_RWsize(f);
+      if (fileSize == -1)
+      {
+         errorOut = "Error getting the file size: ";
+         errorOut += SDL_GetError();
+         SDL_RWclose(f);
+         return retVal;
+      }
+
+      retVal.reserve(fileSize);
+
+      char buf[4097];
+      int bytesToRead = fileSize;
+      while(bytesToRead)
+      {
+         int bytesToReadIntoBuf = 4096;
+         if ( bytesToReadIntoBuf > bytesToRead)
+            bytesToReadIntoBuf = bytesToRead;
+
+         int numBytes = SDL_RWread(f, buf, 1, bytesToReadIntoBuf);
+
+         if (numBytes == 0)
+            break;
+
+         buf[numBytes] = 0;
+         retVal += buf;
+
+         bytesToRead -= numBytes;
+      }
+
+      SDL_RWclose(f);
+      return retVal;
+   }
+
+#else
+
+   std::string Utils::loadFile(std::string&  name, std::string& errorOut)
+   {
+      errorOut = "Utils::loadFile not implemented for non-SDL builds";
+      return "";
+   }
+
+
+#endif
