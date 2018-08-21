@@ -6,6 +6,7 @@
 #include<getopt.h>
 #include "RomMemory.h"
 #include "RamMemory.h"
+#include "UartDevice.h"
 #include "MemoryController.h"
 #include "Cpu6502.h"
 #include "Logger.h"
@@ -136,13 +137,6 @@ int main(int argc, char* argv[])
       }
    }
 
-   if ( (filename == "") || (!baseAddressDefined) )
-   {
-      LOG_WARNING() << "Filename and base address are required parameters!";
-      printUsage(argv[0]);
-      return 1;
-   }
-
    if (!initializeSdl())
    {
       return 1;
@@ -176,6 +170,7 @@ int main(int argc, char* argv[])
 
       memConfig.registerMemoryDevice(RamMemory::getTypeName(), RamMemory::getMDC());
       memConfig.registerMemoryDevice(RomMemory::getTypeName(), RomMemory::getMDC());
+      memConfig.registerMemoryDevice(UartDevice::getTypeName(), UartDevice::getMDC());
 
       std::string errorStr;
       std::string configData = Utils::loadFile(configFilename, errorStr);
@@ -204,7 +199,7 @@ int main(int argc, char* argv[])
    if (debuggerEnabled)
       emu.enableDebugger(debuggerPort);
 
-   if (!jumpAddressSet)
+   if (jumpAddressSet)
    {
       executionEntryPoint = baseAddress;
       LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint << " from CLI options";

@@ -73,7 +73,6 @@ void DebuggerState::haltEmulator()
 {
    SDL_SemWait(theLock);
 
-   theHaltFired = false;
    theStepCount = 0;
 
    SDL_SemPost(theLock);

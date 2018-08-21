@@ -17,8 +17,8 @@
 
 MemoryConfig::MemoryConfig(MemoryController* mc):
    theMemoryController(mc),
-   theStartAddress(0xfffe),
-   theStartAddressSet(false)
+   theStartAddressSet(false),
+   theStartAddress(0xfffe)
 {
    // Empty
 }
