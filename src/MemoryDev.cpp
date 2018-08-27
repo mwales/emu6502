@@ -5,7 +5,8 @@
 MemoryDev::MemoryDev(std::string name):
    theAddress(0),
    theSize(0),
-   theName(name)
+   theName(name),
+   theMemController(nullptr)
 {
    // Purposely blank
 }
@@ -13,6 +14,11 @@ MemoryDev::MemoryDev(std::string name):
 MemoryDev::~MemoryDev()
 {
    // Purposely blank
+}
+
+void MemoryDev::setMemoryController(MemoryController* mc)
+{
+    theMemController = mc;
 }
 
 std::string MemoryDev::getName()
@@ -62,7 +68,7 @@ std::string MemoryDev::getDebugString()
    retVal += " ~ ";
    retVal += theName;
    retVal += " ~ ";
-   retVal += addressToString(theAddress + theSize);
+   retVal += addressToString(theAddress + theSize - 1);
    retVal += "]";
 
    return retVal;

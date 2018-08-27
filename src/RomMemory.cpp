@@ -170,9 +170,11 @@ void RomMemory::resetMemory()
          return;
       }
 
-      if (sizeStatus > (UINT16_MAX - theAddress))
+      if (sizeStatus > (UINT16_MAX - theAddress + 1))
       {
-         ROM_WARNING() << "ROM INIT ERROR: ROM file will not fit in the memory region";
+         ROM_WARNING() << "ROM INIT ERROR: ROM file will not fit in the memory region.  Space ="
+                       << Utils::toHex16(UINT16_MAX - theAddress + 1) << ", ROM size = "
+                       << Utils::toHex16(sizeStatus);
          close(fd);
          return;
       }
@@ -206,6 +208,6 @@ void RomMemory::resetMemory()
       }
 
       ROM_DEBUG() << "ROM INITIALIZED: " << theRomFile << " (" << theSize << " bytes) "
-                  << addressToString(theAddress) << "-" << addressToString(theAddress + theSize);
+                  << addressToString(theAddress) << "-" << addressToString(theAddress + theSize -1);
       close(fd);
 }

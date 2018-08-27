@@ -19,6 +19,8 @@ set(EMULAT_FILES Cpu6502.cpp
                  EmuMain.cpp
 		 MemoryConfig.cpp
 		 UartDevice.cpp
+		 MirrorMemory.cpp
+		 NesRom.cpp
 		 cjson/cJSON.c)
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)

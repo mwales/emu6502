@@ -40,7 +40,7 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
 {
    theMemoryController = ctrlr;
 
-   memset(&theStatusReg, 0, sizeof(StatusReg));
+   theStatusReg.theWholeRegister = 0;
 }
 
 Cpu6502::~Cpu6502()
@@ -313,9 +313,7 @@ uint8_t Cpu6502::getStackPointer()
 
 uint8_t Cpu6502::getStatusReg()
 {
-   uint8_t retVal;
-   memcpy(&retVal, &theStatusReg, sizeof(StatusReg));
-   return retVal;
+   return theStatusReg.theWholeRegister;
 }
 
 uint64_t Cpu6502::getInstructionCount()
@@ -1129,8 +1127,7 @@ void Cpu6502::handler_rti(OpCodeInfo* oci)
 {
    theStackPtr++;
    uint8_t srVal = emulatorRead(0x0100 + theStackPtr);
-   uint8_t* statusReg = (uint8_t*) &theStatusReg;
-   *statusReg = srVal;
+   theStatusReg.theWholeRegister = srVal;
 
    CPU_DEBUG() << "RTI Handler - Popped SR (" << Utils::toHex8(srVal) << ") from stack";
 
@@ -1313,23 +1310,20 @@ void Cpu6502::handler_pla(OpCodeInfo* oci)
 
 void Cpu6502::handler_php(OpCodeInfo* oci)
 {
-   uint8_t* statusRegValue = (uint8_t*) &theStatusReg;
-   emulatorWrite(0x0100 + theStackPtr, *statusRegValue);
+   emulatorWrite(0x0100 + theStackPtr, theStatusReg.theWholeRegister);
    theStackPtr--;
 
-   CPU_DEBUG() << "PHP Handler - Pushed SR (" << Utils::toHex8(*statusRegValue) << ") onto stack, not SP="
-               << Utils::toHex8(theStackPtr);
+   CPU_DEBUG() << "PHP Handler - Pushed SR (" << Utils::toHex8(theStatusReg.theWholeRegister)
+               << ") onto stack, not SP=" << Utils::toHex8(theStackPtr);
 }
 
 void Cpu6502::handler_plp(OpCodeInfo* oci)
 {
    theStackPtr++;
-   uint8_t srVal = emulatorRead(0x0100 + theStackPtr);
-   uint8_t* statusReg = (uint8_t*) &theStatusReg;
-   *statusReg = srVal;
+   theStatusReg.theWholeRegister = emulatorRead(0x0100 + theStackPtr);
 
-   CPU_DEBUG() << "PLP Handler - Popped SR (" << Utils::toHex8(srVal) << ") from stack, now SP="
-               << Utils::toHex8(theStackPtr);
+   CPU_DEBUG() << "PLP Handler - Popped SR (" << Utils::toHex8(theStatusReg.theWholeRegister)
+               << ") from stack, now SP=" << Utils::toHex8(theStackPtr);
 }
 
 /********************************************/
@@ -1438,7 +1432,35 @@ void Cpu6502::handler_isc(OpCodeInfo* oci)
 
 void Cpu6502::handler_brk(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for brk";
+   CPU_DEBUG() << "BRK Handler";
+
+   // due to behavior of rts on 6502, the returns address has 1 byte subtracted
+   uint16_t addressToPush = thePc + oci->theNumBytes - 1;
+
+   uint8_t addressUpper = ((addressToPush >> 8) & 0x00ff);
+   uint8_t addressLower = addressToPush & 0x00ff;
+
+   if (theStackPtr == 0x0101)
+   {
+      // We are going to overflow the stack, wtg n00b
+      LOG_WARNING() << "6502 stack overflow @ addr " << addressToString(thePc)
+                    << " from a BRK instruction";
+   }
+
+   emulatorWrite(0x0100 + theStackPtr, addressUpper);
+   theStackPtr--;
+   emulatorWrite(0x0100 + theStackPtr, addressLower);
+   theStackPtr--;
+
+   emulatorWrite(0x0100 + theStackPtr, theStatusReg.theWholeRegister);
+
+   CPU_DEBUG() << "BRK pushed " << Utils::toHex8(addressUpper) << ", " << Utils::toHex8(addressLower)
+               << ", " << Utils::toHex8(theStatusReg.theWholeRegister);
+
+   theStatusReg.theBreakpointFlag = 1;
+
+   // This likely needs to be modified because the decoder is going to increment PC after this
+   thePc = (emulatorRead(0xffff) << 8) + emulatorRead(0xfffe);
 }
 
 

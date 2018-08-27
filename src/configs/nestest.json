@@ -1,0 +1,24 @@
+{
+	"configName": "Emulator Development",
+	"startAddress": 49152,
+	"devices": [
+		{
+			"type":"RAM",
+			"instanceName": "Main RAM",
+			"startAddress": 0,
+			"size": 2048
+		},
+		{
+			"type": "MirrorMemory",
+			"instanceName": "RAM Mirror",
+			"startAddress": 2048,
+			"size": 6144,
+			"originalMemoryAddress": 0
+		},
+		{
+			"type": "iNES",
+			"instanceName": "nestest",
+			"romFilename": "../test/kevtris_nestest/test_src_files/nestest.nes"
+		}	] 
+}
+

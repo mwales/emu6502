@@ -1,0 +1,31 @@
+{
+	"configName": "Emulator Development",
+	"startAddress": 49152,
+	"devices": [
+		{
+			"type":"RAM",
+			"instanceName": "Main RAM",
+			"startAddress": 0,
+			"size": 49152
+		},
+		{
+			"type": "ROM",
+			"instanceName": "ehBASIC Upper ROM",
+			"startAddress": 49152,
+			"romFilename": "../test/ehbasic/ehbasic_top_c000.bin" 
+		},
+		{
+			"type": "UART",
+			"instanceName": "Network UART",
+			"portNumber": 8123,
+			"startAddress": 61440
+		},
+       		{
+			"type": "ROM",
+			"instanceName": "ehBASIC Lower IRQ ROM",
+			"startAddress": 65408,
+			"romFilename": "../test/ehbasic/ehbasic_bottom_ff80.bin"
+		}	]
+
+}
+

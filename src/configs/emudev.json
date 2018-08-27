@@ -6,6 +6,12 @@
 			"instanceName": "Main RAM",
 			"startAddress": 0,
 			"size": 8192
+		},
+		{
+			"type":"RAM",
+			"instanceName": "Interrupt Vector RAM",
+			"startAddress": 65280,
+			"size": 256
 		}
 	],
 	"startAddress": 61440

@@ -175,6 +175,7 @@ void MemoryConfig::parseSingleDevice(cJSON* j)
    if (md->isFullyConfigured())
    {
       CFG_DEBUG() << "Device " << instanceName << " fully configured, adding to memory controller";
+      md->setMemoryController(theMemoryController);
       md->resetMemory();
       theMemoryController->addNewDevice(md);
    }

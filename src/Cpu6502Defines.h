@@ -41,17 +41,20 @@ enum AddressMode6502
 #define FLG_OVFL 0x40
 #define FLG_NEG  0x80
 
-typedef struct StatusRegStruct
+typedef union StatusRegUnion
 {
-   uint8_t theCarryFlag:1;
-   uint8_t theZeroFlag:1;
-   uint8_t theInterruptFlag:1;
-   uint8_t theBCDFlag:1;
-   uint8_t theBreakpointFlag:1;
-   uint8_t theNotUsedFlag:1;
-   uint8_t theOverflowFlag:1;
-   uint8_t theSignFlag:1;
-
+   uint8_t theWholeRegister;
+   struct
+   {
+       uint8_t theCarryFlag:1;
+       uint8_t theZeroFlag:1;
+       uint8_t theInterruptFlag:1;
+       uint8_t theBCDFlag:1;
+       uint8_t theBreakpointFlag:1;
+       uint8_t theNotUsedFlag:1;
+       uint8_t theOverflowFlag:1;
+       uint8_t theSignFlag:1;
+    };
 } StatusReg;
 
 

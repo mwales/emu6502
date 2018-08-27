@@ -148,6 +148,6 @@ void RamMemory::resetMemory()
 
       LOG_DEBUG() << "RAM INITIALIZED: " << theSize << " bytes "
                   << addressToString(theAddress) << "-"
-                  << addressToString(theAddress + theSize);
+                  << addressToString(theAddress + theSize - 1);
    }
 }

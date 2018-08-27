@@ -1,12 +1,17 @@
 #include <iostream>
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<getopt.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <getopt.h>
+
+// Memory devices
+#include "NesRom.h"
 #include "RomMemory.h"
 #include "RamMemory.h"
 #include "UartDevice.h"
+#include "MirrorMemory.h"
+
 #include "MemoryController.h"
 #include "Cpu6502.h"
 #include "Logger.h"
@@ -168,9 +173,11 @@ int main(int argc, char* argv[])
    {
       MemoryConfig memConfig(memControl);
 
-      memConfig.registerMemoryDevice(RamMemory::getTypeName(), RamMemory::getMDC());
-      memConfig.registerMemoryDevice(RomMemory::getTypeName(), RomMemory::getMDC());
-      memConfig.registerMemoryDevice(UartDevice::getTypeName(), UartDevice::getMDC());
+      memConfig.registerMemoryDevice(RamMemory::getTypeName(),    RamMemory::getMDC());
+      memConfig.registerMemoryDevice(RomMemory::getTypeName(),    RomMemory::getMDC());
+      memConfig.registerMemoryDevice(UartDevice::getTypeName(),   UartDevice::getMDC());
+      memConfig.registerMemoryDevice(NesRom::getTypeName(),       NesRom::getMDC());
+      memConfig.registerMemoryDevice(MirrorMemory::getTypeName(), MirrorMemory::getMDC());
 
       std::string errorStr;
       std::string configData = Utils::loadFile(configFilename, errorStr);

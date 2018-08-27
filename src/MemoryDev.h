@@ -7,6 +7,7 @@
 #include "Cpu6502Defines.h"
 
 class MemoryDev;
+class MemoryController;
 
 typedef MemoryDev* (*MemoryDeviceConstructor)(std::string instanceName);
 
@@ -19,6 +20,8 @@ public:
    MemoryDev(std::string const name);
 
    virtual ~MemoryDev();
+
+   virtual void setMemoryController(MemoryController* mc);
 
    std::string getName();
 
@@ -64,6 +67,8 @@ protected:
    CpuAddress theSize;
 
    std::string theName;
+
+   MemoryController* theMemController;
 };
 
 #endif // MEMORYDEV_H
