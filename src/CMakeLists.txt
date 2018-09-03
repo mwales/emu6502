@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.6)
 project (emu6502)
 
+INCLUDE_DIRECTORIES(./
+                    mappers)
+
 set(COMMON_FILES Decoder6502.cpp
                  MemoryController.cpp
                  RomMemory.cpp
@@ -21,7 +24,9 @@ set(EMULAT_FILES Cpu6502.cpp
 		 UartDevice.cpp
 		 MirrorMemory.cpp
 		 NesRom.cpp
-		 cjson/cJSON.c)
+		 cjson/cJSON.c
+                 mappers/Mapper.cpp
+                 mappers/NRomMapper.cpp)
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 

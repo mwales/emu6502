@@ -11,6 +11,7 @@ def printUsage(progName):
     print("after each instruction is executed")
     print("")
     print("{} binaryFile loadAddressHex [-t=numStepsTraceDec] [-d=f000]").format(progName)
+    print("{} --config   config.json    [-t=numStepsTraceDec] [-d=f000]").format(progName)
     print("")
     print("You must provide a binary and address to load the binary.  You can optionally specify the number of")
     print("steps you want to trace.  You can also specify some memory pages you want dumped at the end of")
@@ -22,9 +23,14 @@ def main(args):
         printUsage(args[0])
         return
 
-    binaryFile = args[1]
-    loadAddress = int(args[2], 16)
-
+    if ( args[1] == "--config" ):
+        configFile = args[2]
+        spawnArgs = [ './emu6502', "-c", configFile, "-d", "6502" ]
+    else:
+        binaryFile = args[1]
+        loadAddress = int(args[2], 16)
+        spawnArgs = [ './emu6502', "-f", binaryFile, "-b", hex(loadAddress), "-d", "6502", "-c", "../configs/emudev.json"]
+    
     dumpList = []
     numSteps = -1
     if (len(args) >= 4):
@@ -44,8 +50,7 @@ def main(args):
 
 
     print("Going to spawn the emulator process")
-    spawnArgs = [ '../build/emu6502', "-f", binaryFile, "-b", hex(loadAddress), "-d", "6502", "-c", "../configs/emudev.json"]
-
+    
     emulatorStdOut = open("emulator_stdout.txt", "w+")
     emulatorStdErr = open("emulator_stderr.txt", "w+")
 

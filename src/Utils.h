@@ -4,6 +4,11 @@
 #include <iostream>
 #include <stdint.h>
 
+#ifdef SDL_INCLUDED
+   #include <SDL2/SDL.h>
+   #include <SDL2/SDL_rwops.h>
+#endif
+
 /**
  * Standalone utility functions
  *
@@ -27,6 +32,11 @@ public:
    static uint32_t parseUInt32(std::string userInput, bool* success = nullptr);
 
    static std::string loadFile(std::string& name, std::string& errorOut);
+
+#ifdef SDL_INCLUDED
+   static int readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp);
+
+#endif
 
 
 protected:

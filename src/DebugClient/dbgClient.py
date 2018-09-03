@@ -280,7 +280,7 @@ class DbgClient(cmd2.Cmd):
         if (status & 0x08):
             statusFlags.append("FLG_DECI")
         if (status & 0x10):
-            statsuFlags.append("FLG_BKPT")
+            statusFlags.append("FLG_BKPT")
         if (status & 0x40):
             statusFlags.append("FLG_OVFL")
         if (status & 0x80):

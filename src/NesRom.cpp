@@ -10,6 +10,8 @@
 
 #include "Logger.h"
 
+#include "NRomMapper.h"
+
 #define ROM_TRACE
 
 #ifdef ROM_TRACE
@@ -44,12 +46,16 @@ NesRom::NesRom(std::string name):
    thePrgRomData(nullptr),
    theChrRomData(nullptr),
    thePlayChoiceInstRomData(nullptr),
-   thePlayChoicePromData(nullptr)
+   thePlayChoicePromData(nullptr),
+   theMapper(nullptr)
 
 {
    NES_ROM_DEBUG() << "Created a iNES ROM device: " << name;
 
    memset(&theHeaderBytes, 0, sizeof(struct INesHeader));
+
+   theAddress = 0x6000;
+   theSize = 0xa000;
 }
 
 NesRom::~NesRom()
@@ -64,8 +70,13 @@ uint8_t NesRom::read8(CpuAddress absAddr)
       return 0;
    }
 
-   return 0;
-   //return theData[absAddr - theAddress];
+   if (theMapper == nullptr)
+   {
+       NES_ROM_WARNING() << "NES ROM read8 failure @" << addressToString(absAddr) << " - no mapper found";
+       return 0;
+   }
+
+   return theMapper->read8(absAddr);
 }
 
 bool NesRom::write8(CpuAddress absAddr, uint8_t val)
@@ -75,6 +86,13 @@ bool NesRom::write8(CpuAddress absAddr, uint8_t val)
       return false;
    }
 
+   if (theMapper == nullptr)
+   {
+       NES_ROM_WARNING() << "NES ROM write8 failure @" << addressToString(absAddr) << " - no mapper found";
+       return false;
+   }
+
+   theMapper->write8(absAddr, val);
    return true;
 }
 
@@ -85,8 +103,20 @@ uint16_t NesRom::read16(CpuAddress absAddr)
       return 0;
    }
 
-   return 0;
-   //return *retData;
+   if (theMapper == nullptr)
+   {
+       NES_ROM_WARNING() << "NES ROM read16 failure @" << addressToString(absAddr) << " - no mapper found";
+       return 0;
+   }
+
+   uint8_t secondByte = theMapper->read8(absAddr);
+   uint8_t firstByte = theMapper->read8(absAddr + 1);
+
+   uint16_t retVal = firstByte;
+   retVal << 8;
+   retVal += secondByte;
+
+   return retVal;
 }
 
 bool NesRom::write16(CpuAddress absAddr, uint16_t val)
@@ -95,6 +125,17 @@ bool NesRom::write16(CpuAddress absAddr, uint16_t val)
    {
       return false;
    }
+
+   if (theMapper == nullptr)
+   {
+       NES_ROM_WARNING() << "NES ROM write16 failure @" << addressToString(absAddr) << " - no mapper found";
+       return false;
+   }
+
+   uint8_t firstByte = (val >> 8) & 0xff;
+   uint8_t secondByte = val & 0xff;
+   theMapper->write8(absAddr, secondByte);
+   theMapper->write8(absAddr+1, firstByte);
 
    return true;
 }
@@ -123,7 +164,7 @@ std::vector<std::string> NesRom::getStringConfigParams()
 
 void NesRom::setIntConfigValue(std::string paramName, int value)
 {
-
+    // Empty
 }
 
 void NesRom::setStringConfigValue(std::string paramName, std::string value)
@@ -179,94 +220,41 @@ void NesRom::resetMemory()
 
       dumpHeaderInfo();
 
-//      int fileSize = SDL_RWsize(f);
-//      if (fileSize == -1)
-//      {
-//         errorOut = "Error getting the file size: ";
-//         errorOut += SDL_GetError();
-//         SDL_RWclose(f);
-//         return retVal;
-//      }
+      if (theHeaderBytes.theFlagSix.theTrainerPresentFlag)
+      {
+          // The emulator doesn't care about trainer data, just read past this
+          uint8_t garbageBuffer[512];
+          int nbr = Utils::readUntilEof(garbageBuffer, 512, f);
 
-//      retVal.reserve(fileSize);
+          if (nbr != 512)
+          {
+              NES_ROM_WARNING() << "EOF encountered after reading " << nbr << " bytes of trainer data";
+              SDL_RWclose(f);
+              return;
+          }
 
-//      char buf[4097];
-//      int bytesToRead = fileSize;
-//      while(bytesToRead)
-//      {
-//         int bytesToReadIntoBuf = 4096;
-//         if ( bytesToReadIntoBuf > bytesToRead)
-//            bytesToReadIntoBuf = bytesToRead;
+          NES_ROM_DEBUG() << "Read and discarded trainer data from NES ROM" << theName;
+      }
+      else
+      {
+          NES_ROM_DEBUG() << "No trainer data to read from NES ROM " << theName;
+      }
 
-//         int numBytes = SDL_RWread(f, buf, 1, bytesToReadIntoBuf);
+      switch(getMapperNumber())
+      {
+      case 0:
+          NES_ROM_DEBUG() << "Creating NROM mapper for NES ROM " << theName;
+          theMapper = new NRomMapper(&theHeaderBytes, f);
 
-//         if (numBytes == 0)
-//            break;
+          break;
 
-//         buf[numBytes] = 0;
-//         retVal += buf;
+      default:
+          NES_ROM_WARNING() << "Mapper type " << Utils::toHex8(getMapperNumber()) << " not implemented";
 
-//         bytesToRead -= numBytes;
-//      }
+      }
 
-//      SDL_RWclose(f);
+      SDL_RWclose(f);
 
-
-//      int32_t sizeStatus =  lseek(fd, 0, SEEK_END);
-//      if (sizeStatus < 0)
-//      {
-//         NES_ROM_WARNING() << "ROM INIT ERROR: Couldn't seek to the end of the ROM";
-//         close(fd);
-//         return;
-//      }
-
-//      if (sizeStatus > UINT16_MAX)
-//      {
-//         NES_ROM_WARNING() << "ROM INIT ERROR: ROM File too large for 6502 memory space";
-//         close(fd);
-//         return;
-//      }
-
-//      if (sizeStatus > (UINT16_MAX - theAddress + 1))
-//      {
-//         NES_ROM_WARNING() << "ROM INIT ERROR: ROM file will not fit in the memory region.  Space ="
-//                       << Utils::toHex16(UINT16_MAX - theAddress + 1) << ", ROM size = "
-//                       << Utils::toHex16(sizeStatus);
-//         close(fd);
-//         return;
-//      }
-
-//      theSize = sizeStatus;
-
-//      if (theData != nullptr)
-//      {
-//         delete[] theData;
-//      }
-
-//      theData = new uint8_t[theSize];
-
-//      lseek(fd, 0, SEEK_SET);
-
-//      uint16_t bytesLeft = theSize;
-//      int bytesReadCumulative = 0;
-//      while(bytesLeft)
-//      {
-//         int bytesRead = read(fd, &theData[bytesReadCumulative], bytesLeft);
-
-//         if (bytesRead <= 0)
-//         {
-//            NES_ROM_WARNING() << "ROM INIT ERROR: Error reading the ROM contents";
-//            close(fd);
-//            return;
-//         }
-
-//         bytesLeft -= bytesRead;
-//         bytesReadCumulative += bytesRead;
-//      }
-
-//      NES_ROM_DEBUG() << "ROM INITIALIZED: " << theRomFile << " (" << theSize << " bytes) "
-//                  << addressToString(theAddress) << "-" << addressToString(theAddress + theSize);
-//      close(fd);
 }
 
 void NesRom::dumpHeaderInfo()

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <stdint.h>
 
+class Mapper;
+
 #define INES_MIRRORING_HORIZONTAL 0
 #define INES_MIRRORING_VERTICAL   1
 
@@ -139,6 +141,8 @@ protected:
    uint8_t* thePlayChoiceInstRomData;
 
    uint8_t* thePlayChoicePromData;
+
+   Mapper* theMapper;
 
 
 };

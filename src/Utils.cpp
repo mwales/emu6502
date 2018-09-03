@@ -153,6 +153,25 @@ uint32_t Utils::parseUInt32(std::string userInput, bool* success)
       return retVal;
    }
 
+   int Utils::readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp)
+   {
+       int bytesReadTotal = 0;
+       while (bytesReadTotal < numBytes)
+       {
+           int bytesRead = SDL_RWread(fp, buffer + bytesReadTotal, 1, numBytes - bytesReadTotal);
+
+           if (bytesRead == 0)
+           {
+               // We are out of bytes to read
+               return bytesReadTotal;
+           }
+
+           bytesReadTotal += bytesRead;
+       }
+
+       return bytesReadTotal;
+   }
+
 #else
 
    std::string Utils::loadFile(std::string&  name, std::string& errorOut)
