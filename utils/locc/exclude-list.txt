@@ -1,0 +1,10 @@
+# Files from external projects
+../../src/test/catch.hpp
+../../src/cjson/cJSON.c
+../../src/cjson/cJSON.h
+# CMake build files
+../../src/build
+../../src/test/build
+# PyCharm project files
+../../src/DebugClient/.idea
+../../src/DebugClient/venv
