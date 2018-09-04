@@ -83,6 +83,15 @@ bool DebugServer::startDebugServer()
 
 void DebugServer::debugHook()
 {
+   // Check breakpoints
+   CpuAddress curAddr = theCpu->getPc();
+   if (theBreakpoints.find(curAddr) != theBreakpoints.end())
+   {
+      // We hit the breakpoint
+      theDebuggerState.haltEmulator();
+      DS_DEBUG() << "Debugger hit breakpoint at" << addressToString(curAddr);
+   }
+
    while(!theDebuggerState.emulatorDebugHook())
    {
       // DS_DEBUG() << "Emulator not executing";
@@ -277,6 +286,18 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       memoryDumpCommand(commandLen);
       break;
 
+   case 9: // Breakpoint add
+      addBreakpointCommand(commandLen);
+      break;
+
+   case 10: // Breakpoint remove
+      removeBreakpointCommand(commandLen);
+      break;
+
+   case 11: // Breakpoint list
+      listBreakpointCommand();
+      break;
+
    default:
       DS_WARNING() << "Command " << command << " is not implemented!";
    }
@@ -460,6 +481,81 @@ void DebugServer::memoryDumpCommand(uint16_t commandLen)
    SDLNet_Write16(mdSize, rspBuf + 2);
 
    sendResponse(mdSize + 4, rspBuf);
+}
+
+void DebugServer::addBreakpointCommand(uint16_t commandLen)
+{
+   // We are expecting CpuAddress addr
+   if (commandLen != 2)
+   {
+      char const * mdErrorMessage = "Malformed add breakpoint received from debugger client";
+      DS_WARNING() << mdErrorMessage;
+      sendResponse(strlen(mdErrorMessage), (uint8_t*) mdErrorMessage);
+      return;
+   }
+
+   CpuAddress addr = SDLNet_Read16(theRxDataBuffer);
+
+   theBreakpoints.insert(addr);
+
+   DS_DEBUG() << "Inserted" << addressToString(addr) << "into breakpoint list";
+
+   sendBreakpointList();
+}
+
+void DebugServer::removeBreakpointCommand(uint16_t commandLen)
+{
+   // We are expecting CpuAddress addr
+   if (commandLen != 2)
+   {
+      char const * mdErrorMessage = "Malformed remove breakpoint received from debugger client";
+      DS_WARNING() << mdErrorMessage;
+      sendResponse(strlen(mdErrorMessage), (uint8_t*) mdErrorMessage);
+      return;
+   }
+
+   CpuAddress addr = SDLNet_Read16(theRxDataBuffer);
+
+   auto bpIt = theBreakpoints.find(addr);
+   if (bpIt != theBreakpoints.end())
+   {
+      // We found the breakpoint in the list, now remove it
+      theBreakpoints.erase(bpIt);
+
+      DS_DEBUG() << "Removed breakpoint" << addressToString(addr);
+   }
+   else
+   {
+      DS_WARNING() << "Failed to remove breakpoint" << addressToString(addr) << ", because it is not set";
+   }
+
+   sendBreakpointList();
+}
+
+void DebugServer::listBreakpointCommand()
+{
+   DS_DEBUG() << "List breakpoint command received";
+   sendBreakpointList();
+}
+
+void DebugServer::sendBreakpointList()
+{
+   uint16_t numberBreakpoints = theBreakpoints.size();
+   int frameLength = sizeof(uint16_t) + numberBreakpoints * sizeof(CpuAddress);
+
+   uint8_t* frameBuffer = (uint8_t*) malloc(frameLength);
+   uint8_t* fbp = frameBuffer;
+
+   SDLNet_Write16(numberBreakpoints, fbp);
+   fbp += sizeof(uint16_t);
+
+   for(auto BpIt = theBreakpoints.begin(); BpIt != theBreakpoints.end(); BpIt++)
+   {
+      SDLNet_Write16(*BpIt, fbp);
+      fbp += sizeof(CpuAddress);
+   }
+
+   sendResponse(frameLength, frameBuffer);
 }
 
 void DebugServer::closeExistingConnection(char const * reason)

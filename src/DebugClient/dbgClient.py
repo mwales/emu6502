@@ -335,5 +335,84 @@ class DbgClient(cmd2.Cmd):
         self.lastResult = hexDump(addrRx, dataBuf, bytesRx)
         print(self.lastResult)
 
+    def do_bp_add(self, argstr):
+        """
+        Adds a breakpoint
+        """
+
+        args = argstr.split()
+        if (len(args) < 1):
+            self.lastResult = "Breakpoint add failed, no address specified"
+            print(self.lastResult)
+            return
+
+        addr = int(args[0], 16)
+
+        print("Adding a breakpoint at address: {}".format(hex(addr)))
+
+        self.sendHeader(9, 2)
+
+        msgData = struct.pack("!H", addr)
+        self.s.send(msgData)
+
+        self.recvBreakpointList()
+
+    def do_bp_del(self, argstr):
+        """
+        Deletes a breakpoint
+        """
+
+        args = argstr.split()
+        if (len(args) < 1):
+            self.lastResult = "Breakpoint delete failed, no address specified"
+            print(self.lastResult)
+            return
+
+        addr = int(args[0], 16)
+
+        print("Removing a breakpoint at address: {}".format(hex(addr)))
+
+        self.sendHeader(10, 2)
+
+        msgData = struct.pack("!H", addr)
+        self.s.send(msgData)
+
+        self.recvBreakpointList()
+
+    def do_bp_list(self, argstr):
+        """
+        Lists the breakpoints
+        """
+        self.sendHeader(11, 0)
+
+        self.recvBreakpointList()
+
+
+    def recvBreakpointList(self):
+        msgData = self.receiveMessage()
+
+        if (len(msgData) < 2):
+            print("Received malformed breakpoint response (less than 2 bytes): {}".format(msgData))
+            return
+
+        bpListSizeTuple = struct.unpack("!H", msgData[0:2])
+        bpListSize = bpListSizeTuple[0]
+        print("Received a list of {} breakpoints:".format(bpListSize))
+
+        # Verify the frame length is correct for the data that we received
+        if (len(msgData) != 2 + 2 * bpListSize):
+            print("List of breakpoints doesn't match the size of the frame!")
+            return
+
+        bpListText = ""
+        for i in range(0, bpListSize):
+            bpAddrTuple = struct.unpack("!H", msgData[2 + i * 2: 4 + i * 2])
+            bpAddr = bpAddrTuple[0]
+            bpListText += "BP {} = {}\n".format(i, hex(bpAddr))
+
+        self.lastResult = bpListText
+        print(self.lastResult)
+
+
 if (__name__ == "__main__"):
     main(sys.argv)

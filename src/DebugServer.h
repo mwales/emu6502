@@ -5,7 +5,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include <vector>
+#include <set>
 #include "DebuggerState.h"
+#include "Cpu6502Defines.h"
 
 class Cpu6502;
 class MemoryController;
@@ -42,7 +44,7 @@ protected:
     * @note The message length sent over the wire doesn't account for 2 bytes of the frame header
     *
     * @param msgLen Number of bytes in the frame
-    * @param buffer Frame data
+    * @param buffer Frame data.  Will be free-ed before returning
     */
    void sendResponse(int msgLen, uint8_t const * const buffer);
 
@@ -63,6 +65,11 @@ protected:
    void haltCommand();
 
    void memoryDumpCommand(uint16_t commandLen);
+
+   void addBreakpointCommand(uint16_t commandLen);
+   void removeBreakpointCommand(uint16_t commandLen);
+   void listBreakpointCommand();
+   void sendBreakpointList();
 
    Cpu6502* theCpu;
 
@@ -92,6 +99,8 @@ protected:
 
    /// Stepping into an emulator fault will try to send 2 dumps to the client
    bool theRegisterDumpSentToClient;
+
+   std::set<CpuAddress> theBreakpoints;
 
 };
 

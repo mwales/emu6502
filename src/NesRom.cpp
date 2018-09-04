@@ -113,7 +113,7 @@ uint16_t NesRom::read16(CpuAddress absAddr)
    uint8_t firstByte = theMapper->read8(absAddr + 1);
 
    uint16_t retVal = firstByte;
-   retVal << 8;
+   retVal <<= 8;
    retVal += secondByte;
 
    return retVal;

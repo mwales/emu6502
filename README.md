@@ -215,11 +215,12 @@ Commands for the emulator's debugger
 * 0x07 Continue
 * 0x08 MemoryRead(address, numBytes) - Address is CpuAddress size, numBytes is 16-bit.  Returns
      address (CpuAddress size), num bytes (16-bits), then raw binary data
+* 0x09 Breakpoint(address) - Adds a breakpoint.  Returns a list of the breakpoints
+* 0x0a BreakpointRemove(addresss) - Removes a breakpoint.  Returns a list of the breakpoints
+* 0x0b BreakpointList - Returns a list of the breakpoints.  uint16_t length of list, followed by
+     a uint16_t for each address in the breakpoint list
 * RegisterWrite(registerName, registerValue)
 * MemoryWrite(address, numBytes, data)
-* Breakpoint(address)
-* BreakpointRemove(addresss)
-* BreakpointList
 * SaveState(filename) - Prefix RAM indicates save in memory based dictionary
 * LoadState(filename) - Prefix RAM indicates save in memory based dictionary
 * MemDev(ioctl, numBytes, dataBuffer) - Who knows what commands we will need these
