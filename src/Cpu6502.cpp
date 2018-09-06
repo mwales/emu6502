@@ -30,7 +30,7 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
    theRegX(0),
    theRegY(0),
    theAccum(0),
-   theStackPtr(0xff),
+   theStackPtr(0xfd),
    thePc(0),
    theDebugger(nullptr),
    theRunFlag(true),
@@ -40,7 +40,7 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
 {
    theMemoryController = ctrlr;
 
-   theStatusReg.theWholeRegister = 0;
+   theStatusReg.theWholeRegister = 0x24;
 }
 
 Cpu6502::~Cpu6502()
@@ -74,6 +74,7 @@ void Cpu6502::start(CpuAddress address)
    // Do a bunch of architecutre specific setup stuff here if necessary
 
    thePc = address;
+   CPU_DEBUG() << "Cpu6502::start called at address " << addressToString(address);
 
    while(true)
    {
@@ -922,6 +923,33 @@ void Cpu6502::handler_clv(OpCodeInfo* oci)
 /************ COMPARE OPERATIONS ************/
 /********************************************/
 
+void Cpu6502::comparison_operation(uint8_t regValue, uint8_t operandValue)
+{
+   if (regValue == operandValue)
+   {
+      CPU_DEBUG() << "Comparison Operation: " << Utils::toHex8(operandValue) << "== regValue ("
+                  << Utils::toHex8(regValue) << ")";
+      theStatusReg.theCarryFlag = 1;
+      theStatusReg.theZeroFlag = 1;
+      theStatusReg.theSignFlag = 0;
+   }
+   else
+   {
+      // They are not the same
+      theStatusReg.theZeroFlag = 0;
+      theStatusReg.theCarryFlag = (regValue > operandValue ? 1 : 0);
+
+      // Lets do some subtraction, 8 bit style
+      operandValue ^= 0xff;
+      uint16_t sum = operandValue + regValue + 1;
+      operandValue = sum & 0xff;
+
+      CPU_DEBUG() << "Comparison Operation: After subtraction " << Utils::toHex8(operandValue);
+
+      UPDATE_SIGN_FLAG(operandValue);
+   }
+}
+
 void Cpu6502::handler_cmp(OpCodeInfo* oci)
 {
    uint8_t val;
@@ -934,28 +962,7 @@ void Cpu6502::handler_cmp(OpCodeInfo* oci)
       val = emulatorRead(theOperandAddr);
    }
 
-   if (theAccum == val)
-   {
-      CPU_DEBUG() << "CMP Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 1;
-      theStatusReg.theZeroFlag = 1;
-      theStatusReg.theSignFlag = 0;
-   }
-   else if (theAccum > val)
-   {
-      CPU_DEBUG() << "CMP Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 1;
-      theStatusReg.theZeroFlag = 0;
-      theStatusReg.theSignFlag = 0;
-   }
-   else
-   {
-      CPU_DEBUG() << "CMP Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 0;
-      theStatusReg.theZeroFlag = 0;
-      theStatusReg.theSignFlag = 1;
-
-   }
+   comparison_operation(theAccum, val);
 
    if ( (oci->theAddrMode == ABSOLUTE_X) ||
         (oci->theAddrMode == ABSOLUTE_Y) ||
@@ -977,28 +984,7 @@ void Cpu6502::handler_cpx(OpCodeInfo* oci)
       val = emulatorRead(theOperandAddr);
    }
 
-   if (theRegX == val)
-   {
-      CPU_DEBUG() << "CPX Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 1;
-      theStatusReg.theZeroFlag = 1;
-      theStatusReg.theSignFlag = 0;
-   }
-   else if (theRegX > val)
-   {
-      CPU_DEBUG() << "CPX Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 1;
-      theStatusReg.theZeroFlag = 0;
-      theStatusReg.theSignFlag = 0;
-   }
-   else
-   {
-      CPU_DEBUG() << "CPX Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 0;
-      theStatusReg.theZeroFlag = 0;
-      theStatusReg.theSignFlag = 1;
-
-   }
+   comparison_operation(theRegX, val);
 }
 
 void Cpu6502::handler_cpy(OpCodeInfo* oci)
@@ -1013,40 +999,22 @@ void Cpu6502::handler_cpy(OpCodeInfo* oci)
       val = emulatorRead(theOperandAddr);
    }
 
-   if (theRegX == val)
-   {
-      CPU_DEBUG() << "CPY Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 1;
-      theStatusReg.theZeroFlag = 1;
-      theStatusReg.theSignFlag = 0;
-   }
-   else if (theRegX > val)
-   {
-      CPU_DEBUG() << "CPY Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 1;
-      theStatusReg.theZeroFlag = 0;
-      theStatusReg.theSignFlag = 0;
-   }
-   else
-   {
-      CPU_DEBUG() << "CPY Handler: " << Utils::toHex8(val) << "> accum (" << Utils::toHex8(theAccum) << ")";
-      theStatusReg.theCarryFlag = 0;
-      theStatusReg.theZeroFlag = 0;
-      theStatusReg.theSignFlag = 1;
-
-   }
+   comparison_operation(theRegY, val);
 }
 
 void Cpu6502::handler_bit(OpCodeInfo* oci)
 {
-   uint8_t val = emulatorRead(theOperandAddr);
-   val &= theAccum;
+   uint8_t opVal = emulatorRead(theOperandAddr);
+   uint8_t val= opVal & theAccum;
 
    theStatusReg.theZeroFlag = (val == 0 ? 1 : 0);
-   theStatusReg.theOverflowFlag = ( val & 0x40 ? 1 : 0);
-   theStatusReg.theSignFlag = (val & 0x80 ? 1 : 0);
 
-   CPU_DEBUG() << "BIT Handler - *op & accum = " << Utils::toHex8(val);
+   // This was a bit confusing at first, but just use the bits 6 and 7 directly from opVal
+   theStatusReg.theOverflowFlag = ( opVal & 0x40 ? 1 : 0);
+   theStatusReg.theSignFlag = (opVal & 0x80 ? 1 : 0);
+
+   CPU_DEBUG() << "BIT Handler - *op & accum = " << Utils::toHex8(opVal) << " & "
+               << Utils::toHex8(theAccum) << " = " << Utils::toHex8(val);
 }
 
 /********************************************/
@@ -1310,7 +1278,13 @@ void Cpu6502::handler_pla(OpCodeInfo* oci)
 
 void Cpu6502::handler_php(OpCodeInfo* oci)
 {
-   emulatorWrite(0x0100 + theStackPtr, theStatusReg.theWholeRegister);
+   uint8_t valueToPush;
+
+   // Set bits 4 and 5 before pushing
+   // https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+   valueToPush = theStatusReg.theWholeRegister | 0x30;
+
+   emulatorWrite(0x0100 + theStackPtr, valueToPush);
    theStackPtr--;
 
    CPU_DEBUG() << "PHP Handler - Pushed SR (" << Utils::toHex8(theStatusReg.theWholeRegister)
@@ -1320,7 +1294,12 @@ void Cpu6502::handler_php(OpCodeInfo* oci)
 void Cpu6502::handler_plp(OpCodeInfo* oci)
 {
    theStackPtr++;
-   theStatusReg.theWholeRegister = emulatorRead(0x0100 + theStackPtr);
+
+   // When pulling from the stack, we should ignore bits 4 and 5
+
+   uint8_t ignoredBits = theStatusReg.theWholeRegister & 0x30;
+   theStatusReg.theWholeRegister = emulatorRead(0x0100 + theStackPtr) & 0xCF;
+   theStatusReg.theWholeRegister |= ignoredBits;
 
    CPU_DEBUG() << "PLP Handler - Popped SR (" << Utils::toHex8(theStatusReg.theWholeRegister)
                << ") from stack, now SP=" << Utils::toHex8(theStackPtr);
@@ -1452,7 +1431,13 @@ void Cpu6502::handler_brk(OpCodeInfo* oci)
    emulatorWrite(0x0100 + theStackPtr, addressLower);
    theStackPtr--;
 
-   emulatorWrite(0x0100 + theStackPtr, theStatusReg.theWholeRegister);
+   uint8_t valueToPush;
+
+   // Set bits 4 and 5 before pushing
+   // https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+   valueToPush = theStatusReg.theWholeRegister | 0x30;
+
+   emulatorWrite(0x0100 + theStackPtr, valueToPush);
 
    CPU_DEBUG() << "BRK pushed " << Utils::toHex8(addressUpper) << ", " << Utils::toHex8(addressLower)
                << ", " << Utils::toHex8(theStatusReg.theWholeRegister);

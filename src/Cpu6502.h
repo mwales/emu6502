@@ -102,6 +102,8 @@ public:
 
     virtual void addition_operation(uint8_t operandValue, OpCodeInfo* oci);
 
+    virtual void comparison_operation(uint8_t regValue, uint8_t operandValue);
+
     virtual void halt();
 
     // CPU State Getters
