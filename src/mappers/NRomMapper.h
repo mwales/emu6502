@@ -27,7 +27,7 @@ protected:
     static const int PRG_ROM_SIZE;
     static const CpuAddress PRG_ROM_ADDR;
 
-    bool theUpper8KMirrored;
+    bool theUpper16KMirrored;
 
     uint8_t* thePrgRamRom;
 

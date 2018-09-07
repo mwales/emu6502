@@ -1095,7 +1095,11 @@ void Cpu6502::handler_rti(OpCodeInfo* oci)
 {
    theStackPtr++;
    uint8_t srVal = emulatorRead(0x0100 + theStackPtr);
-   theStatusReg.theWholeRegister = srVal;
+
+   // Don't touch bit 4 and 5 of status register
+   uint8_t unaffectedBits = theStatusReg.theWholeRegister & 0x30;
+   theStatusReg.theWholeRegister = srVal & 0xBF;
+   theStatusReg.theWholeRegister = srVal | unaffectedBits;
 
    CPU_DEBUG() << "RTI Handler - Popped SR (" << Utils::toHex8(srVal) << ") from stack";
 

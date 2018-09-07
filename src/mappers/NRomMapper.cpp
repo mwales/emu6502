@@ -45,7 +45,7 @@ NRomMapper::NRomMapper(struct INesHeader* inesHdr, SDL_RWops* romFile)
            MAPPER_DEBUG() << "NROM Loaded with " << numBytes << " of PRG_ROM @ " << addressToString(PRG_ROM_ADDR);
        }
 
-       theUpper8KMirrored = true;
+       theUpper16KMirrored = true;
        MAPPER_DEBUG() << "NROM PRG ROM memory mirrored at " << addressToString(PRG_ROM_ADDR + PRG_ROM_SIZE);
    }
    else
@@ -66,7 +66,7 @@ NRomMapper::NRomMapper(struct INesHeader* inesHdr, SDL_RWops* romFile)
        }
 
        // No mirroring
-       theUpper8KMirrored = false;
+       theUpper16KMirrored = false;
    }
 
 }
@@ -94,7 +94,7 @@ uint8_t NRomMapper::read8(CpuAddress address)
     }
 
     // Must be a read of PrgRom
-    int mask = (theUpper8KMirrored ? 0x1fff : 0x3fff);
+    int mask = (theUpper16KMirrored ? PRG_ROM_SIZE - 1 : PRG_ROM_SIZE * 2 - 1);
     int offset = address & mask;
     return thePrgRom[offset];
 }

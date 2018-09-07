@@ -1,8 +1,18 @@
 #!/usr/bin/env python
 
 import sys
+import subprocess
 
 def main(args):
+    try:
+        po = subprocess.check_output(["./traceUtility.py", "--config", "nestest.json", "-t=8900"])
+    except:
+        print("We encountered some kind of error during the trace execution, oh well")
+
+    verifyFiles()
+
+
+def verifyFiles():
     verification = open("test_src_files/nestest_good_output.log", "r")
     underTest = open("trace_output.txt")
 
@@ -16,7 +26,13 @@ def main(args):
 
         ut = underTestText[i]
         vt = verificationText[i]
+
         vtState = verificationText[i+1]
+
+        if ((len(ut) < 131) or (len(vtState) < 73)):
+            print("End of process log @ line {}, no diffs found!".format(i))
+            print("Length of under test = {}, length of verification = {}".format(len(ut), len(vtState)))
+            return
 
         addrUut = int(ut[7:11], 16)
         addrVerify = int(vt[0:4], 16)
