@@ -1037,7 +1037,10 @@ void Cpu6502::handler_jmp(OpCodeInfo* oci)
    {
       // The address in the memory pointed to by the opcode address
       uint8_t lowerAddress = emulatorRead(theOperandAddr);
-      uint8_t upperAddress = emulatorRead(theOperandAddr + 1);
+
+      // The upper byte of the address can't cross a page boundary (it will wrap to 0x00 on same page
+      CpuAddress upperByteAddress = (theOperandAddr & 0xff00) + ( (theOperandAddr + 1) & 0x00ff);
+      uint8_t upperAddress = emulatorRead(upperByteAddress);
 
       uint16_t targetAddr = upperAddress << 8;
       targetAddr += lowerAddress;
