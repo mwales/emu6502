@@ -95,7 +95,7 @@ void DebugServer::debugHook()
    while(!theDebuggerState.emulatorDebugHook())
    {
       // DS_DEBUG() << "Emulator not executing";
-      SDL_Delay(100);
+      SDL_Delay(5);
    }
 }
 
@@ -143,7 +143,7 @@ int DebugServer::debugServerSocketThread()
       }
 
       // Any activities on the sockets?
-      int activity = SDLNet_CheckSockets(theSocketSet, 250);
+      int activity = SDLNet_CheckSockets(theSocketSet, 5);
 
       if (activity)
       {

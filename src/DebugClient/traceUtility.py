@@ -30,6 +30,18 @@ def main(args):
         binaryFile = args[1]
         loadAddress = int(args[2], 16)
         spawnArgs = [ './emu6502', "-f", binaryFile, "-b", hex(loadAddress), "-d", "6502", "-c", "../configs/emudev.json"]
+
+    if ( "--profiling" in args ):
+        print ("Running with profiling")
+        # Want to add one of the following options
+        # valgrind --tool=callgrind -v --dump-every-bb=10000
+        # perf record -a -g -F 97
+        profilingPrefix = "perf record -a -g -F 97"
+        pArgs = profilingPrefix.split()
+
+        for singlePArg in reversed(pArgs):
+            spawnArgs.insert(0, singlePArg)
+
     
     dumpList = []
     numSteps = -1
@@ -60,7 +72,7 @@ def main(args):
     p = subprocess.Popen(spawnArgs, stdout=emulatorStdOut, stderr=emulatorStdErr)
 
     # Wait a second for the emulator to get setup and running
-    time.sleep(1)
+    time.sleep(2)
 
     # Connect to the emulator via the debugging interface
     dc = DbgClient()

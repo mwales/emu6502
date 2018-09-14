@@ -157,6 +157,7 @@ class DbgClient(cmd2.Cmd):
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.connect((ipAddress, portNum))
+            self.s.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             print("Connected")
             self.lastResult = "Connected"
         except IOError as e:
