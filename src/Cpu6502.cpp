@@ -25,6 +25,10 @@
    #define ADDRMODE_WARNING  if(0) LOG_WARNING
 #endif
 
+// Opcodes that aren't actually in 6502 documentation, but someone figured them out
+#define UNOFFICIAL_NES_OPCODE_SUPPORT
+
+
 Cpu6502::Cpu6502(MemoryController* ctrlr):
    Decoder6502(),
    theRegX(0),
@@ -1330,11 +1334,21 @@ void Cpu6502::handler_rra(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for rra";
 }
-
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
 void Cpu6502::handler_sax(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for sax";
+   //AND X and Accum registers, store in memory
+   uint8_t val = theRegX & theAccum;
+
+   CPU_DEBUG() << "SAX Handler: X & A = " << Utils::toHex8(val);
+   emulatorWrite(theOperandAddr, val);
 }
+#else
+void Cpu6502::handler_sax(OpCodeInfo* oci)
+{
+   CPU_DEBUG() << "Empty handler for sax - UNOFFICIAL 6502 OP CODE";
+}
+#endif
 
 void Cpu6502::handler_alr(OpCodeInfo* oci)
 {
@@ -1361,15 +1375,65 @@ void Cpu6502::handler_axs(OpCodeInfo* oci)
    CPU_DEBUG() << "Empty handler for axs";
 }
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
+void Cpu6502::handler_rla(OpCodeInfo* oci)
+{
+
+   uint8_t val = emulatorRead(theOperandAddr);
+
+   int carryFlag = (val >> 7) & 0x01;
+
+   // Rotate left
+   val <<= 1;
+   val |= theStatusReg.theCarryFlag;
+
+   emulatorWrite(theOperandAddr, val);
+
+   CPU_DEBUG() << "RLA Handler: Memory @" << addressToString(theOperandAddr) << "="
+               << Utils::toHex8(val) << "after rotate left, and-ing with A ="
+               << Utils::toHex8(theAccum);
+
+   theAccum &= val;
+
+   theStatusReg.theCarryFlag = carryFlag;
+   UPDATE_SZ_FLAGS(theAccum);
+}
+#else
 void Cpu6502::handler_rla(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for rla";
 }
+#endif
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
 void Cpu6502::handler_lax(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for lax";
+   // Load accumulator and X register with memory.
+
+   // We need to read the actual value to load from memory
+   theRegX = emulatorRead(theOperandAddr);
+   theAccum = theRegX;
+
+   CPU_DEBUG() << "LAX Handler: Loaded" << Utils::toHex8(theRegX) << " into A and X registers";
+
+   UPDATE_SZ_FLAGS(theRegX);
+
+   if (thePageBoundaryCrossedFlag)
+   {
+      if ( (oci->theAddrMode == ABSOLUTE_Y) ||
+           (oci->theAddrMode == INDIRECT_Y) )
+      {
+        theAddrModeExtraClockCycle = 1;
+      }
+   }
+
 }
+#else
+void Cpu6502::handler_lax(OpCodeInfo* oci)
+{
+   CPU_DEBUG() << "Empty handler for lax - UNOFFICIAL 6502 OP CODE";
+}
+#endif
 
 void Cpu6502::handler_kil(OpCodeInfo* oci)
 {
@@ -1381,16 +1445,56 @@ void Cpu6502::handler_nop(OpCodeInfo* oci)
    CPU_DEBUG() << "NOP Handler";
 }
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
+void Cpu6502::handler_dcp(OpCodeInfo* oci)
+{
+   // Equivalent to DEC followed by a CMP operation
+
+   uint8_t val = emulatorRead(theOperandAddr) - 1;
+   emulatorWrite(theOperandAddr, val);
+
+   CPU_DEBUG() << "DCP handler: Mem @" << addressToString(theOperandAddr) << "=" << Utils::toHex8(val)
+               << "after decrement, compare to A =" << Utils::toHex8(theAccum);
+
+   comparison_operation(theAccum, val);
+}
+#else
 void Cpu6502::handler_dcp(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for dcp";
 }
+#endif
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
+void Cpu6502::handler_sre(OpCodeInfo* oci)
+{
+   CPU_DEBUG() << "Empty handler for sre";
+
+   uint8_t val = emulatorRead(theOperandAddr);
+
+   int carryFlag = val & 0x01;
+
+   // Shift right and store in memory
+   val >>= 1;
+   emulatorWrite(theOperandAddr, val);
+
+   CPU_DEBUG() << "SRE Handler: Memory @" << addressToString(theOperandAddr) << "="
+               << Utils::toHex8(val) << "after right shift, xoring with A ="
+               << Utils::toHex8(theAccum);
+
+   theAccum = theAccum ^ val;
+
+   theStatusReg.theCarryFlag = carryFlag;
+   UPDATE_SZ_FLAGS(theAccum);
+
+
+}
+#else
 void Cpu6502::handler_sre(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for sre";
 }
-
+#endif
 void Cpu6502::handler_shx(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for shx";
@@ -1401,20 +1505,60 @@ void Cpu6502::handler_shy(OpCodeInfo* oci)
    CPU_DEBUG() << "Empty handler for shy";
 }
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
+void Cpu6502::handler_slo(OpCodeInfo* oci)
+{
+   // Equivalent to ASL followed by ORA
+
+   uint8_t val = emulatorRead(theOperandAddr);
+
+   int carryFlag = (val >> 7) & 0x01;
+   theStatusReg.theCarryFlag = carryFlag;
+
+   val <<= 1;
+   emulatorWrite(theOperandAddr, val);
+
+   CPU_DEBUG() << "SLO Handler: Memory @" << addressToString(theOperandAddr) << "="
+               << Utils::toHex8(val) << "after shift left, OR-ing with A ="
+               << Utils::toHex8(theAccum);
+
+   theAccum |= val;
+
+   UPDATE_SZ_FLAGS(theAccum);
+}
+#else
 void Cpu6502::handler_slo(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for slo";
 }
-
+#endif
 void Cpu6502::handler_las(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for las";
 }
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
+void Cpu6502::handler_isc(OpCodeInfo* oci)
+{
+   CPU_DEBUG() << "Empty handler for isc";
+
+   uint8_t val = emulatorRead(theOperandAddr) + 1;
+   emulatorWrite(theOperandAddr, val);
+
+   CPU_DEBUG() << "ISC Handler: Memory @" << addressToString(theOperandAddr) << "="
+               << Utils::toHex8(val) << " after inc, now sbc with A =" << Utils::toHex8(theAccum);
+
+   addition_operation(0xff ^ val, oci);
+
+   // Addition operation will try to add
+   theAddrModeExtraClockCycle = 0;
+}
+#else
 void Cpu6502::handler_isc(OpCodeInfo* oci)
 {
    CPU_DEBUG() << "Empty handler for isc";
 }
+#endif
 
 void Cpu6502::handler_brk(OpCodeInfo* oci)
 {
