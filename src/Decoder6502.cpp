@@ -34,13 +34,13 @@ void Decoder6502::decode(CpuAddress address)
 
    preHandlerHook(oci);
 
-   auto handlerFunc = gOpCodes[opCode].theOpCodeHandler;
+   auto handlerFunc = oci->theOpCodeHandler;
 
-   (*this.*handlerFunc)(&gOpCodes[opCode]);
+   (*this.*handlerFunc)(oci);
 
    postHandlerHook(oci);
 
-   updatePc(gOpCodes[opCode].theNumBytes);
+   updatePc(oci->theNumBytes);
 }
 
 void Decoder6502::preHandlerHook(OpCodeInfo* oci)
