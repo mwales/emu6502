@@ -1,4 +1,5 @@
 #include "RomMemory.h"
+#include "EmulatorConfig.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -7,8 +8,6 @@
 #include <unistd.h>
 
 #include "Logger.h"
-
-#define ROM_TRACE
 
 #ifdef ROM_TRACE
    #define ROM_DEBUG    LOG_DEBUG

@@ -1,6 +1,7 @@
-#include "RamMemory.h"
 #include <string.h>
 
+#include "RamMemory.h"
+#include "EmulatorConfig.h"
 #include "Logger.h"
 
 #ifdef RAM_TRACE

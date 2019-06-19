@@ -53,6 +53,19 @@ std::string Utils::toHex32(uint32_t val, bool withPrefix)
    return buf;
 }
 
+std::string Utils::toHex64(uint64_t val, bool withPrefix)
+{
+   char buf[19];
+
+   if(withPrefix)
+      snprintf(buf, 19, "0x%016lx", val);
+   else
+      snprintf(buf, 19, "%016lx", val);
+   buf[18] = 0;
+
+   return buf;
+}
+
 
 uint8_t Utils::parseUInt8(std::string userInput, bool* success)
 {

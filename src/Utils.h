@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdint.h>
+#include "EmulatorConfig.h"
 
 #ifdef SDL_INCLUDED
    #include <SDL2/SDL.h>
@@ -25,6 +26,7 @@ public:
    static std::string toHex8(uint8_t val, bool withPrefix = true);
    static std::string toHex16(uint16_t val, bool withPrefix = true);
    static std::string toHex32(uint32_t val, bool withPrefix = true);
+   static std::string toHex64(uint64_t val, bool withPrefix = true);
 
    // Parse user input into integer.  If user includes "0x", parse as base 16, otherwise base 10
    static uint8_t parseUInt8(std::string userInput, bool* success = nullptr);

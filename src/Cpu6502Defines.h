@@ -66,13 +66,9 @@ typedef struct OpCodeInfoStruct
    uint8_t theDelayCycles;
 
    char const * theMnemonicDisass;
-
    bool    theExtraDelay;
-
    enum AddressMode6502 theAddrMode;
-
    void (Decoder6502::*theOpCodeHandler)(struct OpCodeInfoStruct* info);
-
 } OpCodeInfo;
 
 void constructCpuGlobals();

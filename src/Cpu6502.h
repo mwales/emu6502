@@ -1,10 +1,17 @@
 #ifndef CPU6502_H
 #define CPU6502_H
 
+#include "EmulatorConfig.h"
 #include "Decoder6502.h"
 
 class DebugServer;
 class MemoryController;
+
+
+#ifdef TRACE_EXECUTION
+   #include<stdio.h> // FILE
+   class Disassembler6502;
+#endif
 
 class Cpu6502 : public Decoder6502
 {
@@ -169,6 +176,13 @@ protected:
      * complete
      */
     bool thePageBoundaryCrossedFlag;
+
+#ifdef TRACE_EXECUTION
+    Disassembler6502* theDisAss;
+
+    FILE* theTraceFile;
+#endif
+
 };
 
 #endif // CPU6502_H

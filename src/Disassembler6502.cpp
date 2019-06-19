@@ -4,12 +4,10 @@
 #include <string.h>
 
 #include "Disassembler6502.h"
+#include "EmulatorConfig.h"
 #include "Logger.h"
 #include "MemoryDev.h"
 #include "MemoryController.h"
-
-// Uncomment to turn on disassembler trace debug
-// #define DISASS_TRACE
 
 #ifdef DISASS_TRACE
    #define DISASS_DEBUG LOG_DEBUG

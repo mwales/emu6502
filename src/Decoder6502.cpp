@@ -30,12 +30,12 @@ void Decoder6502::decode(CpuAddress address)
       theOpCode3 = theMemoryController->getDevice(address + 2)->read8(address + 2);
 
    // Call the handler for the function!
-   LOG_DEBUG() << "Found opCode " << Utils::toHex8(opCode) << " @ addr " << Utils::toHex16(address);
+   LOG_DEBUG() << "Found opCode " << Utils::toHex8(opCode) 
+               << " @ addr " << Utils::toHex16(address);
 
    preHandlerHook(oci);
 
    auto handlerFunc = oci->theOpCodeHandler;
-
    (*this.*handlerFunc)(oci);
 
    postHandlerHook(oci);

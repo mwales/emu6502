@@ -1,13 +1,11 @@
 #include "DebugServer.h"
+#include "EmulatorConfig.h"
 #include "Logger.h"
 #include "Cpu6502.h"
 #include "Cpu6502Defines.h"
 #include "MemoryController.h"
 #include "MemoryDev.h"
 #include "Disassembler6502.h"
-
-// Uncomment below for debug output from this class
-// #define DEBUG_SERVER_DEBUG 1
 
 #ifdef DEBUG_SERVER_DEBUG
    #define DS_DEBUG   LOG_DEBUG

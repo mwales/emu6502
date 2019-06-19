@@ -1,9 +1,7 @@
 #include "UartDevice.h"
+#include "EmulatorConfig.h"
 #include "Utils.h"
 #include "Logger.h"
-#
-
-#define UART_TRACE 1
 
 #ifdef UART_TRACE
    #define UART_DEBUG   LOG_DEBUG

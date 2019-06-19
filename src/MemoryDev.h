@@ -60,6 +60,8 @@ public:
 
    std::string getDebugString();
 
+   std::string dump();
+
 protected:   
 
    CpuAddress theAddress;

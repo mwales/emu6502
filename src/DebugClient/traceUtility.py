@@ -42,6 +42,8 @@ def main(args):
         for singlePArg in reversed(pArgs):
             spawnArgs.insert(0, singlePArg)
 
+    print("Emulator cmd line={}".format(" ".join(spawnArgs)))
+
     
     dumpList = []
     numSteps = -1
@@ -86,7 +88,6 @@ def main(args):
     curPc = 0
     while( (iNum < numSteps) or (numSteps == -1) ):
 
-
         dc.do_disass("")
         assemblyText = dc.getLastResult().strip()
 
@@ -126,7 +127,6 @@ def main(args):
 
             # Remember this PC for the next loop now
             lastPc = curPc
-
         iNum += 1
 
     # Any memory dumps requested?

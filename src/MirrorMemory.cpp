@@ -1,10 +1,10 @@
-#include "MirrorMemory.h"
 #include <string.h>
 
+#include "MirrorMemory.h"
+#include "EmulatorConfig.h"
 #include "Logger.h"
 #include "MemoryController.h"
 
-#define MIRROR_MEM_TRACE
 
 #ifdef MIRROR_MEM_TRACE
    #define MIRROR_DEBUG    LOG_DEBUG

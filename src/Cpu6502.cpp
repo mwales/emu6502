@@ -6,8 +6,10 @@
 #include "MemoryController.h"
 #include "MemoryDev.h"
 
-#define CPU_TRACE
-#define ADDR_MODE_TRACE
+
+#ifdef TRACE_EXECUTION
+   #include "Disassembler6502.h"
+#endif
 
 #ifdef CPU_TRACE
    #define CPU_DEBUG    LOG_DEBUG
@@ -25,10 +27,6 @@
    #define ADDRMODE_WARNING  if(0) LOG_WARNING
 #endif
 
-// Opcodes that aren't actually in 6502 documentation, but someone figured them out
-#define UNOFFICIAL_NES_OPCODE_SUPPORT
-
-
 Cpu6502::Cpu6502(MemoryController* ctrlr):
    Decoder6502(),
    theRegX(0),
@@ -45,6 +43,23 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
    theMemoryController = ctrlr;
 
    theStatusReg.theWholeRegister = 0x24;
+
+#ifdef TRACE_EXECUTION
+   theDisAss = new Disassembler6502(ctrlr);
+   theDisAss->includeOpCodes(true);
+   theDisAss->includeAddress(true);
+
+   theTraceFile = fopen("trace.txt", "w");
+
+   if (!theTraceFile)
+   {
+      LOG_WARNING() << "Error opening trace.txt execution trace file";
+   }
+   else
+   {
+      fprintf(theTraceFile, "Execution start\n");
+   }
+#endif
 }
 
 Cpu6502::~Cpu6502()
@@ -53,6 +68,17 @@ Cpu6502::~Cpu6502()
    {
       delete theDebugger;
    }
+
+#ifdef TRACE_EXECUTION
+   delete theDisAss;
+
+   if (theTraceFile)
+   {
+      fprintf(theTraceFile, "Execution end\n");
+      fclose(theTraceFile);
+      theTraceFile = nullptr;
+   }
+#endif
 }
 
 void Cpu6502::enableDebugger(uint16_t portNumber)
@@ -291,6 +317,30 @@ void Cpu6502::preHandlerHook(OpCodeInfo* oci)
    }
 
    theAddrModeExtraClockCycle = 0;
+
+#ifdef TRACE_EXECUTION
+   std::string disassText = theDisAss->debugListing(thePc, 1);
+   disassText.pop_back();  // Remove line ending
+
+   // Lets get the length to 45 characters
+   while(disassText.size() < 45)
+   {
+      disassText.push_back(' ');
+   }
+
+   disassText += "A=";
+   disassText += Utils::toHex8(theAccum, false);
+   disassText += ",  X=";
+   disassText += Utils::toHex8(theRegX, false);
+   disassText += ",  Y=";
+   disassText += Utils::toHex8(theRegY, false);
+   disassText += ",  SP=";
+   disassText += Utils::toHex8(theStackPtr, false);
+   disassText += ",  CLK=";
+   disassText += Utils::toHex64(theNumClocks, false);
+
+   fprintf(theTraceFile, "%s\n", disassText.c_str());
+#endif
 }
 
 void Cpu6502::postHandlerHook(OpCodeInfo* oci)
@@ -1330,10 +1380,42 @@ void Cpu6502::handler_arr(OpCodeInfo* oci)
    CPU_DEBUG() << "Empty handler for arr";
 }
 
+#ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
 void Cpu6502::handler_rra(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for rra";
+
+   bool setCarryFlag;
+   bool oldCarryFlag = theStatusReg.theCarryFlag;
+
+   // We are shifting a byte in memory
+   uint8_t val = emulatorRead(theOperandAddr);
+
+   setCarryFlag = val & 0x01;
+   val >>= 1;
+
+   if (oldCarryFlag)
+   {
+      // We shift in the value of the old carry flag
+      val |= 0x80;
+   }
+
+   theStatusReg.theCarryFlag = (setCarryFlag ? 1 : 0);
+
+   emulatorWrite(theOperandAddr, val);
+
+   addition_operation(val, oci);
+
+   CPU_DEBUG() << "RRA Handler: Memory @" << addressToString(theOperandAddr) << "="
+               << Utils::toHex8(val) << "after rotate right, adding with A ="
+               << Utils::toHex8(theAccum);
 }
+#else
+void Cpu6502::handler_rra(OpCodeInfo* oci)
+{
+   CPU_DEBUG() << "Empty handler for rra - UNOFFICIAL 6502 OP CODE";
+}
+#endif
+
 #ifdef UNOFFICIAL_NES_OPCODE_SUPPORT
 void Cpu6502::handler_sax(OpCodeInfo* oci)
 {
@@ -1401,7 +1483,7 @@ void Cpu6502::handler_rla(OpCodeInfo* oci)
 #else
 void Cpu6502::handler_rla(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for rla";
+   CPU_DEBUG() << "Empty handler for rla - UNOFFICIAL 6502 OP CODE";
 }
 #endif
 
@@ -1461,7 +1543,7 @@ void Cpu6502::handler_dcp(OpCodeInfo* oci)
 #else
 void Cpu6502::handler_dcp(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for dcp";
+   CPU_DEBUG() << "Empty handler for dcp - UNOFFICIAL 6502 OP CODE";
 }
 #endif
 
@@ -1492,7 +1574,7 @@ void Cpu6502::handler_sre(OpCodeInfo* oci)
 #else
 void Cpu6502::handler_sre(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for sre";
+   CPU_DEBUG() << "Empty handler for sre - UNOFFICIAL 6502 OP CODE";
 }
 #endif
 void Cpu6502::handler_shx(OpCodeInfo* oci)
@@ -1529,7 +1611,7 @@ void Cpu6502::handler_slo(OpCodeInfo* oci)
 #else
 void Cpu6502::handler_slo(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for slo";
+   CPU_DEBUG() << "Empty handler for slo - UNOFFICIAL 6502 OP CODE";
 }
 #endif
 void Cpu6502::handler_las(OpCodeInfo* oci)
@@ -1556,7 +1638,7 @@ void Cpu6502::handler_isc(OpCodeInfo* oci)
 #else
 void Cpu6502::handler_isc(OpCodeInfo* oci)
 {
-   CPU_DEBUG() << "Empty handler for isc";
+   CPU_DEBUG() << "Empty handler for isc - UNOFFICIAL 6502 OP CODE";
 }
 #endif
 
