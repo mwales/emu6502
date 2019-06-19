@@ -24,6 +24,14 @@ public:
 
     void enableDebugger(uint16_t portNumber);
 
+#ifdef TRACE_EXECUTION
+    /**
+     * Set an a limit to the number of steps the emulator will execute before exitting for testing
+     * @param numSteps Finite number of steps or 0xffffffffffffffff for infinity
+     */
+    void setStepLimit(uint64_t numSteps);
+#endif
+
     /**
      * Called from debugger to have the emulator exit
      */
@@ -181,6 +189,9 @@ protected:
     Disassembler6502* theDisAss;
 
     FILE* theTraceFile;
+
+    uint64_t theNumberOfStepsToTrace;
+    uint64_t theNumberOfStepsExecuted;
 #endif
 
 };

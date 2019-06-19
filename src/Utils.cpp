@@ -118,6 +118,38 @@ uint32_t Utils::parseUInt32(std::string userInput, bool* success)
    return val;
 }
 
+uint64_t Utils::parseUInt64(std::string userInput, bool* success)
+{
+   errno = 0;
+   uint64_t val = 0;
+   char const * userInputCharStar = userInput.c_str();
+
+   if ( (userInput.size() > 2) &&
+        (userInput[0] == '0') &&
+        (userInput[1] == 'x') )
+   {
+      // User provided base 16 number
+      val = strtoull(userInputCharStar + 2, 0, 16);
+   }
+   else
+   {
+      // User provided base 16 number
+      val = strtoull(userInputCharStar, 0, 10);
+   }
+
+   if ( (errno != 0) && (success != nullptr) )
+   {
+      *success = false;
+   }
+   else if (success != nullptr)
+   {
+      *success = true;
+   }
+
+   return val;
+}
+
+
 #ifdef SDL_INCLUDED
 
    std::string Utils::loadFile(std::string& name, std::string& errorOut)

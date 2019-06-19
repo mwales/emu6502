@@ -59,6 +59,9 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
    {
       fprintf(theTraceFile, "Execution start\n");
    }
+
+   theNumberOfStepsToTrace = 0xffffffffffffffff;
+   theNumberOfStepsExecuted = 0;
 #endif
 }
 
@@ -93,6 +96,13 @@ void Cpu6502::enableDebugger(uint16_t portNumber)
       CPU_WARNING() << "Debugger was already running!";
    }
 }
+
+#ifdef TRACE_EXECUTION
+void Cpu6502::setStepLimit(uint64_t numSteps)
+{
+   theNumberOfStepsToTrace = numSteps;
+}
+#endif
 
 void Cpu6502::exitEmulation()
 {
@@ -347,6 +357,21 @@ void Cpu6502::postHandlerHook(OpCodeInfo* oci)
 {
    theNumClocks += oci->theDelayCycles;
    theNumClocks += theAddrModeExtraClockCycle;
+
+#ifdef TRACE_EXECUTION
+   theNumberOfStepsExecuted++;
+
+   if (theNumberOfStepsToTrace < theNumberOfStepsExecuted)
+   {
+      fprintf(theTraceFile, "Hit the step limit of %ld\n", theNumberOfStepsToTrace);
+      halt();
+   }
+   else
+   {
+      CPU_DEBUG() << "Step target " << theNumberOfStepsToTrace << ", we are at "
+                  << theNumberOfStepsExecuted;
+   }
+#endif
 }
 
 void Cpu6502::getRegisters(uint8_t* regX, uint8_t* regY, uint8_t* accum)

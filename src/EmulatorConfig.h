@@ -20,7 +20,7 @@
 #define TRACE_EXECUTION                                                        
 
 // Turns on debug statements in Cpu6502 class
-#define CPU_TRACE                                                              
+// #define CPU_TRACE
 
 // Turns on debug statements about the address mode in the Cpu6502 class
 // #define ADDR_MODE_TRACE                                                           
@@ -41,13 +41,13 @@
 #define MAPPER_TRACE                                                     
 
 // Turns on the debug statements in the MemoryConfig class
-#define CONFIG_TRACE
+// #define CONFIG_TRACE
 
 // Turns on debug statements in the MirrorMemory class
-#define MIRROR_MEM_TRACE
+// #define MIRROR_MEM_TRACE
 
 // Turns on the debug statements in the RomMemory class
-#define ROM_TRACE
+// #define ROM_TRACE
 
 // Turns on debug statements in the RamMemory class
 // #define RAM_TRACE                                                

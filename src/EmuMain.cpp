@@ -1,9 +1,10 @@
 #include <iostream>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+
+#include "EmulatorConfig.h"
 
 // Memory devices
 #include "NesRom.h"
@@ -30,6 +31,11 @@ void printUsage(char* appName)
    std::cout << "  -j --jump       Address to jump to when emulation starts" << std::endl;
    std::cout << "  -h --help       Show this help" << std::endl;
    std::cout << "  -c --config     Configuration file" << std::endl;
+
+#ifdef TRACE_EXECUTION
+   std::cout << "  -n --numsteps   Number of instructions to execute" << std::endl;
+#endif
+
    std::cout << std::endl;
 }
 
@@ -68,6 +74,9 @@ int main(int argc, char* argv[])
       { "jump",     required_argument, 0, 'j'},
       { "debugger", required_argument, 0, 'd'},
       { "help",     no_argument,       0, 'h'},
+#ifdef TRACE_EXECUTION
+      { "numsteps", required_argument, 0, 'n'},
+#endif
       { 0,          0,                 0, 0}
    };
 
@@ -84,9 +93,13 @@ int main(int argc, char* argv[])
 
    int optIndex;
 
+#ifdef TRACE_EXECUTION
+   uint64_t numSteps = 0xffffffffffffffff;
+#endif
+
    while(true)
    {
-      char optChar = getopt_long(argc, argv, "c:f:b:j:d:h", long_options, &optIndex);
+      char optChar = getopt_long(argc, argv, "c:f:b:j:d:h:n:", long_options, &optIndex);
 
       if (optChar == -1)
       {
@@ -136,6 +149,13 @@ int main(int argc, char* argv[])
          LOG_DEBUG() << "Config File:" << optarg;
          configFilename = optarg;
          break;
+
+#ifdef TRACE_EXECUTION
+      case 'n':
+         LOG_DEBUG() << "Num Steps:" << optarg;
+         numSteps = Utils::parseUInt64(optarg);
+         break;
+#endif
 
       default:
          std::cerr << "Invalid argument.  Use -h or --help to see usage" << std::endl;
@@ -205,6 +225,10 @@ int main(int argc, char* argv[])
 
    if (debuggerEnabled)
       emu.enableDebugger(debuggerPort);
+
+#ifdef TRACE_EXECUTION
+   emu.setStepLimit(numSteps);
+#endif
 
    if (jumpAddressSet)
    {

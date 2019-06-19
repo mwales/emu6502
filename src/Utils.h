@@ -32,6 +32,7 @@ public:
    static uint8_t parseUInt8(std::string userInput, bool* success = nullptr);
    static uint16_t parseUInt16(std::string userInput, bool* success = nullptr);
    static uint32_t parseUInt32(std::string userInput, bool* success = nullptr);
+   static uint64_t parseUInt64(std::string userInput, bool* success = nullptr);
 
    static std::string loadFile(std::string& name, std::string& errorOut);
 
