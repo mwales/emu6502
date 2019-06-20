@@ -346,6 +346,8 @@ void Cpu6502::preHandlerHook(OpCodeInfo* oci)
    disassText += Utils::toHex8(theRegY, false);
    disassText += ",  SP=";
    disassText += Utils::toHex8(theStackPtr, false);
+   disassText += ",  SR=";
+   disassText += Utils::toHex8(theStatusReg.theWholeRegister, false);
    disassText += ",  CLK=";
    disassText += Utils::toHex64(theNumClocks, false);
 
