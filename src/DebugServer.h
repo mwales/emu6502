@@ -66,9 +66,17 @@ protected:
 
    void memoryDumpCommand(uint16_t commandLen);
 
-   void addBreakpointCommand(uint16_t commandLen);
-   void removeBreakpointCommand(uint16_t commandLen);
+   void addBreakpointCommand(uint16_t command, uint16_t commandLen);
+   void removeBreakpointCommand(uint16_t command, uint16_t commandLen);
    void listBreakpointCommand();
+
+   /**
+    * Sends the list of breakpoints to the debugger client.  Breakpoint list format is:
+    * uint16_t Number of instruction breakpoints
+    * uint16_t Number of memory access breakpoints
+    * uint16_t[n] CPU Address of instructions breakpoints
+    * uint16_t[n] CPU Address of memory access breakpoints
+    */
    void sendBreakpointList();
 
    Cpu6502* theCpu;
@@ -101,6 +109,8 @@ protected:
    bool theRegisterDumpSentToClient;
 
    std::set<CpuAddress> theBreakpoints;
+
+   std::set<CpuAddress> theMemoryAccessBPs;
 
 };
 

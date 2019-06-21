@@ -380,6 +380,52 @@ class DbgClient(cmd2.Cmd):
 
         self.recvBreakpointList()
 
+    def do_mabp_add(self, argstr):
+        """
+        Adds a breakpoint when memory address is accessed
+        """
+
+        args = argstr.split()
+        if (len(args) < 1):
+            self.lastResult = "Memory access breakpoint add failed, no address specified"
+            print(self.lastResult)
+            return
+
+        addr = int(args[0], 16)
+
+        print("Adding a breakpoint at address: {}".format(hex(addr)))
+
+        self.sendHeader(12, 2)
+
+        msgData = struct.pack("!H", addr)
+        self.s.send(msgData)
+
+        self.recvBreakpointList()
+
+    def do_mabp_del(self, argstr):
+        """
+        Deletes a memory access breakpoint
+        """
+
+        args = argstr.split()
+        if (len(args) < 1):
+            self.lastResult = "Breakpoint delete failed, no address specified"
+            print(self.lastResult)
+            return
+
+        addr = int(args[0], 16)
+
+        print("Removing a memory access breakpoint at address: {}".format(hex(addr)))
+
+        self.sendHeader(13, 2)
+
+        msgData = struct.pack("!H", addr)
+        self.s.send(msgData)
+
+        self.recvBreakpointList()
+
+      
+
     def do_bp_list(self, argstr):
         """
         Lists the breakpoints
@@ -396,20 +442,25 @@ class DbgClient(cmd2.Cmd):
             print("Received malformed breakpoint response (less than 2 bytes): {}".format(msgData))
             return
 
-        bpListSizeTuple = struct.unpack("!H", msgData[0:2])
-        bpListSize = bpListSizeTuple[0]
-        print("Received a list of {} breakpoints:".format(bpListSize))
+        bpListSizeTuple = struct.unpack("!HH", msgData[0:4])
+        bpInstructionListSize = bpListSizeTuple[0]
+        bpMemoryAccessListSize = bpListSizeTuple[1]
+
+        print("Received a list of {} instruction and {} memory access breakpoints:".format(bpInstructionListSize, bpMemoryAccessListSize))
 
         # Verify the frame length is correct for the data that we received
-        if (len(msgData) != 2 + 2 * bpListSize):
+        if (len(msgData) != 4 + 2 * (bpInstructionListSize + bpMemoryAccessListSize)):
             print("List of breakpoints doesn't match the size of the frame!")
             return
 
         bpListText = ""
-        for i in range(0, bpListSize):
-            bpAddrTuple = struct.unpack("!H", msgData[2 + i * 2: 4 + i * 2])
+        breakpointType = "instruction"
+        for i in range(0, bpInstructionListSize + bpMemoryAccessListSize):
+            if (i == bpInstructionListSize):
+                breakpointType = "memory access"
+            bpAddrTuple = struct.unpack("!H", msgData[4 + i * 2: 6 + i * 2])
             bpAddr = bpAddrTuple[0]
-            bpListText += "BP {} = {}\n".format(i, hex(bpAddr))
+            bpListText += "BP {} = {} {}\n".format(i, hex(bpAddr), breakpointType)
 
         self.lastResult = bpListText
         print(self.lastResult)

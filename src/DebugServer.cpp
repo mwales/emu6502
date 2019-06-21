@@ -285,16 +285,21 @@ void DebugServer::processCommand(uint16_t commandLen, uint16_t command)
       break;
 
    case 9: // Breakpoint add
-      addBreakpointCommand(commandLen);
+   case 12: // Add memory access breakpoint
+      addBreakpointCommand(command, commandLen);
       break;
 
    case 10: // Breakpoint remove
-      removeBreakpointCommand(commandLen);
+   case 13: // Delete memory access breakpoint
+      removeBreakpointCommand(command, commandLen);
       break;
 
    case 11: // Breakpoint list
       listBreakpointCommand();
       break;
+
+   // case 12 is above
+   // case 13 is above
 
    default:
       DS_WARNING() << "Command " << command << " is not implemented!";
@@ -481,7 +486,7 @@ void DebugServer::memoryDumpCommand(uint16_t commandLen)
    sendResponse(mdSize + 4, rspBuf);
 }
 
-void DebugServer::addBreakpointCommand(uint16_t commandLen)
+void DebugServer::addBreakpointCommand(uint16_t command, uint16_t commandLen)
 {
    // We are expecting CpuAddress addr
    if (commandLen != 2)
@@ -494,14 +499,18 @@ void DebugServer::addBreakpointCommand(uint16_t commandLen)
 
    CpuAddress addr = SDLNet_Read16(theRxDataBuffer);
 
-   theBreakpoints.insert(addr);
+   if (command == 9)
+      theBreakpoints.insert(addr);
+   else
+      theMemoryAccessBPs.insert(addr);
 
-   DS_DEBUG() << "Inserted" << addressToString(addr) << "into breakpoint list";
+   DS_DEBUG() << "Inserted" << addressToString(addr) << "into breakpoint list " <<
+                 (command == 9 ? "instruction" : "memory access");
 
    sendBreakpointList();
 }
 
-void DebugServer::removeBreakpointCommand(uint16_t commandLen)
+void DebugServer::removeBreakpointCommand(uint16_t command, uint16_t commandLen)
 {
    // We are expecting CpuAddress addr
    if (commandLen != 2)
@@ -514,11 +523,17 @@ void DebugServer::removeBreakpointCommand(uint16_t commandLen)
 
    CpuAddress addr = SDLNet_Read16(theRxDataBuffer);
 
-   auto bpIt = theBreakpoints.find(addr);
-   if (bpIt != theBreakpoints.end())
+   std::set<CpuAddress>* bpList;
+   if (command == 10)
+      bpList = &theBreakpoints;
+   else
+      bpList = &theMemoryAccessBPs;
+
+   auto bpIt = bpList->find(addr);
+   if (bpIt != bpList->end())
    {
       // We found the breakpoint in the list, now remove it
-      theBreakpoints.erase(bpIt);
+      bpList->erase(bpIt);
 
       DS_DEBUG() << "Removed breakpoint" << addressToString(addr);
    }
@@ -538,18 +553,27 @@ void DebugServer::listBreakpointCommand()
 
 void DebugServer::sendBreakpointList()
 {
-   uint16_t numberBreakpoints = theBreakpoints.size();
-   int frameLength = sizeof(uint16_t) + numberBreakpoints * sizeof(CpuAddress);
+   uint16_t numberBreakpoints = theBreakpoints.size() + theMemoryAccessBPs.size();
+   int frameLength = 2 * sizeof(uint16_t) + numberBreakpoints * sizeof(CpuAddress);
 
    uint8_t* frameBuffer = (uint8_t*) malloc(frameLength);
    uint8_t* fbp = frameBuffer;
 
-   SDLNet_Write16(numberBreakpoints, fbp);
+   SDLNet_Write16(theBreakpoints.size(), fbp);
+   fbp += sizeof(uint16_t);
+
+   SDLNet_Write16(theMemoryAccessBPs.size(), fbp);
    fbp += sizeof(uint16_t);
 
    for(auto BpIt = theBreakpoints.begin(); BpIt != theBreakpoints.end(); BpIt++)
    {
       SDLNet_Write16(*BpIt, fbp);
+      fbp += sizeof(CpuAddress);
+   }
+
+   for(auto BpMemIt = theMemoryAccessBPs.begin(); BpMemIt != theMemoryAccessBPs.end(); BpMemIt++)
+   {
+      SDLNet_Write16(*BpMemIt, fbp);
       fbp += sizeof(CpuAddress);
    }
 
