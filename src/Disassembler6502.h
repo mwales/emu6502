@@ -6,10 +6,16 @@
 #include <map>
 
 
+/**
+ * Class outputs the disassembly in the debugger or if dumping assembly using the standalone
+ * disassembler application.
+ */
 class Disassembler6502 : public Decoder6502
 {
 public:
    Disassembler6502(MemoryController* memCtrl);
+
+   virtual ~Disassembler6502();
 
    virtual void start(CpuAddress address);
 

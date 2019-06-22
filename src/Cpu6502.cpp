@@ -405,6 +405,12 @@ uint64_t Cpu6502::getInstructionCount()
 
 uint8_t Cpu6502::emulatorRead(CpuAddress addr)
 {
+   if (theDebugger)
+   {
+      // Call debugger incase user has memory access breakpoint
+      theDebugger->debugMemoryAccessHook(addr, false);
+   }
+
    MemoryDev* theMemDev = theMemoryController->getDevice(addr);
 
    if (theMemDev == nullptr)
@@ -423,6 +429,12 @@ uint8_t Cpu6502::emulatorRead(CpuAddress addr)
 
 void Cpu6502::emulatorWrite(CpuAddress addr, uint8_t val)
 {
+   if (theDebugger)
+   {
+      // Call debugger incase user has memory access breakpoint
+      theDebugger->debugMemoryAccessHook(addr, true);
+   }
+
    MemoryDev* theMemDev = theMemoryController->getDevice(addr);
 
    if (theMemDev == nullptr)

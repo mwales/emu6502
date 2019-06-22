@@ -14,6 +14,9 @@ class MemoryController;
 
 #define DEBUGGER_MAX_MSG_LEN  2048
 
+/**
+ * Class that the debugger client connects to via TCP connection to command the debugger
+ */
 class DebugServer
 {
 public:
@@ -23,6 +26,13 @@ public:
 
    /// Called every CPU cycle to see if the debugger needs to do anything
    void debugHook();
+
+   /**
+    * Called by the emulator when memory address are accessed for reading or writing
+    * @param addr Memory address being written
+    * @param isWrite If the access was a read or write
+    */
+   void debugMemoryAccessHook(CpuAddress addr, bool isWrite);
 
    bool startDebugServer();
 

@@ -97,6 +97,23 @@ void DebugServer::debugHook()
    }
 }
 
+void DebugServer::debugMemoryAccessHook(CpuAddress addr, bool isWrite)
+{
+   if (theMemoryAccessBPs.find(addr) != theMemoryAccessBPs.end() )
+   {
+      theDebuggerState.haltEmulator();
+      DS_DEBUG() << "Debugger hit memory access breakpoint for "
+                 << (isWrite ? "write" : "read") << " at "
+                 << addressToString(addr);
+   }
+   else
+   {
+      DS_DEBUG() << "Hook called for " << (isWrite ? "write" : "read") << "memory access at "
+                 << addressToString(addr);
+   }
+
+}
+
 int DebugServer::debugServerThreadEntry(void* debuggerInstance)
 {
    DebugServer* instance = (DebugServer*) debuggerInstance;

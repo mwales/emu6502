@@ -23,8 +23,14 @@ Disassembler6502::Disassembler6502(MemoryController* memCtrl):
 {
    theMemoryController = memCtrl;
 
-
+   DISASS_DEBUG() << "Disassembler object created";
 }
+
+Disassembler6502::~Disassembler6502()
+{
+   DISASS_DEBUG() << "Disassembler objected deleted";
+}
+
 
 void Disassembler6502::start(CpuAddress address)
 {
