@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../Cpu6502Defines.h"
+#include "Cpu6502Defines.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
