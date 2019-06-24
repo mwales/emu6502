@@ -4,11 +4,9 @@
 #include <stdint.h>
 #include "EmulatorConfig.h"
 #include "Cpu6502Defines.h"
-
+#include "Logger.h"
 
 #ifdef MAPPER_TRACE
-   #include "Logger.h"
-
    #define MAPPER_DEBUG  LOG_DEBUG
    #define MAPPER_WARNING  LOG_WARNING
 #else
