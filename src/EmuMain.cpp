@@ -12,6 +12,7 @@
 #include "RamMemory.h"
 #include "UartDevice.h"
 #include "MirrorMemory.h"
+#include "RngDev.h"
 
 #include "MemoryController.h"
 #include "Cpu6502.h"
@@ -198,6 +199,7 @@ int main(int argc, char* argv[])
       memConfig.registerMemoryDevice(UartDevice::getTypeName(),   UartDevice::getMDC());
       memConfig.registerMemoryDevice(NesRom::getTypeName(),       NesRom::getMDC());
       memConfig.registerMemoryDevice(MirrorMemory::getTypeName(), MirrorMemory::getMDC());
+      memConfig.registerMemoryDevice(RngDev::getTypeName(),       RngDev::getMDC());
 
       std::string errorStr;
       std::string configData = Utils::loadFile(configFilename, errorStr);

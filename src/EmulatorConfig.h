@@ -53,7 +53,10 @@
 // #define ROM_TRACE
 
 // Turns on debug statements in the RamMemory class
-// #define RAM_TRACE                                                
+// #define RAM_TRACE
+
+// Turns on debug for the random number generator device
+#define RANDOMDEV_TRACE
 
 #endif
 

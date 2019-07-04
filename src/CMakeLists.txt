@@ -19,6 +19,7 @@ set(EMULAT_FILES Cpu6502.cpp
                  DebugServer.cpp
                  DebuggerState.cpp
                  RamMemory.cpp
+		 RngDev.cpp
                  EmuMain.cpp
 		 MemoryConfig.cpp
 		 UartDevice.cpp
