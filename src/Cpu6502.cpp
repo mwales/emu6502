@@ -33,13 +33,15 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
    theRegY(0),
    theAccum(0),
    theStackPtr(0xfd),
-   thePc(0),
    theDebugger(nullptr),
+   theDebuggerShutdownFlag(false),
    theRunFlag(true),
    theNumClocks(0),
    theAddrModeExtraClockCycle(0),
    thePageBoundaryCrossedFlag(false)
 {
+   thePc = 0;
+
    theMemoryController = ctrlr;
 
    theStatusReg.theWholeRegister = 0x24;
@@ -106,35 +108,60 @@ void Cpu6502::setStepLimit(uint64_t numSteps)
 
 void Cpu6502::exitEmulation()
 {
+   CPU_DEBUG() << "exit Emulation called";
    theRunFlag = false;
+   theDebuggerShutdownFlag = true;
 }
 
-void Cpu6502::start(CpuAddress address)
+void Cpu6502::start()
 {
    // Do a bunch of architecutre specific setup stuff here if necessary
 
-   thePc = address;
-   CPU_DEBUG() << "Cpu6502::start called at address " << addressToString(address);
+   CPU_DEBUG() << "Cpu6502::start called at address " << addressToString(thePc);
 
    while(true)
    {
       CPU_DEBUG() << "Cpu6502::start start of the loop executing";
 
-      // If there is a debugger, do the debugger hook
-      if (theDebugger != nullptr)
-      {
-         theDebugger->debugHook();
-      }
-
-      if (!theRunFlag)
-         break;
-
       //SDL_Delay(2000);
 
-      decode(thePc);
+      if (-1 == decode())
+      {
+         break;
+      }
    }
 
    CPU_DEBUG() << "Emulator exitting (run flag false)";
+
+}
+
+int Cpu6502::decode()
+{
+   // Check for the few instances where we can't decode
+   // If there is a debugger, do the debugger hook
+   if (theDebugger != nullptr)
+   {
+      theDebugger->debugHook();
+
+      int cc = Decoder6502::decode();
+      if (cc == -1)
+      {
+         // Is the emulator just stopped, or do we really need to shut down
+         return (theDebuggerShutdownFlag ? -1 : 0);
+      }
+      else
+      {
+         return cc;
+      }
+   }
+
+   if (!theRunFlag)
+   {
+      CPU_DEBUG() << "Run flag set to false!";
+      return -1;
+   }
+
+   return Decoder6502::decode();
 
 }
 
@@ -355,10 +382,10 @@ void Cpu6502::preHandlerHook(OpCodeInfo* oci)
 #endif
 }
 
-void Cpu6502::postHandlerHook(OpCodeInfo* oci)
+int Cpu6502::postHandlerHook(OpCodeInfo* oci)
 {
-   theNumClocks += oci->theDelayCycles;
-   theNumClocks += theAddrModeExtraClockCycle;
+   int clockCycles = oci->theDelayCycles + theAddrModeExtraClockCycle;
+   theNumClocks += clockCycles;
 
 #ifdef TRACE_EXECUTION
    theNumberOfStepsExecuted++;
@@ -374,6 +401,9 @@ void Cpu6502::postHandlerHook(OpCodeInfo* oci)
                   << theNumberOfStepsExecuted;
    }
 #endif
+
+   CPU_DEBUG() << "Clock cycles for this instruction = " << clockCycles;
+   return clockCycles;
 }
 
 void Cpu6502::getRegisters(uint8_t* regX, uint8_t* regY, uint8_t* accum)

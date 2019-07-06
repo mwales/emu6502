@@ -13,8 +13,6 @@ class Decoder6502 : public Decoder
 {
 public:
 
-   virtual void start(CpuAddress address) = 0;
-
    // I want these handlers to be protected, but then i guess you can't function pointers to them
    // then, maybe I will bring in the Cpu6501Defines.h code into this class...
 
@@ -98,13 +96,18 @@ public:
 
 protected:
 
-   virtual void decode(CpuAddress address);
+   virtual int decode();
 
    virtual void updatePc(uint8_t bytesIncrement) = 0;
 
    virtual void preHandlerHook(OpCodeInfo* oci);
 
-   virtual void postHandlerHook(OpCodeInfo* oci);
+   /**
+    * Post decoder operations hook.
+    * @param oci
+    * @return Number of clock cycles if emulating, -1 on error / halt
+    */
+   virtual int postHandlerHook(OpCodeInfo* oci);
 
    /// When decoding, these are the extra bytes of an op code (not always used)
    uint8_t theOpCode2;

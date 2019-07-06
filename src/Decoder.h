@@ -13,22 +13,40 @@ public:
 
    /**
     * Start the decoding process
-    *
-    * @param address
     */
-   virtual void start(CpuAddress address) = 0;
+   virtual void start() = 0;
 
    /**
     * Something happend during decoding this callback provides a way to stop the decoding
     */
    virtual void halt() = 0;
 
+   /**
+    * Setting the address for the decoder to fetch instructions at
+    * @param address Entry point
+    */
+   virtual void setAddress(CpuAddress address)
+   {
+      thePc = address;
+   }
+
+   /**
+    * Decode a single instruction
+    * @return -1 on error, clock cycles for operation if emulating
+    */
+   virtual int decode() = 0;
 
 protected:
 
-   virtual void decode(CpuAddress address) = 0;
-
+   /**
+    * The manager for accessing all memory devices
+    */
    MemoryController* theMemoryController;
+
+   /**
+    * Current address of decoding (whether emulating or disassembling)
+    */
+   CpuAddress thePc;
 
 };
 

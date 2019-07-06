@@ -20,7 +20,7 @@ public:
 
     ~Cpu6502();
 
-    virtual void start(CpuAddress address);
+    virtual void start();
 
     void enableDebugger(uint16_t portNumber);
 
@@ -129,12 +129,18 @@ public:
     uint8_t    getStatusReg();
     uint64_t   getInstructionCount();
 
+    /**
+     * Our implementation of decode calls debugger hook and makes sure emulator
+     * allowed to run
+     */
+    virtual int decode();
+
 protected:
 
     virtual void updatePc(uint8_t bytesIncrement);
 
     void preHandlerHook(OpCodeInfo* oci);
-    void postHandlerHook(OpCodeInfo* oci);
+    int postHandlerHook(OpCodeInfo* oci);
 
     /**
      * Safely tries to read memory.  If their is no valid memory device for the
@@ -161,10 +167,12 @@ protected:
     uint8_t theAccum;
     uint8_t theStackPtr;
     StatusReg theStatusReg;
-    CpuAddress thePc;
 
     /// The debugger if one is configured, else it is a nullptr
     DebugServer* theDebugger;
+
+    /// Separate flag for the debugger to make the emulator shut down
+    bool theDebuggerShutdownFlag;
 
     bool theRunFlag;
 
@@ -186,6 +194,7 @@ protected:
     bool thePageBoundaryCrossedFlag;
 
 #ifdef TRACE_EXECUTION
+    /// Used to create disassembler listings for each statement
     Disassembler6502* theDisAss;
 
     FILE* theTraceFile;

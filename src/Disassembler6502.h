@@ -17,7 +17,7 @@ public:
 
    virtual ~Disassembler6502();
 
-   virtual void start(CpuAddress address);
+   virtual void start();
 
    virtual void addExtraEntryPoint(CpuAddress address);
 
@@ -125,7 +125,6 @@ protected:
 
    // Overrides of base methods
    virtual void preHandlerHook(OpCodeInfo* oci);
-   virtual void postHandlerHook(OpCodeInfo* oci);
 
    virtual void updatePc(uint8_t bytesIncrement);
 
@@ -140,7 +139,6 @@ protected:
    std::string addBranchLabelFromRelativeOffset(uint8_t offset);
 
    bool theDeadEndFlag;
-   CpuAddress thePc;
 
    std::vector<CpuAddress> theEntryPoints;
 

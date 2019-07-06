@@ -106,6 +106,11 @@ void MemoryController::resetAll()
    }
 }
 
+std::vector<MemoryDev*> MemoryController::getAllDevices()
+{
+   return theDevices;
+}
+
 bool MemoryController::doRangesOverlap(MemoryRange dev1, MemoryRange dev2)
 {
    // [ dev1 ]

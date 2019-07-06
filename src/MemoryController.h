@@ -36,6 +36,8 @@ public:
 
     void resetAll();
 
+    std::vector<MemoryDev*> getAllDevices();
+
 protected:
     /**
      * Do two memory ranges overlap each other for 1 or more addresses

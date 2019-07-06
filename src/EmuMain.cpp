@@ -239,7 +239,8 @@ int main(int argc, char* argv[])
    }
 
    // Start of emulation
-   emu.start(executionEntryPoint);
+   emu.setAddress(executionEntryPoint);
+   emu.start();
 
    // Emulation complete, cleanup
 

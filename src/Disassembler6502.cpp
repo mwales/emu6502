@@ -32,9 +32,9 @@ Disassembler6502::~Disassembler6502()
 }
 
 
-void Disassembler6502::start(CpuAddress address)
+void Disassembler6502::start()
 {
-   theEntryPoints.push_back(address);
+   theEntryPoints.push_back(thePc);
 
    while(!theEntryPoints.empty())
    {
@@ -53,7 +53,7 @@ void Disassembler6502::start(CpuAddress address)
 
          while(!theDeadEndFlag)
          {
-            decode(thePc);
+            decode();
 
             // Delete me!!!
             //theDeadEndFlag = true;
@@ -185,18 +185,17 @@ void Disassembler6502::printAddress(std::string* listingText, CpuAddress addr)
 
 std::string Disassembler6502::debugListing(CpuAddress addr, int numInstructions)
 {
-   CpuAddress nextAddress = addr;
-   DISASS_DEBUG() << "Debug listing start =" << addressToString(nextAddress);
+   thePc = addr;
+   DISASS_DEBUG() << "Debug listing start =" << addressToString(thePc);
    std::ostringstream oss;
 
    theDeadEndFlag = false;
-   thePc = nextAddress;
 
    while(!theDeadEndFlag && numInstructions)
    {
       CpuAddress addressOfInstruction = thePc;
 
-      decode(thePc);
+      decode();
       numInstructions--;
 
       oss << Utils::toHex16(addressOfInstruction, false) << "\t";
@@ -361,12 +360,6 @@ void Disassembler6502::preHandlerHook(OpCodeInfo* oci)
    // This is where sub-classes will do sub-class specific behavior if necessary
    addDisassemblerListing(oci);
 }
-
-void Disassembler6502::postHandlerHook(OpCodeInfo* oci)
-{
-   // This is where sub-classes will do sub-class specific behavior if necessary
-}
-
 
 void Disassembler6502::handler_and(OpCodeInfo* oci)
 {

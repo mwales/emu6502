@@ -20,13 +20,13 @@
 #define TRACE_EXECUTION                                                        
 
 // Turns on debug statements in Cpu6502 class
-// #define CPU_TRACE
+#define CPU_TRACE
 
 // Turns on debug statements about the address mode in the Cpu6502 class
 // #define ADDR_MODE_TRACE                                                           
 
 // Turns on debugger statements for the Decoder6502 class
-// #define DECODER_6502_DEBUG
+#define DECODER_6502_DEBUG
 
 // Turning this on implements the unofficial NES op-codes in Cpu6502 class
 #define UNOFFICIAL_NES_OPCODE_SUPPORT                         
@@ -35,10 +35,10 @@
 // #define DSTATE_DEBUG_LOGGING                                      
 
 // Turns on debug statements from the DebugServer class
-// #define DEBUG_SERVER_DEBUG                                                     
+#define DEBUG_SERVER_DEBUG
 
 // Turns on debug statements from the Disassembler6502 class
-// #define DISASS_TRACE                                     
+#define DISASS_TRACE
             
 // Turns on debug statements for the Mapper class (and child mapper classes)
 // #define MAPPER_TRACE

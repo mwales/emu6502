@@ -133,7 +133,8 @@ int main(int argc, char* argv[])
       dis.addExtraEntryPoint(*singleEp);
    }
 
-   dis.start(baseAddress);
+   dis.setAddress(baseAddress);
+   dis.start();
 
    dis.printDisassembly();
 
