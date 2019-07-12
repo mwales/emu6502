@@ -5,6 +5,7 @@
    #include <SDL2/SDL_rwops.h>
 #endif
 
+#include <sstream>
 
 Utils::Utils()
 {
@@ -198,6 +199,8 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
       return retVal;
    }
 
+
+
    int Utils::readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp)
    {
        int bytesReadTotal = 0;
@@ -227,3 +230,42 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
 
 
 #endif
+
+std::string Utils::hexDump(uint8_t* buffer, int length)
+{
+   std::ostringstream oss;
+   bool isFirst = true;
+   for(int i = 0; i < length; i++)
+   {
+      if (isFirst)
+      {
+         isFirst = false;
+      }
+      else
+      {
+         oss << " ";
+      }
+
+      oss << toHex8(buffer[i], false);
+   }
+
+   return oss.str();
+}
+
+bool Utils::isPowerOf2(int32_t val)
+{
+   return ( (val & (val - 1)) == 0);
+}
+
+int32_t Utils::nextPowerOf2(int32_t v)
+{
+   // From bithacks page
+   v--;
+   v |= v >> 1;
+   v |= v >> 2;
+   v |= v >> 4;
+   v |= v >> 8;
+   v |= v >> 16;
+   v++;
+   return v;
+}

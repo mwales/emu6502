@@ -36,11 +36,19 @@ public:
 
    static std::string loadFile(std::string& name, std::string& errorOut);
 
+   /// Converts a buffer of data into "aa bb cc .."
+   static std::string hexDump(uint8_t* buffer, int length);
+
 #ifdef SDL_INCLUDED
    static int readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp);
 
 #endif
 
+   /// Is the given number a power of 2
+   static bool isPowerOf2(int32_t val);
+
+   /// Find the next power of 2 higher than the current number
+   static int32_t nextPowerOf2(int32_t val);
 
 protected:
 

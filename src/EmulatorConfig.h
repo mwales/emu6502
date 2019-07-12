@@ -58,5 +58,8 @@
 // Turns on debug for the random number generator device
 #define RANDOMDEV_TRACE
 
+// Turns on debug for the simple queue (for display commands)
+//#define SIMPLE_QUEUE_LOGGING
+
 #endif
 
