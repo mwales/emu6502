@@ -262,6 +262,8 @@ TEST_CASE("Test blocking behaviors", "[verify]")
 
    // We should have read 1 bytes
    REQUIRE(numBytesRead == 1);
+
+   endFuture();
 }
 
 
@@ -274,25 +276,27 @@ int futureFunction(void* data)
 
    std::cout << "Calling future function of interest" << std::endl;
 
+   int retVal = 0;
 
    switch(futureData[1])
    {
    case 0:
       helloWorldTestHelper();
-      return 0;
+      break;
 
    case 1:
       queueBytesTestHelper();
-      return 0;
+      break;
 
    case 2:
       readBytesTestHelper();
-      return 0;
+      break;
 
    default:
-      return 1;
+      retVal = 1;
    }
 
    free(data);
+   return retVal;
 }
 
