@@ -40,6 +40,8 @@ public:
 
     CpuAddress getStartAddress();
 
+    std::string getDisplayType();
+
     bool isStartAddressSet();
 
 
@@ -55,8 +57,13 @@ protected:
 
     std::map<std::string, MemoryDeviceConstructor > theDevConstructorList;
 
+    // Configuration itmems that aren't really memory device related, but just convenient here
+
     bool theStartAddressSet;
+
     CpuAddress theStartAddress;
+
+    std::string theDisplayType;
 
 };
 

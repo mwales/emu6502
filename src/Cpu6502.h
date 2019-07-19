@@ -3,9 +3,12 @@
 
 #include "EmulatorConfig.h"
 #include "Decoder6502.h"
+#include <vector>
 
 class DebugServer;
 class MemoryController;
+
+typedef void (*HaltFunctionCallback)(void);
 
 
 #ifdef TRACE_EXECUTION
@@ -18,11 +21,16 @@ class Cpu6502 : public Decoder6502
 public:
     Cpu6502(MemoryController* ctrlr);
 
-    ~Cpu6502();
+    virtual ~Cpu6502();
 
     virtual void start();
 
-    void enableDebugger(uint16_t portNumber);
+    /**
+     * Opens the debug server socket.
+     * @param portNumber
+     * @return False on errror
+     */
+    bool enableDebugger(uint16_t portNumber);
 
 #ifdef TRACE_EXECUTION
     /**
@@ -36,6 +44,8 @@ public:
      * Called from debugger to have the emulator exit
      */
     void exitEmulation();
+
+    void addHaltCallback(HaltFunctionCallback cb);
 
     // All of the op code handler functions (auto-generated code below)
     virtual void handler_and(OpCodeInfo* oci);
@@ -133,6 +143,9 @@ public:
      * Our implementation of decode calls debugger hook and makes sure emulator
      * allowed to run
      */
+    virtual int decodeWithDebugging();
+
+    /// Runs fast as possible, only will stop when we are told or when emulator breaks
     virtual int decode();
 
 protected:
@@ -175,6 +188,8 @@ protected:
     bool theDebuggerShutdownFlag;
 
     bool theRunFlag;
+
+    std::vector<HaltFunctionCallback> theHaltCallbacksList;
 
     /**
      * The number of clock cycles the CPU has been on for

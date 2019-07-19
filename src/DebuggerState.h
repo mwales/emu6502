@@ -1,26 +1,31 @@
 #ifndef DEBUGGER_STATE_H
 #define DEBUGGER_STATE_H
 
-#include <SDL2/SDL.h>
 
+/**
+ * Keeps track of what state the debugger should be in (and how many steps until the next
+ * breakpoint when stepping
+ */
 class DebuggerState
 {
 public:
 
    DebuggerState();
 
+   ~DebuggerState();
+
    /**
     * This method is called by the main debug hook and will block the emulator
     * if the debugger wants the emulator blocked
     * @returns False if the debugger should sleep for a bit and block
     */
-   bool emulatorDebugHook();
+   bool emulatorAllowExecution();
 
    /**
-    * The debugger thread calls this to cause the emulator to block the next
-    * time the debugger hook is called
+    * The debugger calls this to cause the state machine to block the next time
+    * the debugger hook is called
     */
-   void haltEmulator();
+   void pauseEmulator();
 
    /**
     * Lets the emulator run for a finite number of steps before halting itself
@@ -34,23 +39,28 @@ public:
    void runEmulator();
 
    /**
-    * Allows the debugger to register a callback that it wants to be called
-    * when the emulator is halted to due to the halt command, or number of
-    * steps have been executed
+    * When the emulation is halted while debugging, the debugger needs to send
+    * a dump of stuff to the debugger client.  This is called after the dump
+    * of state has been sent to the client
     */
-   void registerEmulatorHaltedCallback(void (*callback)(void*), void* callbackValue);
+   void acknowledgeHalt();
+
+   bool isFreshHalt();
 
 protected:
 
-   SDL_sem* theLock;
+   typedef enum
+   {
+      PAUSE,
+      RUN,
+      STEPPING,
+      FRESH_HALT
+   } DebuggerInternalState;
 
-   int theStepCount;
+   DebuggerInternalState theState;
 
-   bool theHaltFired;
+   int theStepsLeft;
 
-   void (*theHaltCallback)(void*);
-
-   void* theHaltCallbackValue;
 };
 
 #endif // DEBUGGER_STATE_H

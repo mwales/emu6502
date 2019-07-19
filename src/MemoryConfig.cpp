@@ -70,6 +70,19 @@ bool MemoryConfig::parseConfig(std::string configJson)
       CFG_DEBUG() << "JSON configuration specified start address of" << addressToString(theStartAddress);
    }
 
+   // Get the start address for execution
+   j = cJSON_GetObjectItem(json, "displayType");
+   if ( (j == nullptr) || !cJSON_IsString(j) )
+   {
+      CFG_DEBUG() << "No display type specified in the configuration file";
+      theDisplayType = "none";
+   }
+   else
+   {
+      theDisplayType = j->valuestring;
+      CFG_DEBUG() << "JSON configuration specified display type " << theDisplayType;
+   }
+
    // Parse the array of devices
    j = cJSON_GetObjectItem(json, "devices");
    if ( (j == nullptr) || (!cJSON_IsArray(j)))
@@ -199,6 +212,11 @@ std::string MemoryConfig::getConfigurationName()
 CpuAddress MemoryConfig::getStartAddress()
 {
    return theStartAddress;
+}
+
+std::string MemoryConfig::getDisplayType()
+{
+   return theDisplayType;
 }
 
 bool MemoryConfig::isStartAddressSet()

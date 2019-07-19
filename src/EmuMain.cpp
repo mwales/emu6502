@@ -6,6 +6,8 @@
 
 #include "EmulatorConfig.h"
 
+#include "DisplayManager.h"
+
 // Memory devices
 #include "NesRom.h"
 #include "RomMemory.h"
@@ -190,6 +192,8 @@ int main(int argc, char* argv[])
       }
    }
 
+   std::string displayType;
+
    if (configFilename.length() != 0)
    {
       MemoryConfig memConfig(memControl);
@@ -219,17 +223,31 @@ int main(int argc, char* argv[])
          executionEntryPoint = memConfig.getStartAddress();
          LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint << " from config";
       }
+
+      displayType = memConfig.getDisplayType();
    }
 
    constructCpuGlobals();
 
-   Cpu6502 emu(memControl);
+   Cpu6502* emu = new Cpu6502(memControl);
+
+   DisplayManager* dispManager = DisplayManager::getInstance();
+   dispManager->configureDisplay(displayType, emu);
 
    if (debuggerEnabled)
-      emu.enableDebugger(debuggerPort);
+   {
+      if (emu->enableDebugger(debuggerPort))
+      {
+         LOG_DEBUG() << "Debugger started successfully on port" << debuggerPort;
+      }
+      else
+      {
+         goto FAILED_TO_START;
+      }
+   }
 
 #ifdef TRACE_EXECUTION
-   emu.setStepLimit(numSteps);
+   emu->setStepLimit(numSteps);
 #endif
 
    if (jumpAddressSet)
@@ -239,10 +257,17 @@ int main(int argc, char* argv[])
    }
 
    // Start of emulation
-   emu.setAddress(executionEntryPoint);
-   emu.start();
+   emu->setAddress(executionEntryPoint);
+
+   // Display manager will spawn emulator thread and block for the entire duration of emulation
+   dispManager->startEmulator();
+
+   FAILED_TO_START:
 
    // Emulation complete, cleanup
+   DisplayManager::destroyInstance();
+
+   delete emu;
 
    delete memControl;
 

@@ -69,16 +69,25 @@ Cpu6502::Cpu6502(MemoryController* ctrlr):
 
 Cpu6502::~Cpu6502()
 {
+   CPU_DEBUG() << "CPU6502 destructor called";
+
    if (theDebugger != nullptr)
    {
+      CPU_DEBUG() << "Deleting the debugger";
       delete theDebugger;
+   }
+   else
+   {
+      CPU_DEBUG() << "No debugger to delete";
    }
 
 #ifdef TRACE_EXECUTION
+   CPU_DEBUG() << "Delete the tracer disassembler";
    delete theDisAss;
 
    if (theTraceFile)
    {
+      CPU_DEBUG() << "Closing the trace file";
       fprintf(theTraceFile, "Execution end\n");
       fclose(theTraceFile);
       theTraceFile = nullptr;
@@ -86,16 +95,19 @@ Cpu6502::~Cpu6502()
 #endif
 }
 
-void Cpu6502::enableDebugger(uint16_t portNumber)
+bool Cpu6502::enableDebugger(uint16_t portNumber)
 {
    if (theDebugger == nullptr)
    {
       CPU_DEBUG() << "Enabling debugger on port " << portNumber;
       theDebugger = new DebugServer(this, portNumber, theMemoryController);
+
+      return theDebugger->startDebugServer();
    }
    else
    {
       CPU_WARNING() << "Debugger was already running!";
+      return true;
    }
 }
 
@@ -113,46 +125,76 @@ void Cpu6502::exitEmulation()
    theDebuggerShutdownFlag = true;
 }
 
+void Cpu6502::addHaltCallback(HaltFunctionCallback cb)
+{
+   theHaltCallbacksList.push_back(cb);
+}
+
 void Cpu6502::start()
 {
    // Do a bunch of architecutre specific setup stuff here if necessary
 
    CPU_DEBUG() << "Cpu6502::start called at address " << addressToString(thePc);
 
-   while(true)
+   if (theDebugger)
    {
-      CPU_DEBUG() << "Cpu6502::start start of the loop executing";
-
-      //SDL_Delay(2000);
-
-      if (-1 == decode())
+      // Debugger running
+      while(true)
       {
-         break;
+         CPU_DEBUG() << "Cpu6502::start start of the loop executing (debug mode)";
+
+         SDL_Delay(100);
+
+         if (-1 == decodeWithDebugging())
+         {
+            break;
+         }
+      }
+   }
+   else
+   {
+      // Debugger not running
+      while(true)
+      {
+         CPU_DEBUG() << "Cpu6502::start start of the loop executing (no debugger)";
+
+         SDL_Delay(100);
+
+         if (-1 == decode())
+         {
+            break;
+         }
       }
    }
 
-   CPU_DEBUG() << "Emulator exitting (run flag false)";
-
+   CPU_DEBUG() << "Emulator exitting";
 }
 
-int Cpu6502::decode()
+int Cpu6502::decodeWithDebugging()
 {
-   // Check for the few instances where we can't decode
-   // If there is a debugger, do the debugger hook
-   if (theDebugger != nullptr)
+   int cc;
+   if (theDebugger == nullptr)
    {
-      theDebugger->debugHook();
+      CPU_WARNING() << "decodeWithDebugging called with no debugger";
+      return -1;
+   }
 
-      int cc = Decoder6502::decode();
-      if (cc == -1)
-      {
-         // Is the emulator just stopped, or do we really need to shut down
-         return (theDebuggerShutdownFlag ? -1 : 0);
-      }
-      else
-      {
-         return cc;
-      }
+   int debuggerStatus = theDebugger->debugHook();
+   if (debuggerStatus == -1)
+   {
+      // User has asked us to shut emulator down
+      return -1;
+   }
+
+   if (debuggerStatus == 0)
+   {
+      // Debugger has the program stopped, don't decode or anything
+      return 0;
+   }
+   else
+   {
+      // Debugger says we can continue execution
+      cc = Decoder6502::decode();
    }
 
    if (!theRunFlag)
@@ -161,8 +203,33 @@ int Cpu6502::decode()
       return -1;
    }
 
-   return Decoder6502::decode();
+   if (cc == -1)
+   {
+      // Since we are debugging, we probably want to see the error
+      return 0;
+   }
 
+   return cc;
+}
+
+int Cpu6502::decode()
+{
+   CPU_DEBUG() << "CPU6502::decode";
+
+   int cc = Decoder6502::decode();
+   if (cc == -1)
+   {
+      // Is the emulator just stopped, or do we really need to shut down
+      return -1;
+   }
+
+   if (!theRunFlag)
+   {
+      CPU_DEBUG() << "Run flag set to false!";
+      return -1;
+   }
+
+   return cc;
 }
 
 void Cpu6502::halt()
@@ -176,6 +243,12 @@ void Cpu6502::halt()
    {
       CPU_WARNING() << "Emulator halting (no debugger)";
       theRunFlag = false;
+
+      for(auto cbFunc : theHaltCallbacksList)
+      {
+         CPU_DEBUG() << "Calling halt function callback";
+         cbFunc();
+      }
    }
 
 }
@@ -185,10 +258,7 @@ void Cpu6502::updatePc(uint8_t bytesIncrement)
    // Check clock cycles
    CPU_DEBUG() << "Updating PC";
 
-
    thePc += bytesIncrement;
-
-
 }
 
 void Cpu6502::preHandlerHook(OpCodeInfo* oci)

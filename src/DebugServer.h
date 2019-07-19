@@ -24,8 +24,11 @@ public:
 
    ~DebugServer();
 
-   /// Called every CPU cycle to see if the debugger needs to do anything
-   void debugHook();
+   /**
+    * Called every CPU cycle to see if the debugger needs to do anything
+    * @return -1 when application should quit, 0 when debugger paused, 1 when running
+    */
+   int debugHook();
 
    /**
     * Called by the emulator when memory address are accessed for reading or writing
@@ -36,8 +39,6 @@ public:
 
    bool startDebugServer();
 
-   static int debugServerThreadEntry(void* debuggerInstance);
-
    static void emulatorHalt(void* thisPtr);
 
 
@@ -45,7 +46,7 @@ protected:
 
    void closeExistingConnection(char const * reason);
 
-   int debugServerSocketThread();
+   int handleDebuggerClients();
 
    /**
     * Sends a framed message to the debugger client.  The frame contains a 2-byte message length
@@ -97,21 +98,16 @@ protected:
 
    TCPsocket theServerSocket;
 
-   SDL_Thread* theServerThread;
-
    TCPsocket theClientSocket;
 
    /// This is set to zero when the debugger needs to exit, application closing
-   bool theRunningFlag;
+   bool theQuitFlag;
 
    int theNumberBytesToRx;
 
    uint8_t theRxDataBuffer[DEBUGGER_MAX_MSG_LEN];
 
    SDLNet_SocketSet theSocketSet;
-
-   /// This is given by emulator thread to let the debugger know the emulator halted
-   SDL_sem* theEmulatorHaltedSem;
 
    DebuggerState theDebuggerState;
 

@@ -20,39 +20,21 @@ DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memCo
    theMemoryController(memController),
    thePortNumber(portNum),
    theServerSocket(nullptr),
-   theServerThread(nullptr),
    theClientSocket(nullptr),
-   theRunningFlag(true),
+   theQuitFlag(false),
    theNumberBytesToRx(-1),
    theRegisterDumpSentToClient(false)
 {
    DS_DEBUG() << "DebugServer constructed, portNum = " << portNum;
 
    theSocketSet = SDLNet_AllocSocketSet(4);
-
-   theEmulatorHaltedSem = SDL_CreateSemaphore(0);
-
-   theDebuggerState.registerEmulatorHaltedCallback(DebugServer::emulatorHalt, this);
-   theDebuggerState.haltEmulator();
-
-   startDebugServer();
 }
 
 DebugServer::~DebugServer()
 {
-   // Tell the thread that we are exitting
-   theRunningFlag = false;
-
-   if (theServerThread != nullptr)
-   {
-      int status;
-      SDL_WaitThread(theServerThread, &status);
-
-      DS_DEBUG() << "Debugger thread exitted with code " << status;
-   }
+   DS_DEBUG() << "DebugServer destructor called";
 
    SDLNet_TCP_Close(theServerSocket);
-
    SDLNet_FreeSocketSet(theSocketSet);
 }
 
@@ -73,35 +55,48 @@ bool DebugServer::startDebugServer()
       return false;
    }
 
-   // Start the debugger thread
-   theServerThread = SDL_CreateThread(DebugServer::debugServerThreadEntry, "T_debug", this);
-
    return true;
 }
 
-void DebugServer::debugHook()
+int DebugServer::debugHook()
 {
    // Check breakpoints
+   int retVal = 0;
    CpuAddress curAddr = theCpu->getPc();
    if (theBreakpoints.find(curAddr) != theBreakpoints.end())
    {
       // We hit the breakpoint
-      theDebuggerState.haltEmulator();
+      theDebuggerState.pauseEmulator();
       DS_DEBUG() << "Debugger hit breakpoint at" << addressToString(curAddr);
    }
 
-   while(!theDebuggerState.emulatorDebugHook())
+   if (theQuitFlag)
+   {
+      DS_DEBUG() << "debugHook letting caller know client has called quit";
+      return -1;
+   }
+
+   if (!theDebuggerState.emulatorAllowExecution())
    {
       // DS_DEBUG() << "Emulator not executing";
       SDL_Delay(5);
+      retVal = 0;
    }
+   else
+   {
+      retVal = 1;
+   }
+
+   handleDebuggerClients();
+
+   return retVal;
 }
 
 void DebugServer::debugMemoryAccessHook(CpuAddress addr, bool isWrite)
 {
    if (theMemoryAccessBPs.find(addr) != theMemoryAccessBPs.end() )
    {
-      theDebuggerState.haltEmulator();
+      theDebuggerState.pauseEmulator();
       DS_DEBUG() << "Debugger hit memory access breakpoint for "
                  << (isWrite ? "write" : "read") << " at "
                  << addressToString(addr);
@@ -111,13 +106,6 @@ void DebugServer::debugMemoryAccessHook(CpuAddress addr, bool isWrite)
       DS_DEBUG() << "Hook called for " << (isWrite ? "write" : "read") << "memory access at "
                  << addressToString(addr);
    }
-
-}
-
-int DebugServer::debugServerThreadEntry(void* debuggerInstance)
-{
-   DebugServer* instance = (DebugServer*) debuggerInstance;
-   return instance->debugServerSocketThread();
 }
 
 void DebugServer::emulatorHalt(void* thisPtr)
@@ -126,115 +114,96 @@ void DebugServer::emulatorHalt(void* thisPtr)
 
    DebugServer* ds = (DebugServer*) thisPtr;
 
-   ds->theDebuggerState.haltEmulator();
-
-   SDL_SemPost(ds->theEmulatorHaltedSem);
+   ds->theDebuggerState.pauseEmulator();
 }
 
-int DebugServer::debugServerSocketThread()
+int DebugServer::handleDebuggerClients()
 {
-   DS_DEBUG() << "Starting thread to listen for connections!";
+   DS_DEBUG() << "DebugerServer::handleDebuggerClients";
 
-   while(theRunningFlag)
+   TCPsocket newConnection;
+   newConnection = SDLNet_TCP_Accept(theServerSocket);
+
+   if (newConnection)
    {
-      // DS_DEBUG() << "Debugger Loop Iteration Start";
+      // We just got a new connection!
+      DS_DEBUG() << "Accepted a new debugger connection";
 
-      TCPsocket newConnection;
-      newConnection = SDLNet_TCP_Accept(theServerSocket);
+      theNumberBytesToRx = -1;
+      memset(theRxDataBuffer, 0, DEBUGGER_MAX_MSG_LEN);
 
-      if (newConnection)
+      if (theClientSocket)
+         closeExistingConnection("New connection");
+
+      theClientSocket = newConnection;
+      SDLNet_TCP_AddSocket(theSocketSet, theClientSocket);
+   }
+
+   // Any activities on the sockets?
+   int activity = SDLNet_CheckSockets(theSocketSet, 5);
+
+   if (activity)
+   {
+      int numBytes = SDLNet_TCP_Recv(theClientSocket, theRxDataBuffer, 4);
+
+      if (numBytes < 4)
       {
-         // We just got a new connection!
-         DS_DEBUG() << "Accepted a new debugger connection";
-
-         theNumberBytesToRx = -1;
-         memset(theRxDataBuffer, 0, DEBUGGER_MAX_MSG_LEN);
-
-         if (theClientSocket)
-            closeExistingConnection("New connection");
-
-         theClientSocket = newConnection;
-         SDLNet_TCP_AddSocket(theSocketSet, theClientSocket);
-      }
-
-      // Any activities on the sockets?
-      int activity = SDLNet_CheckSockets(theSocketSet, 5);
-
-      if (activity)
-      {
-         int numBytes = SDLNet_TCP_Recv(theClientSocket, theRxDataBuffer, 4);
-
-         if (numBytes < 4)
+         if (numBytes <= 0)
          {
-            if (numBytes <= 0)
-            {
-               closeExistingConnection("Error / Recv failed");
-            }
-            else
-            {
-               closeExistingConnection("Incomplete Header");
-            }
-
-            continue;
-         }
-
-         uint16_t numBytesFrame = SDLNet_Read16(theRxDataBuffer);
-         uint16_t command = SDLNet_Read16(theRxDataBuffer + 2);
-
-         DS_DEBUG() << "Received a header.  Frame Size = " << numBytesFrame
-                    << " and command = " << command;
-
-         int bytesReceived = 0;
-         int bytesReceivedTotal = 0;
-         while(bytesReceivedTotal < numBytesFrame)
-         {
-            bytesReceived = SDLNet_TCP_Recv(theClientSocket,
-                                            theRxDataBuffer + bytesReceivedTotal,
-                                            numBytesFrame - bytesReceivedTotal);
-
-            if (bytesReceived <= 0)
-            {
-               DS_WARNING() << "Error.  Only received " << bytesReceivedTotal
-                            << "bytes of frame with " << numBytesFrame << " bytes";
-               closeExistingConnection("Truncated frame");
-               break;
-            }
-
-            bytesReceivedTotal += bytesReceived;
-         }
-
-         DS_DEBUG() << "Received full frame of " << numBytesFrame << "bytes, cmd = "
-                    << command;
-
-         processCommand(numBytesFrame, command);
-
-
-      }
-
-      // Check for fresh halts from the emulator
-      int semTakeResult = SDL_SemTryWait(theEmulatorHaltedSem);
-      if (semTakeResult == 0)
-      {
-         // the take was successsful, the emulator just halted
-         if (theClientSocket)
-         {
-            DS_DEBUG() << "Emulator halted, sending register dump to debugger client";
-            dumpRegistersCommand();
+            closeExistingConnection("Error / Recv failed");
          }
          else
          {
-            DS_DEBUG() << "Emulator halted, no debugger client to alert";
+            closeExistingConnection("Incomplete Header");
          }
       }
-      else if (semTakeResult != SDL_MUTEX_TIMEDOUT)
+
+      uint16_t numBytesFrame = SDLNet_Read16(theRxDataBuffer);
+      uint16_t command = SDLNet_Read16(theRxDataBuffer + 2);
+
+      DS_DEBUG() << "Received a header.  Frame Size = " << numBytesFrame
+                 << " and command = " << command;
+
+      int bytesReceived = 0;
+      int bytesReceivedTotal = 0;
+      while(bytesReceivedTotal < numBytesFrame)
       {
-         // We didn't take the semaphore, and instead encountered an error, how sad
-         DS_WARNING() << "Halt semaphore take attempt had an error in the debugger thread; " << SDL_GetError();
+         bytesReceived = SDLNet_TCP_Recv(theClientSocket,
+                                         theRxDataBuffer + bytesReceivedTotal,
+                                         numBytesFrame - bytesReceivedTotal);
+
+         if (bytesReceived <= 0)
+         {
+            DS_WARNING() << "Error.  Only received " << bytesReceivedTotal
+                         << "bytes of frame with " << numBytesFrame << " bytes";
+            closeExistingConnection("Truncated frame");
+            break;
+         }
+
+         bytesReceivedTotal += bytesReceived;
       }
 
+      DS_DEBUG() << "Received full frame of " << numBytesFrame << "bytes, cmd = "
+                 << command;
+
+      processCommand(numBytesFrame, command);
    }
 
-   DS_DEBUG() << "Debugger thread now exitting";
+   // Check for fresh halts from the emulator
+   if (theDebuggerState.isFreshHalt())
+   {
+      // the take was successsful, the emulator just halted
+      if (theClientSocket)
+      {
+         DS_DEBUG() << "Emulator halted, sending register dump to debugger client";
+         dumpRegistersCommand();
+         theDebuggerState.acknowledgeHalt();
+      }
+      else
+      {
+         DS_DEBUG() << "Emulator halted, no debugger client to alert";
+      }
+   }
 
    return 0;
 }
@@ -334,10 +303,11 @@ void DebugServer::versionCommand()
 void DebugServer::quitCommand()
 {
    DS_DEBUG() << "Exit emulator command sent by debugger client";
-   theCpu->exitEmulation();
 
-   // unblock the emulator so it can exit
-   theDebuggerState.runEmulator();
+   // Stop the emulator
+   theDebuggerState.pauseEmulator();
+
+   theQuitFlag = true;
 }
 
 void DebugServer::disassembleCommand(uint16_t commandLen)
@@ -455,7 +425,7 @@ void DebugServer::haltCommand()
    theRegisterDumpSentToClient = false;
 
    DS_DEBUG() << "Halt command received from debugger client";
-   theDebuggerState.haltEmulator();
+   theDebuggerState.pauseEmulator();
 }
 
 void DebugServer::memoryDumpCommand(uint16_t commandLen)

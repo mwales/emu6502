@@ -11,20 +11,20 @@
    #define SIMPQ_WARNING if(0) LOG_WARNING
 #endif
 
-SimpleQueue::SimpleQueue(int32_t messageQueueSize)
+SimpleQueue::SimpleQueue(int32_t commandQueueSize)
 {
-   SIMPQ_DEBUG() << "SimpleQueue constructed with size" << messageQueueSize;
+   SIMPQ_DEBUG() << "SimpleQueue constructed with size" << commandQueueSize;
 
-   if (!Utils::isPowerOf2(messageQueueSize))
+   if (!Utils::isPowerOf2(commandQueueSize))
    {
-      SIMPQ_WARNING() << "Queue size" << messageQueueSize << "is not power of 2";
-      messageQueueSize = Utils::nextPowerOf2(messageQueueSize);
-      SIMPQ_DEBUG() << "Next power of 2 size =" << messageQueueSize;
+      SIMPQ_WARNING() << "Queue size" << commandQueueSize << "is not power of 2";
+      commandQueueSize = Utils::nextPowerOf2(commandQueueSize);
+      SIMPQ_DEBUG() << "Next power of 2 size =" << commandQueueSize;
    }
 
-   theMessageBuffer = (char*) calloc(1, messageQueueSize);
+   theMessageBuffer = (char*) calloc(1, commandQueueSize);
 
-   theQueueSize = messageQueueSize;
+   theQueueSize = commandQueueSize;
    theQueueSizeMask = theQueueSize - 1;
 
    theWritePos = 0;
@@ -42,9 +42,9 @@ SimpleQueue::~SimpleQueue()
 
 bool SimpleQueue::writeMessage(int32_t numBytes, char const * const data)
 {
-   if (numBytes > (theQueueSize - sizeof(int32_t)) )
+   if (numBytes > (theQueueSize - (int32_t) sizeof(int32_t)) )
    {
-      // Fatal, message queue isn't big enough for the data trying to be put into it
+      // Fatal, command queue isn't big enough for the data trying to be put into it
       SIMPQ_WARNING() << "writeMessage of" << numBytes << "bytes in Q size of" << theQueueSize
                       << "too big for queue";
       return false;
@@ -54,17 +54,17 @@ bool SimpleQueue::writeMessage(int32_t numBytes, char const * const data)
                     theReadPos << ", WritePos=" << theWritePos;
 
    int bytesStoredInQueue = SDL_AtomicGet(&theNumberOfBytesQueued);
-   while(bytesStoredInQueue + sizeof(int32_t) + numBytes > theQueueSize)
+   while(bytesStoredInQueue + (int32_t) sizeof(int32_t) + numBytes > theQueueSize)
    {
       SIMPQ_WARNING() << "Waiting for room in Q. Q has" << bytesStoredInQueue
-                      << "bytes, message len = " << numBytes;
+                      << "bytes, command len = " << numBytes;
       SDL_Delay(10);
       bytesStoredInQueue = SDL_AtomicGet(&theNumberOfBytesQueued);
    }
 
    // There is room in the queue, copy the data into the queue
    // Write the size into the queue
-   SIMPQ_DEBUG() << "Writing message size into queue (" << numBytes << ")";
+   SIMPQ_DEBUG() << "Writing command size into queue (" << numBytes << ")";
    copyDataIntoQueue(sizeof(int32_t), (char*) &numBytes);
 
    SIMPQ_DEBUG() << "Writing the data into the queue";
@@ -79,19 +79,19 @@ bool SimpleQueue::writeMessage(int32_t numBytes, char const * const data)
 
 bool SimpleQueue::tryWriteMessage(int32_t numBytes, char const * const data)
 {
-   if (numBytes > (theQueueSize - sizeof(int32_t)) )
+   if (numBytes > (theQueueSize - (int32_t) sizeof(int32_t)) )
    {
-      // Fatal, message queue isn't big enough for the data trying to be put into it
+      // Fatal, command queue isn't big enough for the data trying to be put into it
       SIMPQ_WARNING() << "tryWriteMessage of" << numBytes << "bytes in Q size of" << theQueueSize
                       << "too big for queue";
       return false;
    }
 
    int bytesStoredInQueue = SDL_AtomicGet(&theNumberOfBytesQueued);
-   if(bytesStoredInQueue + sizeof(int32_t) + numBytes > theQueueSize)
+   if(bytesStoredInQueue + (int32_t) sizeof(int32_t) + numBytes > theQueueSize)
    {
       SIMPQ_WARNING() << "No room in Q. Q has" << bytesStoredInQueue
-                      << "bytes, message len = " << numBytes;
+                      << "bytes, command len = " << numBytes;
       return false;
    }
 
@@ -100,7 +100,7 @@ bool SimpleQueue::tryWriteMessage(int32_t numBytes, char const * const data)
 
    // There is room in the queue, copy the data into the queue
    // Write the size into the queue
-   SIMPQ_DEBUG() << "Writing message size into queue (" << numBytes << ")";
+   SIMPQ_DEBUG() << "Writing command size into queue (" << numBytes << ")";
    copyDataIntoQueue(sizeof(int32_t), (char*) &numBytes);
 
    SIMPQ_DEBUG() << "Writing the data into the queue";
@@ -120,7 +120,7 @@ int32_t SimpleQueue::readNextMessageSize()
    SIMPQ_DEBUG() << "readNextMessageSize: called with ReadPos=" <<
                     theReadPos << ", WritePos=" << theWritePos;
 
-   while(numBytesInQ < sizeof(int32_t))
+   while(numBytesInQ < (int32_t) sizeof(int32_t))
    {
       SDL_Delay(10);
       numBytesInQ = SDL_AtomicGet(&theNumberOfBytesQueued);
@@ -137,7 +137,7 @@ int32_t SimpleQueue::tryReadNextMessageSize()
 {
    int32_t numBytesInQ = SDL_AtomicGet(&theNumberOfBytesQueued);
 
-   if(numBytesInQ < sizeof(int32_t))
+   if(numBytesInQ < (int32_t) sizeof(int32_t))
    {
       // Nothing in the queue yet
       SIMPQ_DEBUG() << "tryReadNextMessageSize returning 0";
@@ -159,7 +159,7 @@ bool SimpleQueue::readMessage(int32_t* numBytes, char* buffer, int bufSize)
    int32_t numBytesInQ = SDL_AtomicGet(&theNumberOfBytesQueued);
    SIMPQ_DEBUG() << "readMessage called with" << numBytesInQ << "bytes in queue (first read)";
 
-   while(numBytesInQ < sizeof(int32_t))
+   while(numBytesInQ < (int32_t) sizeof(int32_t))
    {
       SDL_Delay(10);
       numBytesInQ = SDL_AtomicGet(&theNumberOfBytesQueued);
@@ -179,7 +179,7 @@ bool SimpleQueue::readMessage(int32_t* numBytes, char* buffer, int bufSize)
       return false;
    }
 
-   if (*numBytes + sizeof(int32_t) > numBytesInQ)
+   if (*numBytes + (int32_t) sizeof(int32_t) > numBytesInQ)
    {
       SIMPQ_WARNING() << "readMessage failure.  Length stored in queue =" << *numBytes
                       << "bytes, but only " << numBytesInQ << "bytes in queue";
@@ -193,7 +193,7 @@ bool SimpleQueue::readMessage(int32_t* numBytes, char* buffer, int bufSize)
    theReadPos = (theReadPos + sizeof(int32_t)) & theQueueSizeMask;
 
    readDataFromQueue(*numBytes, buffer, true);
-   SIMPQ_DEBUG() << "readMessage read message of" << *numBytes << "bytes";
+   SIMPQ_DEBUG() << "readMessage read command of" << *numBytes << "bytes";
 
    // Subtract the bytes read from qty available for reading
    SDL_AtomicAdd(&theNumberOfBytesQueued, -1 * (sizeof(int32_t) + *numBytes));
@@ -205,7 +205,7 @@ bool SimpleQueue::tryReadMessage(int32_t* numBytes, char* buffer, int bufSize)
 {
    int32_t numBytesInQ = SDL_AtomicGet(&theNumberOfBytesQueued);
 
-   if(numBytesInQ < sizeof(int32_t))
+   if(numBytesInQ < (int32_t) sizeof(int32_t))
    {
       SIMPQ_DEBUG() << "tryReadMessage called, but no data in queue";
       *numBytes = 0;
@@ -228,7 +228,7 @@ bool SimpleQueue::tryReadMessage(int32_t* numBytes, char* buffer, int bufSize)
       return false;
    }
 
-   if (*numBytes + sizeof(int32_t) > numBytesInQ)
+   if (*numBytes + (int32_t) sizeof(int32_t) > numBytesInQ)
    {
       SIMPQ_WARNING() << "tryReadMessage failure.  Length stored in queue =" << *numBytes
                       << "bytes, but only " << numBytesInQ << "bytes in queue";
@@ -243,7 +243,7 @@ bool SimpleQueue::tryReadMessage(int32_t* numBytes, char* buffer, int bufSize)
    theReadPos = (theReadPos + sizeof(int32_t)) & theQueueSizeMask;
 
    readDataFromQueue(*numBytes, buffer, true);
-   SIMPQ_DEBUG() << "tryReadMessage read message of" << *numBytes << "bytes";
+   SIMPQ_DEBUG() << "tryReadMessage read command of" << *numBytes << "bytes";
 
    SDL_AtomicAdd(&theNumberOfBytesQueued, -1 * (sizeof(int32_t) + *numBytes));
    return true;

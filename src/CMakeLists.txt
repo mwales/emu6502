@@ -27,7 +27,13 @@ set(EMULAT_FILES Cpu6502.cpp
 		 NesRom.cpp
 		 cjson/cJSON.c
                  mappers/Mapper.cpp
-                 mappers/NRomMapper.cpp)
+                 mappers/NRomMapper.cpp
+		 SimpleQueue.cpp
+		 Display.cpp
+		 DisplayDevice.cpp
+		 DisplayManager.cpp
+		 DisplayCommands.cpp
+		 Easy6502JsDisplay.cpp )
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 

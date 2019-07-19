@@ -96,10 +96,21 @@ public:
 
 protected:
 
+   /**
+    * Decodes instruction
+    * @li Get operand bytes
+    * @li Calling prehook handler
+    * @li Calling opcode handler function
+    * @li Calling posthook handler
+    * @return Number of clock cycles instruction took, or -1 if there was an error
+    */
    virtual int decode();
 
    virtual void updatePc(uint8_t bytesIncrement) = 0;
 
+   /**
+    * Doesn't do anything
+    */
    virtual void preHandlerHook(OpCodeInfo* oci);
 
    /**

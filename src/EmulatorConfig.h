@@ -32,7 +32,7 @@
 #define UNOFFICIAL_NES_OPCODE_SUPPORT                         
 
 // Debugger state tracing from the DebuggerState class
-// #define DSTATE_DEBUG_LOGGING                                      
+#define DSTATE_DEBUG_LOGGING
 
 // Turns on debug statements from the DebugServer class
 #define DEBUG_SERVER_DEBUG
@@ -44,7 +44,7 @@
 // #define MAPPER_TRACE
 
 // Turns on the debug statements in the MemoryConfig class
-// #define CONFIG_TRACE
+#define CONFIG_TRACE
 
 // Turns on debug statements in the MirrorMemory class
 // #define MIRROR_MEM_TRACE
@@ -60,6 +60,11 @@
 
 // Turns on debug for the simple queue (for display commands)
 //#define SIMPLE_QUEUE_LOGGING
+
+// Turns on debug for the display manager
+#define DISPLAY_MANAGER_TRACE
+
+#define DISPLAYWINDOW_DEBUG
 
 #endif
 
