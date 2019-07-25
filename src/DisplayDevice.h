@@ -11,6 +11,8 @@ public:
 
    virtual void startDisplay() = 0;
 
+   virtual void stopDisplay();
+
    SimpleQueue* getCommandQueue();
 
 protected:

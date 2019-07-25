@@ -16,6 +16,7 @@ typedef enum
 {
    HALT_EMULATION,
    SET_RESOLUTION,
+   SET_LOGICAL_SIZE,
    CLEAR_SCREEN,
    DRAW_PIXEL
 } DisplayCommandId;
@@ -35,6 +36,12 @@ typedef union
       uint16_t width;
       uint16_t height;
    } DcSetResolution;
+
+   struct
+   {
+      uint16_t width;
+      uint16_t height;
+   } DcSetLogicalSize;
 
    struct
    {

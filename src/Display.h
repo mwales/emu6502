@@ -33,15 +33,21 @@ protected:
 
    bool handleDcSetResolution(DisplayCommand* cmd);
 
+   bool handleDcSetLogicalSize(DisplayCommand* cmd);
+
    bool handleDcClearScreen(DisplayCommand* cmd);
 
    bool handleDcDrawPixel(DisplayCommand* cmd);
 
    bool handleDcHaltEmulation(DisplayCommand* cmd);
 
+   std::string sdlEventTypeToString(const uint32_t& et);
+
    SimpleQueue* theDisplayCommandQueue;
 
    SDL_Window* theWindow;
+
+   SDL_Renderer* theRenderer;
 
    uint16_t theLargestCommandSize;
 

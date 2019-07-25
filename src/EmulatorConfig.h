@@ -26,16 +26,16 @@
 // #define ADDR_MODE_TRACE                                                           
 
 // Turns on debugger statements for the Decoder6502 class
-#define DECODER_6502_DEBUG
+// #define DECODER_6502_DEBUG
 
 // Turning this on implements the unofficial NES op-codes in Cpu6502 class
 #define UNOFFICIAL_NES_OPCODE_SUPPORT                         
 
 // Debugger state tracing from the DebuggerState class
-#define DSTATE_DEBUG_LOGGING
+// #define DSTATE_DEBUG_LOGGING
 
 // Turns on debug statements from the DebugServer class
-#define DEBUG_SERVER_DEBUG
+// #define DEBUG_SERVER_DEBUG
 
 // Turns on debug statements from the Disassembler6502 class
 #define DISASS_TRACE
@@ -56,7 +56,7 @@
 // #define RAM_TRACE
 
 // Turns on debug for the random number generator device
-#define RANDOMDEV_TRACE
+// #define RANDOMDEV_TRACE
 
 // Turns on debug for the simple queue (for display commands)
 //#define SIMPLE_QUEUE_LOGGING
@@ -65,6 +65,8 @@
 #define DISPLAY_MANAGER_TRACE
 
 #define DISPLAYWINDOW_DEBUG
+
+#define EASY6502_DISPLAY_TRACE
 
 #endif
 

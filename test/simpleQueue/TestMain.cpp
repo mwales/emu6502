@@ -5,6 +5,7 @@
 #include "../catch2/catch.hpp"
 
 #include "SimpleQueue.h"
+#include "DisplayCommands.h"
 
 SDL_Thread* futureThread = nullptr;
 
@@ -67,6 +68,61 @@ TEST_CASE("Hello World Test", "[HelloWorld]")
 
    std::cout << "All done here" << std::endl;
 };
+
+TEST_CASE("Test queue commands", "[verify]")
+{
+   int testSize = sizeof(DisplayCommand);
+
+   REQUIRE(testSize == 12);
+
+   DisplayCommand uut;
+
+   char* uutPtr;
+   uutPtr = (char*) &uut;
+
+   int* verifyInt = (int*) uutPtr;
+
+   uut.id = CLEAR_SCREEN;
+   REQUIRE(*verifyInt == 3);
+
+   uut.id = HALT_EMULATION;
+   REQUIRE(*verifyInt == 0);
+
+   uut.id = DRAW_PIXEL;
+   REQUIRE(*verifyInt == 4);
+
+   uut.id = SET_RESOLUTION;
+   REQUIRE(*verifyInt == 1);
+
+   DisplayCommand verifyDc;
+
+   uut.data.DcDrawPixel.x = 0x1234;
+   uut.data.DcDrawPixel.y = 0x3869;
+   uut.data.DcDrawPixel.color.blue = 0x23;
+   uut.data.DcDrawPixel.color.red = 0x98;
+   uut.data.DcDrawPixel.color.green = 0x54;
+
+   SimpleQueue sq(1000);
+   sq.writeMessage(sizeof(DisplayCommand), (char*) &uut);
+   memset(&verifyDc, 0, sizeof(DisplayCommand));
+
+   int readSize = 0;
+   sq.readMessage(&readSize, (char*) &verifyDc, 100);
+
+   REQUIRE(readSize == 12);
+
+   REQUIRE(verifyDc.data.DcDrawPixel.color.blue == 0x23);
+   REQUIRE(verifyDc.data.DcDrawPixel.color.red == 0x98);
+   REQUIRE(verifyDc.data.DcDrawPixel.color.green == 0x54);
+
+   REQUIRE(verifyDc.data.DcDrawPixel.x == 0x1234);
+
+   REQUIRE(verifyDc.data.DcSetResolution.width == 0x1234);
+   REQUIRE(verifyDc.data.DcSetResolution.height == 0x3869);
+
+
+
+}
 
 TEST_CASE("Verify cant push larger than q size - blocking version", "[error]")
 {
@@ -299,4 +355,5 @@ int futureFunction(void* data)
    free(data);
    return retVal;
 }
+
 

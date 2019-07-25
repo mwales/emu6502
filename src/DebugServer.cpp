@@ -119,7 +119,7 @@ void DebugServer::emulatorHalt(void* thisPtr)
 
 int DebugServer::handleDebuggerClients()
 {
-   DS_DEBUG() << "DebugerServer::handleDebuggerClients";
+   DS_DEBUG() << "DebuggerServer::handleDebuggerClients";
 
    TCPsocket newConnection;
    newConnection = SDLNet_TCP_Accept(theServerSocket);

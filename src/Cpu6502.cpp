@@ -139,7 +139,7 @@ void Cpu6502::start()
    if (theDebugger)
    {
       // Debugger running
-      while(true)
+      while(theRunFlag)
       {
          CPU_DEBUG() << "Cpu6502::start start of the loop executing (debug mode)";
 
@@ -154,7 +154,7 @@ void Cpu6502::start()
    else
    {
       // Debugger not running
-      while(true)
+      while(theRunFlag)
       {
          CPU_DEBUG() << "Cpu6502::start start of the loop executing (no debugger)";
 
@@ -167,7 +167,16 @@ void Cpu6502::start()
       }
    }
 
-   CPU_DEBUG() << "Emulator exitting";
+   CPU_DEBUG() << "Emulator exitting, calling the halt callbacks";
+
+   // Call the halt callbacks
+   for(auto hcb: theHaltCallbacksList)
+   {
+      CPU_DEBUG() << "Calling a halt callback";
+      hcb();
+   }
+
+   CPU_DEBUG() << "Exiting emulation thread";
 }
 
 int Cpu6502::decodeWithDebugging()

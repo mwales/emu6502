@@ -37,8 +37,8 @@ bool Display::startDisplay()
       return false;
    }
 
-   DisplayCommand* cmd = (DisplayCommand*) malloc(theLargestCommandSize);
-   memset(cmd, 0, theLargestCommandSize);
+   DisplayCommand cmd;
+   memset((char*) &cmd, 0, theLargestCommandSize);
 
    // Have a flag for loop since can't next break statements
    bool runFlag = true;
@@ -52,21 +52,39 @@ bool Display::startDisplay()
       do
       {
          callSuccessful = theDisplayCommandQueue->tryReadMessage(&numBytesInCommand,
-                                                                 (char*) cmd,
+                                                                 (char*) &cmd,
                                                                  theLargestCommandSize);
+
+         DISP_DEBUG() << "DISP RX: " << Utils::hexDump((uint8_t*) &cmd, numBytesInCommand);
+
          if (!callSuccessful)
          {
             DISP_WARNING() << "Error trying to read display command queue";
             break;
          }
 
-         runFlag = handleDisplayQueueCommand(cmd);
+         if (numBytesInCommand == 0)
+         {
+            // There are no commands left, so nothing
+            DISP_DEBUG() << "No Display commands ready at this point";
+         }
+         else if (numBytesInCommand != sizeof(DisplayCommand))
+         {
+            DISP_WARNING() << "Received command in Display Q with wrong size.  Size = "
+                           << numBytesInCommand << "not" << sizeof(DisplayCommand);
+         }
+         else
+         {
+            // Message received is the correct size for a DisplayCommand
+            runFlag = handleDisplayQueueCommand(&cmd);
+         }
+
       } while (numBytesInCommand > 0);
 
       // Check for events from SDL
       int sdlCallSuccess;
       SDL_Event ev;
-      sdlCallSuccess = SDL_WaitEventTimeout(&ev, 10);
+      sdlCallSuccess = SDL_WaitEventTimeout(&ev, 1000);
       if (sdlCallSuccess)
       {
          switch(ev.type)
@@ -81,10 +99,11 @@ bool Display::startDisplay()
 
          case SDL_QUIT:
             DISP_DEBUG() << "Received Quit event";
+            return false;  // user closed by clicking X
             break;
 
          default:
-            DISP_DEBUG() << "Received unexpected SDL event type";
+            DISP_DEBUG() << "Received unexpected SDL event type:" << sdlEventTypeToString(ev.type);
          }
       }
       else
@@ -92,12 +111,9 @@ bool Display::startDisplay()
          DISP_DEBUG() << "No SDL event received";
       }
 
-   } // end while loop
+   } // end while
 
-   free(cmd);
-
-   return true;
-   //return theDisplayClosingExternallyTriggered;
+   return true;  // we are closing because emulator told us too
 }
 
 bool Display::handleDisplayQueueCommand(DisplayCommand* cmd)
@@ -111,6 +127,9 @@ bool Display::handleDisplayQueueCommand(DisplayCommand* cmd)
 
    case SET_RESOLUTION:
       return handleDcSetResolution(cmd);
+
+   case SET_LOGICAL_SIZE:
+      return handleDcSetLogicalSize(cmd);
 
    case CLEAR_SCREEN:
       return handleDcClearScreen(cmd);
@@ -144,7 +163,43 @@ bool Display::handleDcSetResolution(DisplayCommand* cmd)
       // Time to create the SDL window
       DISP_DEBUG() << "Creating SDL window";
       theWindow = SDL_CreateWindow("EMU 6502", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                   cmd->data.DcSetResolution.width, cmd->data.DcSetResolution.height, 0);
+                                   cmd->data.DcSetResolution.width,
+                                   cmd->data.DcSetResolution.height, 0);
+
+      if (theWindow == NULL)
+      {
+         LOG_FATAL() << "Error creating the SDL window: " << SDL_GetError();
+      }
+
+      theRenderer = SDL_CreateRenderer(theWindow, -1, SDL_RENDERER_ACCELERATED);
+
+      if (theRenderer == NULL)
+      {
+         LOG_FATAL() << "Error creating the SDL renderer:" << SDL_GetError();
+         return true;
+      }
+   }
+
+   return true;
+}
+
+bool Display::handleDcSetLogicalSize(DisplayCommand* cmd)
+{
+   if ( (theWindow == nullptr) || (theRenderer == nullptr) )
+   {
+      LOG_FATAL() << "Can't set logical size of renderer if SDL window not initialized";
+      return true;
+   }
+
+   if (SDL_RenderSetLogicalSize(theRenderer, cmd->data.DcSetLogicalSize.width,
+                                cmd->data.DcSetLogicalSize.height))
+   {
+      DISP_WARNING() << "Error setting logical renderer size:" << SDL_GetError();
+   }
+   else
+   {
+      DISP_DEBUG() << "Set SDL Renderer to " << cmd->data.DcSetLogicalSize.width << "x"
+                   << cmd->data.DcSetLogicalSize.height << "successfully";
    }
 
    return true;
@@ -153,6 +208,22 @@ bool Display::handleDcSetResolution(DisplayCommand* cmd)
 bool Display::handleDcClearScreen(DisplayCommand* cmd)
 {
    DISP_DEBUG() << "Display has received a clear screen command";
+
+   if (SDL_SetRenderDrawColor(theRenderer,
+                              cmd->data.DcClearScreen.blankColor.red,
+                              cmd->data.DcClearScreen.blankColor.green,
+                              cmd->data.DcClearScreen.blankColor.blue,
+                              SDL_ALPHA_OPAQUE))
+   {
+      DISP_WARNING() << "Error setting the color of renderer before clearing screen:"
+                     << SDL_GetError();
+   }
+
+   if (SDL_RenderClear(theRenderer))
+   {
+      DISP_WARNING() << "Error clearing the screen:" << SDL_GetError();
+   }
+
    return true;
 }
 
@@ -166,4 +237,107 @@ bool Display::handleDcHaltEmulation(DisplayCommand* cmd)
 {
    DISP_DEBUG() << "Display has received a halt emulation command";
    return false;
+}
+
+std::string Display::sdlEventTypeToString(const uint32_t& et)
+{
+   switch(et)
+   {
+   case SDL_QUIT:
+      return "SDL_QUIT";
+   case SDL_APP_TERMINATING:
+      return "SDL_APP_TERMINATING";
+   case SDL_APP_LOWMEMORY:
+      return "SDL_APP_LOWMEMORY";
+   case SDL_APP_WILLENTERBACKGROUND:
+      return "SDL_APP_WILLENTERBACKGROUND";
+   case SDL_APP_DIDENTERBACKGROUND:
+      return "SDL_APP_DIDENTERBACKGROUND";
+   case SDL_APP_WILLENTERFOREGROUND:
+      return "SDL_APP_WILLENTERFOREGROUND";
+   case SDL_APP_DIDENTERFOREGROUND:
+      return "SDL_APP_DIDENTERFOREGROUND";
+   case SDL_WINDOWEVENT:
+      return "SDL_WINDOWEVENT";
+   case SDL_SYSWMEVENT:
+      return "SDL_SYSWMEVENT";
+   case SDL_KEYDOWN:
+      return "SDL_KEYDOWN";
+   case SDL_KEYUP:
+      return "SDL_KEYUP";
+   case SDL_TEXTEDITING:
+      return "SDL_TEXTEDITING";
+   case SDL_TEXTINPUT:
+      return "SDL_TEXTINPUT";
+   case SDL_KEYMAPCHANGED:
+      return "SDL_KEYMAPCHANGED";
+   case SDL_MOUSEMOTION:
+      return "SDL_MOUSEMOTION";
+   case SDL_MOUSEBUTTONDOWN:
+      return "SDL_MOUSEBUTTONDOWN";
+   case SDL_MOUSEBUTTONUP:
+      return "SDL_MOUSEBUTTONUP";
+   case SDL_MOUSEWHEEL:
+      return "SDL_MOUSEWHEEL";
+   case SDL_JOYAXISMOTION:
+      return "SDL_JOYAXISMOTION";
+   case SDL_JOYBALLMOTION:
+      return "SDL_JOYBALLMOTION";
+   case SDL_JOYHATMOTION:
+      return "SDL_JOYHATMOTION";
+   case SDL_JOYBUTTONDOWN:
+      return "SDL_JOYBUTTONDOWN";
+   case SDL_JOYBUTTONUP:
+      return "SDL_JOYBUTTONUP";
+   case SDL_JOYDEVICEADDED:
+      return "SDL_JOYDEVICEADDED";
+   case SDL_JOYDEVICEREMOVED:
+      return "SDL_JOYDEVICEREMOVED";
+   case SDL_CONTROLLERAXISMOTION:
+      return "SDL_CONTROLLERAXISMOTION";
+   case SDL_CONTROLLERBUTTONDOWN:
+      return "SDL_CONTROLLERBUTTONDOWN";
+   case SDL_CONTROLLERBUTTONUP:
+      return "SDL_CONTROLLERBUTTONUP";
+   case SDL_CONTROLLERDEVICEADDED:
+      return "SDL_CONTROLLERDEVICEADDED";
+   case SDL_CONTROLLERDEVICEREMOVED:
+      return "SDL_CONTROLLERDEVICEREMOVED";
+   case SDL_CONTROLLERDEVICEREMAPPED:
+      return "SDL_CONTROLLERDEVICEREMAPPED";
+   case SDL_FINGERDOWN:
+      return "SDL_FINGERDOWN";
+   case SDL_FINGERUP:
+      return "SDL_FINGERUP";
+   case SDL_FINGERMOTION:
+      return "SDL_FINGERMOTION";
+   case SDL_DOLLARGESTURE:
+      return "SDL_DOLLARGESTURE";
+   case SDL_DOLLARRECORD:
+      return "SDL_DOLLARRECORD";
+   case SDL_MULTIGESTURE:
+      return "SDL_MULTIGESTURE";
+   case SDL_CLIPBOARDUPDATE:
+      return "SDL_CLIPBOARDUPDATE";
+   case SDL_DROPFILE:
+      return "SDL_DROPFILE";
+   case SDL_DROPTEXT:
+      return "SDL_DROPTEXT";
+   case SDL_DROPBEGIN:
+      return "SDL_DROPBEGIN";
+   case SDL_DROPCOMPLETE:
+      return "SDL_DROPCOMPLETE";
+   case SDL_AUDIODEVICEADDED:
+      return "SDL_AUDIODEVICEADDED";
+   case SDL_AUDIODEVICEREMOVED:
+      return "SDL_AUDIODEVICEREMOVED";
+   case SDL_RENDER_TARGETS_RESET:
+      return "SDL_RENDER_TARGETS_RESET";
+   case SDL_RENDER_DEVICE_RESET:
+      return "SDL_RENDER_DEVICE_RESET";
+   case SDL_USEREVENT:
+      return "SDL_USEREVENT";
+   default:
+      return "*** UNKNOWN SDL EVENT ***";
+   }
 }
