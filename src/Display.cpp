@@ -1,5 +1,6 @@
 #include "Display.h"
 #include "Logger.h"
+#include "Utils.h"
 
 
 #ifdef DISPLAYWINDOW_DEBUG
@@ -8,6 +9,12 @@
 #else
    #define DISP_DEBUG     if(0) LOG_DEBUG
    #define DISP_WARNING   if(0) LOG_WARNING
+#endif
+
+#ifdef SDL_TRACE_DEBUG
+   #define SDL_TRACE    LOG_DEBUG
+#else
+   #define SDL_TRACE    if(0) LOG_DEBUG
 #endif
 
 
@@ -85,6 +92,8 @@ bool Display::startDisplay()
       int sdlCallSuccess;
       SDL_Event ev;
       sdlCallSuccess = SDL_WaitEventTimeout(&ev, 1000);
+      SDL_TRACE() << "SDL_WaitEventTimeout(pointer,1000)";
+
       if (sdlCallSuccess)
       {
          switch(ev.type)
@@ -162,6 +171,10 @@ bool Display::handleDcSetResolution(DisplayCommand* cmd)
    {
       // Time to create the SDL window
       DISP_DEBUG() << "Creating SDL window";
+
+      SDL_TRACE() << "SDL_CreateWindow(\"EMU 6502\", SDL_WINDOWPOS_CENTERED, SDLWINDOWPOS_CENTERED,"
+                  << cmd->data.DcSetResolution.width << "," << cmd->data.DcSetResolution.height << ",0)";
+
       theWindow = SDL_CreateWindow("EMU 6502", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                    cmd->data.DcSetResolution.width,
                                    cmd->data.DcSetResolution.height, 0);
@@ -171,7 +184,8 @@ bool Display::handleDcSetResolution(DisplayCommand* cmd)
          LOG_FATAL() << "Error creating the SDL window: " << SDL_GetError();
       }
 
-      theRenderer = SDL_CreateRenderer(theWindow, -1, SDL_RENDERER_ACCELERATED);
+      SDL_TRACE() << "SDL_CreateRenderer(pointer, -1, SDL_RENDERER_SOFTWARE)";
+      theRenderer = SDL_CreateRenderer(theWindow, -1, SDL_RENDERER_SOFTWARE);
 
       if (theRenderer == NULL)
       {
@@ -191,6 +205,9 @@ bool Display::handleDcSetLogicalSize(DisplayCommand* cmd)
       return true;
    }
 
+   SDL_TRACE() << "SDL_RenderSetLogicalSize(pointer," << cmd->data.DcSetLogicalSize.width
+               << "," << cmd->data.DcSetLogicalSize.height << ")";
+
    if (SDL_RenderSetLogicalSize(theRenderer, cmd->data.DcSetLogicalSize.width,
                                 cmd->data.DcSetLogicalSize.height))
    {
@@ -209,6 +226,10 @@ bool Display::handleDcClearScreen(DisplayCommand* cmd)
 {
    DISP_DEBUG() << "Display has received a clear screen command";
 
+   SDL_TRACE() << "SDL_SetRenderDrawColor(pointer," << Utils::toHex8(cmd->data.DcClearScreen.blankColor.red)
+               << "," << Utils::toHex8(cmd->data.DcClearScreen.blankColor.green)
+               << "," << Utils::toHex8(cmd->data.DcClearScreen.blankColor.blue) << ",SDL_ALPHA_OPAQUE)";
+
    if (SDL_SetRenderDrawColor(theRenderer,
                               cmd->data.DcClearScreen.blankColor.red,
                               cmd->data.DcClearScreen.blankColor.green,
@@ -218,6 +239,8 @@ bool Display::handleDcClearScreen(DisplayCommand* cmd)
       DISP_WARNING() << "Error setting the color of renderer before clearing screen:"
                      << SDL_GetError();
    }
+
+   SDL_TRACE() << "SDL_RenderClear(pointer)";
 
    if (SDL_RenderClear(theRenderer))
    {
@@ -230,6 +253,33 @@ bool Display::handleDcClearScreen(DisplayCommand* cmd)
 bool Display::handleDcDrawPixel(DisplayCommand* cmd)
 {
    DISP_DEBUG() << "Display has received a draw pixel command";
+
+   SDL_TRACE() << "SDL_SetRenderDrawColor(pointer," << Utils::toHex8(cmd->data.DcDrawPixel.color.red)
+               << "," << Utils::toHex8(cmd->data.DcDrawPixel.color.green)
+               << "," << Utils::toHex8(cmd->data.DcDrawPixel.color.blue) << ",SDL_ALPHA_OPAQUE)";
+
+   if (SDL_SetRenderDrawColor(theRenderer,
+                              cmd->data.DcDrawPixel.color.red,
+                              cmd->data.DcDrawPixel.color.green,
+                              cmd->data.DcDrawPixel.color.blue,
+                              SDL_ALPHA_OPAQUE))
+   {
+       DISP_WARNING() << "drawPixel failed to set color";
+       return true;
+   }
+
+   SDL_TRACE() << "SDL_RenderDrawPoint(pointer," << cmd->data.DcDrawPixel.x
+               << "," << cmd->data.DcDrawPixel.y << ")";
+
+   if (SDL_RenderDrawPoint(theRenderer, cmd->data.DcDrawPixel.x,
+                            cmd->data.DcDrawPixel.y))
+   {
+       DISP_WARNING() << "drawPixel failed to draw pixel after setting color";
+       return true;
+   }
+
+   DISP_DEBUG() << "  pixel @ " << cmd->data.DcDrawPixel.x << "," << cmd->data.DcDrawPixel.y
+                << ", color = " << colorToString(cmd->data.DcDrawPixel.color);
    return true;
 }
 
@@ -340,4 +390,18 @@ std::string Display::sdlEventTypeToString(const uint32_t& et)
    default:
       return "*** UNKNOWN SDL EVENT ***";
    }
+}
+
+std::string Display::colorToString(Color24 c)
+{
+    std::string retVal = "";
+    retVal += "(";
+    retVal += Utils::toHex8(c.red, false);
+    retVal += ",";
+    retVal += Utils::toHex8(c.green, false);
+    retVal += ",";
+    retVal += Utils::toHex8(c.blue, false);
+    retVal += ")";
+
+    return retVal;
 }

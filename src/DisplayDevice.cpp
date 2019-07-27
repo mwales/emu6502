@@ -1,8 +1,8 @@
 #include "DisplayDevice.h"
 #include "DisplayCommands.h"
 
-DisplayDevice::DisplayDevice():
-   MemoryDev("Display"),
+DisplayDevice::DisplayDevice(std::string const & name):
+   MemoryDev(name),
    theDisplayCommandQueue(2048)
 {
 

@@ -233,6 +233,7 @@ int main(int argc, char* argv[])
 
    DisplayManager* dispManager = DisplayManager::getInstance();
    dispManager->configureDisplay(displayType, emu);
+   dispManager->setMemoryController(memControl);
 
    if (debuggerEnabled)
    {

@@ -154,7 +154,7 @@ make -j8
 * Catch2 - Boost License (It's only used for testing, not in the final binaries).
   Very easy to use C++ unit testing framework
 * HMC-6502 - BSD License - I used some of the test roms for unit testing
-
+* cmd2 - Python library used by the debugger (sudo apt-get install python-cmd2)
 ## Disassembler
 
 This program can disassemble a single 64K ROM Image.  The filename of the binary and the base

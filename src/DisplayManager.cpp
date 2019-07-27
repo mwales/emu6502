@@ -75,6 +75,13 @@ DisplayManager::~DisplayManager()
 void DisplayManager::setMemoryController(MemoryController* memCtrl)
 {
    theMemoryController = memCtrl;
+
+   if (theDisplayDevice == nullptr)
+   {
+      DM_WARNING() << "setMemoryController called but no display device instance yet";
+   }
+
+   theDisplayDevice->setMemoryController(theMemoryController);
 }
 
 void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
@@ -99,6 +106,7 @@ void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
 
    theDisplay = new Display();
    theDisplay->setCommandQueue(theDisplayDevice->getCommandQueue());
+
 
 }
 

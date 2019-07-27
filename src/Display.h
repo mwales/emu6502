@@ -43,6 +43,8 @@ protected:
 
    std::string sdlEventTypeToString(const uint32_t& et);
 
+   std::string colorToString(Color24 c);
+
    SimpleQueue* theDisplayCommandQueue;
 
    SDL_Window* theWindow;

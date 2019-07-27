@@ -7,7 +7,7 @@
 class DisplayDevice : public MemoryDev
 {
 public:
-   DisplayDevice();
+   DisplayDevice(std::string const & name);
 
    virtual void startDisplay() = 0;
 
