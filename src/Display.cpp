@@ -88,6 +88,8 @@ bool Display::startDisplay()
 
       } while (numBytesInCommand > 0);
 
+      SDL_RenderPresent(theRenderer);
+
       // Check for events from SDL
       int sdlCallSuccess;
       SDL_Event ev;
