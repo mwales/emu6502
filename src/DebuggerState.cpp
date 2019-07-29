@@ -98,3 +98,8 @@ bool DebuggerState::isFreshHalt()
    DSTATE_DEBUG() << "isFreshHalt called:" << (theState == FRESH_HALT ? "TRUE" : "FALSE");
    return (theState == FRESH_HALT);
 }
+
+bool DebuggerState::isPaused()
+{
+   return ((theState == PAUSE) || (theState == FRESH_HALT));
+}

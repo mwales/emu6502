@@ -23,7 +23,8 @@ DebugServer::DebugServer(Cpu6502* cpu, uint16_t portNum, MemoryController* memCo
    theClientSocket(nullptr),
    theQuitFlag(false),
    theNumberBytesToRx(-1),
-   theRegisterDumpSentToClient(false)
+   theRegisterDumpSentToClient(false),
+   thePausedOnBreakpointFlag(false)
 {
    DS_DEBUG() << "DebugServer constructed, portNum = " << portNum;
 
@@ -66,8 +67,19 @@ int DebugServer::debugHook()
    if (theBreakpoints.find(curAddr) != theBreakpoints.end())
    {
       // We hit the breakpoint
-      theDebuggerState.pauseEmulator();
-      DS_DEBUG() << "Debugger hit breakpoint at" << addressToString(curAddr);
+      if (thePausedOnBreakpointFlag)
+      {
+         // We already hit this breakpoint and stopped the debugger.  We don't
+         // need the breakpoint to change debugger state anymore until next
+         // breakpoint hit
+         thePausedOnBreakpointFlag = false;
+      }
+      else
+      {
+         thePausedOnBreakpointFlag = true;
+         theDebuggerState.pauseEmulator();
+         DS_DEBUG() << "Debugger hit breakpoint at" << addressToString(curAddr);
+      }
    }
 
    if (theQuitFlag)

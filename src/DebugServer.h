@@ -116,6 +116,8 @@ protected:
 
    std::set<CpuAddress> theBreakpoints;
 
+   bool thePausedOnBreakpointFlag;
+
    std::set<CpuAddress> theMemoryAccessBPs;
 
 };

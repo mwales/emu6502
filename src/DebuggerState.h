@@ -47,6 +47,8 @@ public:
 
    bool isFreshHalt();
 
+   bool isPaused();
+
 protected:
 
    typedef enum
