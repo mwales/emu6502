@@ -38,19 +38,19 @@
 // #define DEBUG_SERVER_DEBUG
 
 // Turns on debug statements from the Disassembler6502 class
-#define DISASS_TRACE
+// #define DISASS_TRACE
             
 // Turns on debug statements for the Mapper class (and child mapper classes)
 // #define MAPPER_TRACE
 
 // Turns on the debug statements in the MemoryConfig class
-#define CONFIG_TRACE
+// #define CONFIG_TRACE
 
 // Turns on debug statements in the MirrorMemory class
 // #define MIRROR_MEM_TRACE
 
 // Turns on the debug statements in the RomMemory class
-#define ROM_TRACE
+// #define ROM_TRACE
 
 // Turns on debug statements in the RamMemory class
 // #define RAM_TRACE
@@ -59,16 +59,22 @@
 // #define RANDOMDEV_TRACE
 
 // Turns on debug for the simple queue (for display commands)
-//#define SIMPLE_QUEUE_LOGGING
+// #define SIMPLE_QUEUE_LOGGING
 
 // Turns on debug for the display manager
-// #define DISPLAY_MANAGER_TRACE
+#define DISPLAY_MANAGER_TRACE
 
+// Turns on debug statements for the display class
 // #define DISPLAYWINDOW_DEBUG
 
+// Spits out a trace of all the SDL commands
+// #define SDL_TRACE_DEBUG
+
+// Turns on debug for the display device for the Easy6502 Javascript emulator
 #define EASY6502_DISPLAY_TRACE
 
-#define SDL_TRACE_DEBUG
+// Turns on the debug for the input device for Easy6502 Javascript emulator
+#define EASY6502_INPUTDEV_TRACE
 
 #endif
 

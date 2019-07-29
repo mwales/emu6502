@@ -31,6 +31,8 @@ DisplayManager* DisplayManager::getInstance()
    {
       return theInstancePtr;
    }
+
+
 }
 
 void DisplayManager::destroyInstance()
@@ -59,6 +61,8 @@ DisplayManager::DisplayManager():
    theCpu(nullptr)
 {
    DM_DEBUG() << "Creating the singleton DisplayManager";
+   theDisplayCommandQueue = new SimpleQueue(2048);
+   theEventQueue = new SimpleQueue(2048);
 }
 
 DisplayManager::~DisplayManager()
@@ -70,6 +74,9 @@ DisplayManager::~DisplayManager()
       DM_DEBUG() << "Deleting the display object";
       delete theDisplayDevice;
    }
+
+   delete theDisplayCommandQueue;
+   delete theEventQueue;
 }
 
 void DisplayManager::setMemoryController(MemoryController* memCtrl)
@@ -105,9 +112,11 @@ void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
    }
 
    theDisplay = new Display();
-   theDisplay->setCommandQueue(theDisplayDevice->getCommandQueue());
+   theDisplay->setCommandQueue(theDisplayCommandQueue);
+   theDisplay->setEventQueue(theEventQueue);
 
-
+   theDisplayDevice->setCommandQueue(theDisplayCommandQueue);
+   theDisplayDevice->setEventQueue(theEventQueue);
 }
 
 bool DisplayManager::isDisplayConfigured()

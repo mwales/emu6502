@@ -32,8 +32,8 @@ set(EMULAT_FILES Cpu6502.cpp
 		 Display.cpp
 		 DisplayDevice.cpp
 		 DisplayManager.cpp
-		 DisplayCommands.cpp
-		 Easy6502JsDisplay.cpp )
+		 Easy6502JsDisplay.cpp
+		 Easy6502JsInputDevice.cpp )
 
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 

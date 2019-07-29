@@ -3,7 +3,8 @@
 
 DisplayDevice::DisplayDevice(std::string const & name):
    MemoryDev(name),
-   theDisplayCommandQueue(2048)
+   theDisplayCommandQueue(nullptr),
+   theEventQueue(nullptr)
 {
 
 }
@@ -12,11 +13,16 @@ void DisplayDevice::stopDisplay()
 {
    DisplayCommand haltCmd;
    haltCmd.id = DisplayCommandId::HALT_EMULATION;
-   theDisplayCommandQueue.writeMessage(sizeof(DisplayCommand), (char*) &haltCmd);
+   theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &haltCmd);
 }
 
 
-SimpleQueue* DisplayDevice::getCommandQueue()
+void DisplayDevice::setCommandQueue(SimpleQueue* cmdQ)
 {
-   return &theDisplayCommandQueue;
+   theDisplayCommandQueue = cmdQ;
+}
+
+void DisplayDevice::setEventQueue(SimpleQueue* evQ)
+{
+   theEventQueue = evQ;
 }

@@ -7,6 +7,9 @@
 
 #include "DisplayCommands.h"
 
+#include <vector>
+
+
 /**
  * Displays graphics for the user.  Receives command messages from the display
  * device running in the emulation thread.  This class has to be in the SDL
@@ -25,7 +28,9 @@ public:
     */
    virtual bool startDisplay();
 
-   void setCommandQueue(SimpleQueue* theCmdQ);
+   void setCommandQueue(SimpleQueue* cmdQ);
+
+   void setEventQueue(SimpleQueue* eventQ);
 
 protected:
 
@@ -41,22 +46,30 @@ protected:
 
    bool handleDcHaltEmulation(DisplayCommand* cmd);
 
+   bool handleDcSdlSubscribeEventType(DisplayCommand* cmd);
+
    std::string sdlEventTypeToString(const uint32_t& et);
+
+   bool isSdlEventInteresting(const uint32_t & et);
 
    std::string colorToString(Color24 c);
 
+   /// Commands sent from the emulator to the display telling the display what to show
    SimpleQueue* theDisplayCommandQueue;
+
+   /// Evnets from SDL are put in this queue for the emulator
+   SimpleQueue* theEventCommandQueue;
 
    SDL_Window* theWindow;
 
    SDL_Renderer* theRenderer;
 
-   uint16_t theLargestCommandSize;
-
    /** This flag needs to be set if display externally triggered to close (like the emulation is
     * halting on it's own due to an error)
     */
    bool theDisplayClosingExternallyTriggered;
+
+   std::vector<uint32_t> theEventsOfInterest;
 
 };
 

@@ -4,6 +4,9 @@
 #include "MemoryDev.h"
 #include "SimpleQueue.h"
 
+/**
+ * Common generic parent type for display memory devices
+ */
 class DisplayDevice : public MemoryDev
 {
 public:
@@ -13,11 +16,15 @@ public:
 
    virtual void stopDisplay();
 
-   SimpleQueue* getCommandQueue();
+   void setCommandQueue(SimpleQueue* cmdQ);
+
+   void setEventQueue(SimpleQueue* eventQ);
 
 protected:
 
-   SimpleQueue theDisplayCommandQueue;
+   SimpleQueue* theDisplayCommandQueue;
+
+   SimpleQueue* theEventQueue;
 
 };
 

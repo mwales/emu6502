@@ -20,12 +20,11 @@
 
 Display::Display():
    theDisplayCommandQueue(nullptr),
+   theEventCommandQueue(nullptr),
    theWindow(nullptr),
    theDisplayClosingExternallyTriggered(false)
 {
-
-   theLargestCommandSize = getSizeOfLargestDisplayCommand();
-
+   DISP_DEBUG() << "Display constructor called";
 }
 
 Display::~Display()
@@ -45,7 +44,7 @@ bool Display::startDisplay()
    }
 
    DisplayCommand cmd;
-   memset((char*) &cmd, 0, theLargestCommandSize);
+   memset((char*) &cmd, 0, sizeof(DisplayCommand));
 
    // Have a flag for loop since can't next break statements
    bool runFlag = true;
@@ -60,7 +59,7 @@ bool Display::startDisplay()
       {
          callSuccessful = theDisplayCommandQueue->tryReadMessage(&numBytesInCommand,
                                                                  (char*) &cmd,
-                                                                 theLargestCommandSize);
+                                                                 sizeof(DisplayCommand));
 
          DISP_DEBUG() << "DISP RX: " << Utils::hexDump((uint8_t*) &cmd, numBytesInCommand);
 
@@ -88,6 +87,7 @@ bool Display::startDisplay()
 
       } while (numBytesInCommand > 0);
 
+      SDL_TRACE() << "SDL_RenderPresent(pointer)";
       SDL_RenderPresent(theRenderer);
 
       // Check for events from SDL
@@ -116,6 +116,14 @@ bool Display::startDisplay()
          default:
             DISP_DEBUG() << "Received unexpected SDL event type:" << sdlEventTypeToString(ev.type);
          }
+
+         if (isSdlEventInteresting(ev.type))
+         {
+            DISP_DEBUG() << "Found an interesting event";
+            theEventCommandQueue->writeMessage(sizeof(SDL_Event), (char*) &ev);
+         }
+
+
       }
       else
       {
@@ -148,18 +156,26 @@ bool Display::handleDisplayQueueCommand(DisplayCommand* cmd)
    case DRAW_PIXEL:
       return handleDcDrawPixel(cmd);
 
+   case SUBSCRIBE_SDL_EVENT_TYPE:
+      return handleDcSdlSubscribeEventType(cmd);
+
    default:
       DISP_WARNING() << "Invalid command ID sent to display" << (int) cmd->id;
       return false;
    }
 }
 
-void Display::setCommandQueue(SimpleQueue* theCmdQ)
+void Display::setCommandQueue(SimpleQueue* cmdQ)
 {
    DISP_DEBUG() << "Display has received a reference to the command queue";
-   theDisplayCommandQueue = theCmdQ;
+   theDisplayCommandQueue = cmdQ;
 }
 
+void Display::setEventQueue(SimpleQueue* eventQ)
+{
+    DISP_DEBUG() << "Display has received a reference to the event queue";
+    theEventCommandQueue = eventQ;
+}
 
 bool Display::handleDcSetResolution(DisplayCommand* cmd)
 {
@@ -291,6 +307,15 @@ bool Display::handleDcHaltEmulation(DisplayCommand* cmd)
    return false;
 }
 
+bool Display::handleDcSdlSubscribeEventType(DisplayCommand* cmd)
+{
+    DISP_DEBUG() << "Display has received a command to subscribe to SDL event:"
+                 << sdlEventTypeToString(cmd->data.DcSubscribeSdlEventType.eventType);
+    theEventsOfInterest.push_back(cmd->data.DcSubscribeSdlEventType.eventType);
+
+    return true;
+}
+
 std::string Display::sdlEventTypeToString(const uint32_t& et)
 {
    switch(et)
@@ -392,6 +417,17 @@ std::string Display::sdlEventTypeToString(const uint32_t& et)
    default:
       return "*** UNKNOWN SDL EVENT ***";
    }
+}
+
+bool Display::isSdlEventInteresting(uint32_t const & et)
+{
+   for(auto & etIt: theEventsOfInterest)
+   {
+      if (et == etIt)
+          return true;
+   }
+
+   return false;
 }
 
 std::string Display::colorToString(Color24 c)

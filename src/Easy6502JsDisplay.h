@@ -6,7 +6,13 @@
 #include <map>
 #include "DisplayCommands.h"
 
+class Easy6502JsInputDevice;
+
 /**
+ * This class implements the display device that clones the online 6502 emulator
+ * made by skilldrick.  This class also creates an Easy6502JsInputDevice object
+ * to handle the input from the display at address 0xff.
+ *
  * Memory locations $200 to $5ff map to the screen pixels. Different values will
  * draw different colour pixels. The colours are:
  *
@@ -52,13 +58,30 @@ public:
 
    virtual void resetMemory();
 
+   /**
+    * Overloaded because we also need to set the memory controller for the
+    * Easy6502JsInputDevice object we manage
+    */
+   virtual void setMemoryController(MemoryController* mc);
+
+   /**
+    * Sends the commands to the display to get the screen cleared and sets the
+    * resolution
+    */
    virtual void startDisplay();
+
 
 protected:
 
+   void drawPixelCommand(int offset, uint8_t c);
+
+   /// The online emulator defined 0-15 colors, we map to RGB here
    std::map<uint8_t, Color24> theColorPalette;
 
+   /// Display raw memory
    uint8_t* theDisplayFrame;
+
+   Easy6502JsInputDevice* theInputDevice;
 
    static const int SCREEN_WIDTH = 32;
    static const int SCREEN_HEIGHT = 32;

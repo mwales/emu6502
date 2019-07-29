@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-uint16_t getSizeOfLargestDisplayCommand();
-
 typedef struct
 {
    uint8_t red;
@@ -18,7 +16,8 @@ typedef enum
    SET_RESOLUTION,
    SET_LOGICAL_SIZE,
    CLEAR_SCREEN,
-   DRAW_PIXEL
+   DRAW_PIXEL,
+   SUBSCRIBE_SDL_EVENT_TYPE
 } DisplayCommandId;
 
 typedef union
@@ -56,6 +55,12 @@ typedef union
       uint16_t y;
       Color24 color;
    } DcDrawPixel;
+
+   struct
+   {
+       uint32_t eventType;
+   } DcSubscribeSdlEventType;
+
 } DisplayCommandPayloads;
 
 typedef struct

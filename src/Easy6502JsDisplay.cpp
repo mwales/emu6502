@@ -2,6 +2,7 @@
 #include "DisplayCommands.h"
 #include "MemoryController.h"
 #include "Logger.h"
+#include "Easy6502JsInputDevice.h"
 
 #ifdef EASY6502_DISPLAY_TRACE
    #define EASY6502_DEBUG LOG_DEBUG
@@ -38,11 +39,16 @@ Easy6502JsDisplay::Easy6502JsDisplay():
 
    theDisplayFrame = (uint8_t*) malloc(theSize);
    memset(theDisplayFrame, 0, theSize);
+
+   theInputDevice = new Easy6502JsInputDevice();
 }
 
 Easy6502JsDisplay::~Easy6502JsDisplay()
 {
    EASY6502_DEBUG() << "Easy6502JsDisplay destructor";
+
+   delete theInputDevice;
+   theInputDevice = nullptr;
 }
 
 uint8_t Easy6502JsDisplay::read8(CpuAddress absAddr)
@@ -68,44 +74,85 @@ bool Easy6502JsDisplay::write8(CpuAddress absAddr, uint8_t val)
    int offset = absAddr - theAddress;
    theDisplayFrame[offset] = val;
 
-
-   DisplayCommand dc;
-   dc.id = DRAW_PIXEL;
-   dc.data.DcDrawPixel.x = offset % SCREEN_WIDTH;
-   dc.data.DcDrawPixel.y = offset / SCREEN_WIDTH;
-
-   Color24 pixelColor = theColorPalette[val & 0xf];
-
-   dc.data.DcDrawPixel.color.red = pixelColor.red;
-   dc.data.DcDrawPixel.color.green = pixelColor.green;
-   dc.data.DcDrawPixel.color.blue = pixelColor.blue;
-
-   theDisplayCommandQueue.writeMessage(sizeof(DisplayCommand), (char*) &dc);
+   drawPixelCommand(offset, val);
 
    return true;
 }
 
 uint16_t Easy6502JsDisplay::read16(CpuAddress absAddr)
 {
-   return 0;
+   if (!isAbsAddressValid(absAddr) || !isAbsAddressValid(absAddr + 1))
+   {
+       EASY6502_WARNING() << "Address" << addressToString(absAddr) << "out of range (for Easy6502Js display (read16)";
+       return false;
+   }
+
+   int offset = absAddr - theAddress;
+
+   uint8_t secondByte = theDisplayFrame[offset];
+   uint8_t firstByte = theDisplayFrame[offset + 1];
+
+   uint16_t retVal = firstByte;
+   retVal <<= 8;
+   retVal += secondByte;
+
+   return retVal;
 }
 
 bool Easy6502JsDisplay::write16(CpuAddress absAddr, uint16_t val)
 {
+   if (!isAbsAddressValid(absAddr) || !isAbsAddressValid(absAddr + 1))
+   {
+       EASY6502_WARNING() << "Address" << addressToString(absAddr) << "out of range (for Easy6502Js display (write16)";
+       return false;
+   }
 
-   return false;
+   int offset = absAddr - theAddress;
+
+   uint8_t secondByte = (val >> 8) & 0xff;
+   uint8_t firstByte = val & 0xff;
+
+   theDisplayFrame[offset] = secondByte;
+   theDisplayFrame[offset + 1] = firstByte;
+
+   drawPixelCommand(offset, secondByte);
+   drawPixelCommand(offset + 1, firstByte);
+
+   return true;
 }
 
 void Easy6502JsDisplay::resetMemory()
 {
+   memset(theDisplayFrame, 0, theSize);
 
+   // Send clear screen command
+   DisplayCommand cmd;
+   cmd.id = DisplayCommandId::CLEAR_SCREEN;
+   cmd.data.DcClearScreen.blankColor.blue = 0;
+   cmd.data.DcClearScreen.blankColor.red = 0;
+   cmd.data.DcClearScreen.blankColor.green = 0;
+   theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &cmd);
 }
 
 void Easy6502JsDisplay::startDisplay()
 {
    EASY6502_DEBUG() << "Easy6502JsDisplay::startDisplay()";
 
+   if (theDisplayCommandQueue == nullptr)
+   {
+      LOG_FATAL() << "startDisplay called, but no display command queue";
+      return;
+   }
+
+   if (theEventQueue == nullptr)
+   {
+      LOG_FATAL() << "startDisplay called, but no event queue";
+      return;
+   }
+
    theMemController->addNewDevice(this);
+
+   EASY6502_DEBUG() << "About to send display init commands";
 
    // We need to send resolution command to the GUI 640x640 is pixels that are 20x upscaling
    DisplayCommand cmd;
@@ -113,16 +160,48 @@ void Easy6502JsDisplay::startDisplay()
    cmd.data.DcSetResolution.width = SCREEN_WIDTH * 20;
    cmd.data.DcSetResolution.height = SCREEN_HEIGHT * 20;
 
-   theDisplayCommandQueue.writeMessage(sizeof(DisplayCommand), (char*) &cmd);
+   theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &cmd);
 
    cmd.id = DisplayCommandId::SET_LOGICAL_SIZE;
    cmd.data.DcSetLogicalSize.width = 32;
    cmd.data.DcSetLogicalSize.height = 32;
-   theDisplayCommandQueue.writeMessage(sizeof(DisplayCommand), (char*) &cmd);
+   theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &cmd);
 
    cmd.id = DisplayCommandId::CLEAR_SCREEN;
    cmd.data.DcClearScreen.blankColor.blue = 0;
    cmd.data.DcClearScreen.blankColor.red = 0;
    cmd.data.DcClearScreen.blankColor.green = 0;
-   theDisplayCommandQueue.writeMessage(sizeof(DisplayCommand), (char*) &cmd);
+   theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &cmd);
+
+   EASY6502_DEBUG() << "Setting up the input device now";
+   theMemController->addNewDevice(theInputDevice);
+
+   theInputDevice->setCommandQueue(theDisplayCommandQueue);
+   theInputDevice->setEventQueue(theEventQueue);
+
+   theInputDevice->setupEventQueue();
+}
+
+void Easy6502JsDisplay::setMemoryController(MemoryController* mc)
+{
+   theInputDevice->setMemoryController(mc);
+
+   // Call parent version
+   MemoryDev::setMemoryController(mc);
+}
+
+void Easy6502JsDisplay::drawPixelCommand(int offset, uint8_t c)
+{
+   DisplayCommand dc;
+   dc.id = DRAW_PIXEL;
+   dc.data.DcDrawPixel.x = offset % SCREEN_WIDTH;
+   dc.data.DcDrawPixel.y = offset / SCREEN_WIDTH;
+
+   Color24 pixelColor = theColorPalette[c & 0xf];
+
+   dc.data.DcDrawPixel.color.red = pixelColor.red;
+   dc.data.DcDrawPixel.color.green = pixelColor.green;
+   dc.data.DcDrawPixel.color.blue = pixelColor.blue;
+
+   theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &dc);
 }
