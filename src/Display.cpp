@@ -107,7 +107,7 @@ bool Display::startDisplay()
       // Check for events from SDL
       int sdlCallSuccess;
       SDL_Event ev;
-      sdlCallSuccess = SDL_WaitEventTimeout(&ev, 1000);
+      sdlCallSuccess = SDL_WaitEventTimeout(&ev, 10);
       SDL_TRACE() << "SDL_WaitEventTimeout(pointer,1000)";
 
       if (sdlCallSuccess)

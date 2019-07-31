@@ -8,7 +8,7 @@
  */
 
 // Turns on debug output in the UartDevice class
-#define UART_TRACE
+// #define UART_TRACE
 
 // This should be defined if SDL is available.  This flag is useful if there is
 // a binary that needs to be build that doesn't require SDL / SDL features
@@ -17,7 +17,7 @@
 // #define SDL_INCLUDED
 
 // Prints all CPU instructions executed to a trace.txt log
-#define TRACE_EXECUTION                                                        
+// #define TRACE_EXECUTION
 
 // Turns on debug statements in Cpu6502 class
 // #define CPU_TRACE
@@ -62,7 +62,7 @@
 // #define SIMPLE_QUEUE_LOGGING
 
 // Turns on debug for the display manager
-#define DISPLAY_MANAGER_TRACE
+// #define DISPLAY_MANAGER_TRACE
 
 // Turns on debug statements for the display class
 // #define DISPLAYWINDOW_DEBUG
@@ -71,10 +71,10 @@
 // #define SDL_TRACE_DEBUG
 
 // Turns on debug for the display device for the Easy6502 Javascript emulator
-#define EASY6502_DISPLAY_TRACE
+// #define EASY6502_DISPLAY_TRACE
 
 // Turns on the debug for the input device for Easy6502 Javascript emulator
-#define EASY6502_INPUTDEV_TRACE
+// #define EASY6502_INPUTDEV_TRACE
 
 #endif
 
