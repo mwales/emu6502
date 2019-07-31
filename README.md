@@ -255,4 +255,24 @@ Example / template configuration file
 }
 ```
 
+## Snake demo
+
+![Snake Game Screenshot](https://raw.githubusercontent.com/mwales/6502-tests/master/snake_game/snake_screenshot.png)
+
+To run:
+
+```
+git clone https://github.com/mwales/emu6502
+cd emu6502
+git submodule update --init --recursive
+cd src
+mkdir build
+cd build
+cmake ..
+make
+cd ../../
+cd 6502-tests
+cd snake_game
+../../src/build/emu6502 -c snake.json
+```
 
