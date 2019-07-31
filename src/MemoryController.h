@@ -21,6 +21,8 @@ class MemoryController
 public:
     MemoryController();
 
+    ~MemoryController();
+
     std::vector<std::string> getDeviceNames();
 
     void addNewDevice(MemoryDev* device);

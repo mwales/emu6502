@@ -47,8 +47,11 @@ Easy6502JsDisplay::~Easy6502JsDisplay()
 {
    EASY6502_DEBUG() << "Easy6502JsDisplay destructor";
 
-   delete theInputDevice;
-   theInputDevice = nullptr;
+   free(theDisplayFrame);
+   theDisplayFrame = nullptr;
+
+   // Don't delete theInputDevice here, let the memory manager object take care
+   // of deleting it
 }
 
 uint8_t Easy6502JsDisplay::read8(CpuAddress absAddr)

@@ -272,9 +272,6 @@ int main(int argc, char* argv[])
 
    delete memControl;
 
-   if(optionalRomMemory != nullptr)
-      delete optionalRomMemory;
-
    shutdownSdl();
 
    return 0;

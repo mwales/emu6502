@@ -73,7 +73,7 @@ typedef struct OpCodeInfoStruct
 
 void constructCpuGlobals();
 
-extern OpCodeInfo gOpCodes[0xff];
+extern OpCodeInfo gOpCodes[0x100];
 
 #define CPU_OP(opCode, numBytes, disMnemonic, mnemonic, addrMode, cycles, extraCycles, flags) \
    gOpCodes[opCode].theOpCode = opCode; \

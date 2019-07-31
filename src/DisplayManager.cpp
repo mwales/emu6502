@@ -69,14 +69,18 @@ DisplayManager::~DisplayManager()
 {
    DM_DEBUG() << "DisplayManager destructor called";
 
-   if (theDisplayDevice != nullptr)
-   {
-      DM_DEBUG() << "Deleting the display object";
-      delete theDisplayDevice;
-   }
-
    delete theDisplayCommandQueue;
    delete theEventQueue;
+
+   // Don't delete theDisplayDevice object, the memory manager object
+   // will manage deleting it
+
+   if (theDisplay != nullptr)
+   {
+      DM_DEBUG() << "Deleting Display object";
+      delete theDisplay;
+      theDisplay = nullptr;
+   }
 }
 
 void DisplayManager::setMemoryController(MemoryController* memCtrl)

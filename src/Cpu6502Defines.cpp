@@ -1,7 +1,7 @@
 #include "Cpu6502Defines.h"
 #include "Decoder6502.h"
 
-OpCodeInfo gOpCodes[0xff];
+OpCodeInfo gOpCodes[0x100];
 
 void constructCpuGlobals()
 {

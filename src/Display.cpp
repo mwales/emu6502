@@ -22,6 +22,7 @@ Display::Display():
    theDisplayCommandQueue(nullptr),
    theEventCommandQueue(nullptr),
    theWindow(nullptr),
+   theRenderer(nullptr),
    theDisplayClosingExternallyTriggered(false)
 {
    DISP_DEBUG() << "Display constructor called";
@@ -31,6 +32,19 @@ Display::~Display()
 {
    DISP_DEBUG() << "destructor called";
 
+   if (theRenderer != nullptr)
+   {
+      DISP_DEBUG() << "Destroy SDL renderer";
+      SDL_DestroyRenderer(theRenderer);
+      theRenderer = nullptr;
+   }
+
+   if(theWindow != nullptr)
+   {
+      DISP_DEBUG() << "Destroy SDL window";
+      SDL_DestroyWindow(theWindow);
+      theWindow = nullptr;
+   }
 }
 
 bool Display::startDisplay()

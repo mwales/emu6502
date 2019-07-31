@@ -7,6 +7,18 @@ MemoryController::MemoryController()
 
 }
 
+MemoryController::~MemoryController()
+{
+   while(theDevices.size() > 0)
+   {
+      MemoryDev* theCurrentDev = theDevices.back();
+      theDevices.pop_back();
+
+      LOG_DEBUG() << "Deleting MemoryDev:" << theCurrentDev->getDebugString();
+      delete theCurrentDev;
+   }
+}
+
 std::vector<std::string> MemoryController::getDeviceNames()
 {
    std::vector<std::string> retData;
