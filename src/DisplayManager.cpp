@@ -69,18 +69,14 @@ DisplayManager::~DisplayManager()
 {
    DM_DEBUG() << "DisplayManager destructor called";
 
+   if (theDisplayDevice != nullptr)
+   {
+      DM_DEBUG() << "Deleting the display object";
+      delete theDisplayDevice;
+   }
+
    delete theDisplayCommandQueue;
    delete theEventQueue;
-
-   // Don't delete theDisplayDevice object, the memory manager object
-   // will manage deleting it
-
-   if (theDisplay != nullptr)
-   {
-      DM_DEBUG() << "Deleting Display object";
-      delete theDisplay;
-      theDisplay = nullptr;
-   }
 }
 
 void DisplayManager::setMemoryController(MemoryController* memCtrl)
@@ -91,8 +87,10 @@ void DisplayManager::setMemoryController(MemoryController* memCtrl)
    {
       DM_WARNING() << "setMemoryController called but no display device instance yet";
    }
-
-   theDisplayDevice->setMemoryController(theMemoryController);
+   else
+   {
+      theDisplayDevice->setMemoryController(theMemoryController);
+   }
 }
 
 void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
@@ -119,8 +117,16 @@ void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
    theDisplay->setCommandQueue(theDisplayCommandQueue);
    theDisplay->setEventQueue(theEventQueue);
 
-   theDisplayDevice->setCommandQueue(theDisplayCommandQueue);
-   theDisplayDevice->setEventQueue(theEventQueue);
+   if (theDisplayDevice == nullptr)
+   {
+      DM_DEBUG() << "No display device";
+   }
+   else
+   {
+      theDisplayDevice->setCommandQueue(theDisplayCommandQueue);
+      theDisplayDevice->setEventQueue(theEventQueue);
+   }
+
 }
 
 bool DisplayManager::isDisplayConfigured()
@@ -148,7 +154,10 @@ void DisplayManager::startEmulator()
    // Open the display / This will until display is closed
    DM_DEBUG() << "DisplayManager starting the display";
 
-   theDisplayDevice->startDisplay();
+   if (theDisplayDevice != nullptr)
+   {
+      theDisplayDevice->startDisplay();
+   }
 
    bool externallyClosed = theDisplay->startDisplay();
 
