@@ -1,8 +1,8 @@
 #include "Utils.h"
 
 #ifdef SDL_INCLUDED
-   #include <SDL2/SDL.h>
-   #include <SDL2/SDL_rwops.h>
+   #include <SDL.h>
+   #include <SDL_rwops.h>
 #endif
 
 #include <sstream>

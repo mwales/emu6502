@@ -2,7 +2,7 @@
 #define DISPLAYMANAGER_H
 
 #include <iostream>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 class Display;
 class DisplayDevice;

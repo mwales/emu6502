@@ -1,7 +1,7 @@
 #ifndef SIMPLEQUEUE_H
 #define SIMPLEQUEUE_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 
 /**

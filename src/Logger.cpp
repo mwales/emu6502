@@ -7,7 +7,7 @@
 // Copied (almost, removed some SDL stuff) from https://github.com/mwales/education/sdl/Asteroids
 // Don't make any changes for this project, put them in original project or create a new Logger project in Utils
 
-//#include <SDL2/SDL.h>
+//#include <SDL.h>
 
 
 #include <execinfo.h>

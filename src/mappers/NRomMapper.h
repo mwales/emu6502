@@ -1,7 +1,7 @@
 #ifndef NROMMAPPER_H
 #define NROMMAPPER_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "Mapper.h"
 #include "NesRom.h"
 

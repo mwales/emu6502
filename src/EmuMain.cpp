@@ -21,8 +21,8 @@
 #include "Logger.h"
 #include "MemoryConfig.h"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_net.h>
+#include <SDL.h>
+#include <SDL_net.h>
 
 void printUsage(char* appName)
 {

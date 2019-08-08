@@ -50,6 +50,8 @@ set(SDL2_net_LIBRARIES "-lSDL2_net")
 
 target_compile_definitions(emu6502 PRIVATE SDL_INCLUDED)
 
+target_include_directories(emu6502 PUBLIC ${SDL2_INCLUDE_DIRS})
+
 target_link_libraries(emu6502 ${SDL2_LIBRARIES})
 target_link_libraries(emu6502 ${SDL2_net_LIBRARIES})
 

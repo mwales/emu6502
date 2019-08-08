@@ -3,7 +3,7 @@
 
 #include "MemoryDev.h"
 #include "SimpleQueue.h"
-#include "SDL2/SDL.h"
+#include "SDL.h"
 
 #include "DisplayCommands.h"
 

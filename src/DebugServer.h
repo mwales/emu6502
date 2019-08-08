@@ -2,8 +2,8 @@
 #define DEBUG_SERVER_H
 
 #include <stdint.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_net.h>
+#include <SDL.h>
+#include <SDL_net.h>
 #include <vector>
 #include <set>
 #include "DebuggerState.h"
