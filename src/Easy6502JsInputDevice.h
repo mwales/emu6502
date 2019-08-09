@@ -2,6 +2,7 @@
 #define EASY6502JSINPUTDEVICE_H
 
 #include "MemoryDev.h"
+#include "SDL.h"
 
 class SimpleQueue;
 

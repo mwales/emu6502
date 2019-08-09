@@ -1,4 +1,8 @@
 #include "Easy6502JsDisplay.h"
+#include "EmulatorConfig.h"
+
+#include <cstring>
+
 #include "DisplayCommands.h"
 #include "MemoryController.h"
 #include "Logger.h"

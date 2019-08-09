@@ -9,7 +9,7 @@
 
 //#include <SDL.h>
 
-
+#ifndef __MINGW32__
 #include <execinfo.h>
 
 // Directly from backtrace manpage
@@ -38,6 +38,8 @@ void printBacktrace(void)
     free(strings);
 
 }
+
+#endif
 
 // Changing this constant also requires changing the length of text fields in both constructors
 const int Logger::FILE_NAME_PRINTED_LENGTH = 19;
@@ -91,7 +93,10 @@ Logger::~Logger()
       default: // FATAL
          std::cout << "\x1b[41m\x1b[30m" << theOss.str() << "\x1b[0m" << std::endl;
 
+#ifndef __MINGW32__
          printBacktrace();
+#endif
+
          //SDL_Quit();
          exit(0);
    }

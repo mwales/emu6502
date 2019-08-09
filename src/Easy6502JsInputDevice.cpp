@@ -1,4 +1,8 @@
 #include "Easy6502JsInputDevice.h"
+#include "EmulatorConfig.h"
+
+#include <cstring>
+
 #include "SimpleQueue.h"
 #include "Logger.h"
 #include "EmulatorConfig.h"

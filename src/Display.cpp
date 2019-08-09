@@ -1,4 +1,7 @@
 #include "Display.h"
+
+#include <cstring>
+
 #include "Logger.h"
 #include "Utils.h"
 

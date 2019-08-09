@@ -1,10 +1,5 @@
 #include "Utils.h"
 
-#ifdef SDL_INCLUDED
-   #include <SDL.h>
-   #include <SDL_rwops.h>
-#endif
-
 #include <sstream>
 
 Utils::Utils()
@@ -151,8 +146,6 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
 }
 
 
-#ifdef SDL_INCLUDED
-
    std::string Utils::loadFile(std::string& name, std::string& errorOut)
    {
       std::string retVal;
@@ -220,16 +213,6 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
        return bytesReadTotal;
    }
 
-#else
-
-   std::string Utils::loadFile(std::string&  name, std::string& errorOut)
-   {
-      errorOut = "Utils::loadFile not implemented for non-SDL builds";
-      return "";
-   }
-
-
-#endif
 
 std::string Utils::hexDump(uint8_t* buffer, int length)
 {

@@ -1,5 +1,8 @@
 #include "SimpleQueue.h"
 #include "EmulatorConfig.h"
+
+#include <cstring>
+
 #include "Logger.h"
 #include "Utils.h"
 

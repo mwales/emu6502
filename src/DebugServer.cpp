@@ -1,5 +1,8 @@
 #include "DebugServer.h"
 #include "EmulatorConfig.h"
+
+#include <cstring>
+
 #include "Logger.h"
 #include "Cpu6502.h"
 #include "Cpu6502Defines.h"

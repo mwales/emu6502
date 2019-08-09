@@ -5,10 +5,8 @@
 #include <stdint.h>
 #include "EmulatorConfig.h"
 
-#ifdef SDL_INCLUDED
-   #include <SDL.h>
-   #include <SDL_rwops.h>
-#endif
+#include <SDL.h>
+#include <SDL_rwops.h>
 
 /**
  * Standalone utility functions
@@ -39,10 +37,8 @@ public:
    /// Converts a buffer of data into "aa bb cc .."
    static std::string hexDump(uint8_t* buffer, int length);
 
-#ifdef SDL_INCLUDED
    static int readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp);
 
-#endif
 
    /// Is the given number a power of 2
    static bool isPowerOf2(int32_t val);
