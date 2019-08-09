@@ -143,7 +143,7 @@ void Cpu6502::start()
       {
          CPU_DEBUG() << "Cpu6502::start start of the loop executing (debug mode)";
 
-         SDL_Delay(0);
+         SDL_Delay(1);
 
          if (-1 == decodeWithDebugging())
          {
@@ -158,7 +158,7 @@ void Cpu6502::start()
       {
          CPU_DEBUG() << "Cpu6502::start start of the loop executing (no debugger)";
 
-         SDL_Delay(0);
+         SDL_Delay(1);
 
          if (-1 == decode())
          {
