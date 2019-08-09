@@ -1,2 +1,6 @@
 dis6502
 build
+SDL2.dll
+SDL2_net.dll
+emu6502.exe
+

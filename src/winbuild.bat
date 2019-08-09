@@ -36,7 +36,7 @@ cjson/cJSON.c
 
 REM Order of the libraries at the end are very important
 g++ %SOURCE_FILES% -I%SDL_PATH%\include\sdl2 -I%SDL_NET_PATH%\include\SDL2 -Imappers -I.. ^
- -L%SDL_PATH%\lib -L%SDL_NET_PATH%\lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_net
+ -L%SDL_PATH%\lib -L%SDL_NET_PATH%\lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -o emu6502
 
 REM Keep sdl2.dll in the same directory as your executable to run
 copy %SDL_PATH%\bin\sdl2.dll SDL2.dll
