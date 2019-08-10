@@ -31,8 +31,6 @@ DisplayManager* DisplayManager::getInstance()
    {
       return theInstancePtr;
    }
-
-
 }
 
 void DisplayManager::destroyInstance()
@@ -69,11 +67,8 @@ DisplayManager::~DisplayManager()
 {
    DM_DEBUG() << "DisplayManager destructor called";
 
-   if (theDisplayDevice != nullptr)
-   {
-      DM_DEBUG() << "Deleting the display object";
-      delete theDisplayDevice;
-   }
+   // We don't delete the display device because memory controller will handle
+   // deleting it for us
 
    delete theDisplayCommandQueue;
    delete theEventQueue;
@@ -101,16 +96,13 @@ void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
 
    if (displayType == "none")
    {
-      // Do nothing, there won't be any display
-      return;
+      // Do nothing, there won't be any display device
    }
 
    if (displayType == "easy6502JsClone")
    {
       // Create the Easy 6502 JS Emulator display
       theDisplayDevice = (DisplayDevice*) new Easy6502JsDisplay();
-
-      // theMemoryController->addNewDevice(theDisplay);
    }
 
    theDisplay = new Display();
@@ -166,7 +158,6 @@ void DisplayManager::startEmulator()
    {
       DM_DEBUG() << "Display closed due to external event, waiting for emulation thread";
       // We don't need to tell the emulator to halt, it already has
-
    }
    else
    {

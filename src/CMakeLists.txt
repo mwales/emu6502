@@ -35,10 +35,6 @@ set(EMULAT_FILES Cpu6502.cpp
 		 Easy6502JsDisplay.cpp
 		 Easy6502JsInputDevice.cpp )
 
-#PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
-
-# PKG_SEARCH_MODULE(SDL2NET REQUIRED SDL2_net>=2.0.0)
-
 add_executable(emu6502 ${COMMON_FILES} ${EMULAT_FILES} )
 add_executable(dis6502 ${COMMON_FILES} ${DISASS_FILES} )
 INCLUDE(FindPkgConfig)
@@ -46,14 +42,15 @@ INCLUDE(FindPkgConfig)
 # Include SDL
 find_package(SDL2 REQUIRED)
 
-set(SDL2_net_LIBRARIES "-lSDL2_net")
-
-target_compile_definitions(emu6502 PRIVATE SDL_INCLUDED)
-
 target_include_directories(emu6502 PUBLIC ${SDL2_INCLUDE_DIRS})
+target_include_directories(dis6502 PUBLIC ${SDL2_INCLUDE_DIRS})
+
+set(SDL2_net_LIBRARIES "-lSDL2_net")
 
 target_link_libraries(emu6502 ${SDL2_LIBRARIES})
 target_link_libraries(emu6502 ${SDL2_net_LIBRARIES})
+
+target_link_libraries(dis6502 ${SDL2_LIBRARIES})
 
 # Modern C++ support
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --std=c++11 -Wall -D_FORTIFY_SOURCE=2 -O2")

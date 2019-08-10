@@ -7,7 +7,6 @@
 #include "Logger.h"
 #include "EmulatorConfig.h"
 #include "DisplayCommands.h"
-#include "SDL.h"
 
 #ifdef EASY6502_INPUTDEV_TRACE
    #define EASYINPUT_DEBUG LOG_DEBUG
