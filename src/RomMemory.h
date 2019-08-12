@@ -18,26 +18,26 @@ public:
 
    // Access methods
 
-   virtual uint8_t read8(CpuAddress absAddr);
+   virtual uint8_t read8(CpuAddress absAddr) override;
 
-   virtual bool write8(CpuAddress absAddr, uint8_t val);
+   virtual bool write8(CpuAddress absAddr, uint8_t val) override;
 
-   virtual uint16_t read16(CpuAddress absAddr);
+   virtual uint16_t read16(CpuAddress absAddr) override;
 
-   virtual bool write16(CpuAddress absAddr, uint16_t val);
+   virtual bool write16(CpuAddress absAddr, uint16_t val) override;
 
    // Configuration methods
 
-   virtual bool isFullyConfigured();
+   virtual bool isFullyConfigured() const override;
 
-   virtual std::vector<std::string> getIntConfigParams();
+   virtual std::vector<std::string> getIntConfigParams() const override;
 
-   virtual std::vector<std::string> getStringConfigParams();
+   virtual std::vector<std::string> getStringConfigParams() const override;
 
-   virtual void setIntConfigValue(std::string paramName, int value);
-   virtual void setStringConfigValue(std::string paramName, std::string value);
+   virtual void setIntConfigValue(std::string paramName, int value) override;
+   virtual void setStringConfigValue(std::string paramName, std::string value) override;
 
-   virtual void resetMemory();
+   virtual void resetMemory() override;
 
 protected:
 

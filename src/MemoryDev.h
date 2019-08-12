@@ -23,7 +23,7 @@ public:
 
    virtual void setMemoryController(MemoryController* mc);
 
-   std::string getName();
+   std::string getName() const;
 
    virtual uint8_t read8(CpuAddress offset) = 0;
 
@@ -33,17 +33,17 @@ public:
 
    virtual bool write16(CpuAddress offset, uint16_t val) = 0;
 
-   virtual CpuAddress getAddress();
+   virtual CpuAddress getAddress() const;
 
-   virtual CpuAddress getSize();
+   virtual CpuAddress getSize() const;
 
    // Configuration Methods
 
-   virtual bool isFullyConfigured();
+   virtual bool isFullyConfigured() const;
 
-   virtual std::vector<std::string> getIntConfigParams();
+   virtual std::vector<std::string> getIntConfigParams() const;
 
-   virtual std::vector<std::string> getStringConfigParams();
+   virtual std::vector<std::string> getStringConfigParams() const;
 
    virtual void setIntConfigValue(std::string paramName, int value);
    virtual void setStringConfigValue(std::string paramName, std::string value);
@@ -54,11 +54,11 @@ public:
     */
    virtual void resetMemory() = 0;
 
-   bool isAbsAddressValid(CpuAddress addr , bool haltOnError = true);
+   bool isAbsAddressValid(CpuAddress addr , bool haltOnError = true) const;
 
-   MemoryRange getAddressRange();
+   MemoryRange getAddressRange() const;
 
-   std::string getDebugString();
+   std::string getDebugString() const;
 
    std::string dump();
 

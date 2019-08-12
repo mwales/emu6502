@@ -18,15 +18,15 @@ public:
 
    virtual ~Easy6502JsInputDevice();
 
-   virtual uint8_t read8(CpuAddress offset);
+   virtual uint8_t read8(CpuAddress offset) override;
 
-   virtual bool write8(CpuAddress offset, uint8_t val);
+   virtual bool write8(CpuAddress offset, uint8_t val) override;
 
-   virtual uint16_t read16(CpuAddress offset);
+   virtual uint16_t read16(CpuAddress offset) override;
 
-   virtual bool write16(CpuAddress offset, uint16_t val);
+   virtual bool write16(CpuAddress offset, uint16_t val) override;
 
-   virtual void resetMemory();
+   virtual void resetMemory() override;
 
    void setCommandQueue(SimpleQueue* cmdQ);
 

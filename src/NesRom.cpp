@@ -145,18 +145,18 @@ bool NesRom::write16(CpuAddress absAddr, uint16_t val)
 #define ROM_FILE_CONFIG 0x01
 #define ROM_CONFIG_DONE  ROM_FILE_CONFIG
 
-bool NesRom::isFullyConfigured()
+bool NesRom::isFullyConfigured() const
 {
    return (theConfigFlags == ROM_CONFIG_DONE);
 }
 
-std::vector<std::string> NesRom::getIntConfigParams()
+std::vector<std::string> NesRom::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    return retVal;
 }
 
-std::vector<std::string> NesRom::getStringConfigParams()
+std::vector<std::string> NesRom::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("romFilename");
@@ -258,7 +258,7 @@ void NesRom::resetMemory()
 
 }
 
-void NesRom::dumpHeaderInfo()
+void NesRom::dumpHeaderInfo() const
 {
     char magicBytes[4];
     magicBytes[0] = theHeaderBytes.theMagicNesBytes[0];
@@ -305,18 +305,18 @@ void NesRom::dumpHeaderInfo()
     NES_ROM_DEBUG() << "  Bus Conflicts: " << (theHeaderBytes.theFlagTen.theBusConflictsFlag ? "1 = has conflicts" : "0 = no conflicts");
 }
 
-uint8_t NesRom::getMapperNumber()
+uint8_t NesRom::getMapperNumber() const
 {
     return 0;
 }
 
 
-uint32_t NesRom::getPrgRomSize()
+uint32_t NesRom::getPrgRomSize() const
 {
     return theHeaderBytes.thePrgRomSizeBlocks * 16 * 1024;
 }
 
-uint32_t NesRom::getChrRomSize()
+uint32_t NesRom::getChrRomSize() const
 {
     return theHeaderBytes.theChrRomSizeBlocks * 1024 * 8;
 }

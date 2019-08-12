@@ -21,22 +21,22 @@ void MemoryDev::setMemoryController(MemoryController* mc)
     theMemController = mc;
 }
 
-std::string MemoryDev::getName()
+std::string MemoryDev::getName() const
 {
    return theName;
 }
 
-CpuAddress MemoryDev::getAddress()
+CpuAddress MemoryDev::getAddress() const
 {
    return theAddress;
 }
 
-CpuAddress MemoryDev::getSize()
+CpuAddress MemoryDev::getSize() const
 {
    return theSize;
 }
 
-bool MemoryDev::isAbsAddressValid(CpuAddress addr, bool haltOnError)
+bool MemoryDev::isAbsAddressValid(CpuAddress addr, bool haltOnError) const
 {
    if (addr < theAddress)
    {
@@ -53,7 +53,7 @@ bool MemoryDev::isAbsAddressValid(CpuAddress addr, bool haltOnError)
    return true;
 }
 
-MemoryRange MemoryDev::getAddressRange()
+MemoryRange MemoryDev::getAddressRange() const
 {
    MemoryRange retVal;
    retVal.first = theAddress;
@@ -61,7 +61,7 @@ MemoryRange MemoryDev::getAddressRange()
    return retVal;
 }
 
-std::string MemoryDev::getDebugString()
+std::string MemoryDev::getDebugString() const
 {
    std::string retVal = "[";
    retVal += addressToString(theAddress);
@@ -122,12 +122,22 @@ std::string MemoryDev::dump()
    return retVal;
 }
 
-bool MemoryDev::isFullyConfigured()
+//bool MemoryDev::specifiesStartAddress() const
+//{
+//   return false;
+//}
+
+//CpuAddress MemoryDev::getStartPcAddress() const
+//{
+//   return 0;
+//}
+
+bool MemoryDev::isFullyConfigured() const
 {
    return true;
 }
 
-std::vector<std::string> MemoryDev::getIntConfigParams()
+std::vector<std::string> MemoryDev::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("startAddress");
@@ -135,7 +145,7 @@ std::vector<std::string> MemoryDev::getIntConfigParams()
    return retVal;
 }
 
-std::vector<std::string> MemoryDev::getStringConfigParams()
+std::vector<std::string> MemoryDev::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("instanceName");

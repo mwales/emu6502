@@ -115,12 +115,14 @@ bool MirrorMemory::write16(CpuAddress absAddr, uint16_t val)
 #define ORIGINAL_ADDR_CONFIG 0x04
 #define MIRROR_CONFIG_DONE (MIRROR_ADDR_CONFIG | MIRROR_SIZE_CONFIG | ORIGINAL_ADDR_CONFIG)
 
-bool MirrorMemory::isFullyConfigured()
+bool MirrorMemory::isFullyConfigured() const
 {
+   MIRROR_DEBUG() << "MirrorMemory isFullConfigured." << Utils::toHex8(theConfigFlags)
+                  << "==" << Utils::toHex8(MIRROR_CONFIG_DONE);
    return (theConfigFlags == MIRROR_CONFIG_DONE);
 }
 
-std::vector<std::string> MirrorMemory::getIntConfigParams()
+std::vector<std::string> MirrorMemory::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("startAddress");
@@ -129,7 +131,7 @@ std::vector<std::string> MirrorMemory::getIntConfigParams()
    return retVal;
 }
 
-std::vector<std::string> MirrorMemory::getStringConfigParams()
+std::vector<std::string> MirrorMemory::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    return retVal;
@@ -137,22 +139,27 @@ std::vector<std::string> MirrorMemory::getStringConfigParams()
 
 void MirrorMemory::setIntConfigValue(std::string paramName, int value)
 {
+   MIRROR_DEBUG() << "setIntConfigValue(" << paramName << "," << value << ")";
+
    if (paramName == "startAddress")
    {
       theAddress = value;
       theConfigFlags |= MIRROR_ADDR_CONFIG;
+      MIRROR_DEBUG() << "Mirror memory start address config =" << addressToString(theAddress);
    }
 
    if (paramName == "size")
    {
       theSize = value;
       theConfigFlags |= MIRROR_SIZE_CONFIG;
+      MIRROR_DEBUG() << "Mirror memory size config =" << Utils::toHex16(theSize);
    }
 
    if (paramName == "originalMemoryAddress")
    {
       theAddrOfMemoryMirrored = value;
       theConfigFlags |= ORIGINAL_ADDR_CONFIG;
+      MIRROR_DEBUG() << "Mirror memory original addr config=" << addressToString(value);
    }
 
 }

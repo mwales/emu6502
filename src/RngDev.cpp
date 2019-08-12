@@ -95,12 +95,12 @@ bool RngDev::write16(CpuAddress absAddr, uint16_t val)
 #define RNG_SIZE_CONFIG 0x02
 #define RNG_CONFIG_DONE (RNG_ADDR_CONFIG | RNG_SIZE_CONFIG)
 
-bool RngDev::isFullyConfigured()
+bool RngDev::isFullyConfigured() const
 {
    return (theConfigFlags == RNG_CONFIG_DONE);
 }
 
-std::vector<std::string> RngDev::getIntConfigParams()
+std::vector<std::string> RngDev::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("startAddress");
@@ -108,7 +108,7 @@ std::vector<std::string> RngDev::getIntConfigParams()
    return retVal;
 }
 
-std::vector<std::string> RngDev::getStringConfigParams()
+std::vector<std::string> RngDev::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    return retVal;

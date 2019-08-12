@@ -150,12 +150,12 @@ bool UartDevice::write16(CpuAddress absAddr, uint16_t val)
 #define UART_PORT_CONFIG 0x02
 #define UART_CONFIG_DONE (UART_ADDR_CONFIG | UART_PORT_CONFIG)
 
-bool UartDevice::isFullyConfigured()
+bool UartDevice::isFullyConfigured() const
 {
    return (theConfigFlags == UART_CONFIG_DONE);
 }
 
-std::vector<std::string> UartDevice::getIntConfigParams()
+std::vector<std::string> UartDevice::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("portNumber");
@@ -163,7 +163,7 @@ std::vector<std::string> UartDevice::getIntConfigParams()
    return retVal;
 }
 
-std::vector<std::string> UartDevice::getStringConfigParams()
+std::vector<std::string> UartDevice::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    return retVal;

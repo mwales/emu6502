@@ -94,12 +94,12 @@ bool RamMemory::write16(CpuAddress absAddr, uint16_t val)
 #define RAM_SIZE_CONFIG 0x02
 #define RAM_CONFIG_DONE (RAM_ADDR_CONFIG | RAM_SIZE_CONFIG)
 
-bool RamMemory::isFullyConfigured()
+bool RamMemory::isFullyConfigured() const
 {
    return (theConfigFlags == RAM_CONFIG_DONE);
 }
 
-std::vector<std::string> RamMemory::getIntConfigParams()
+std::vector<std::string> RamMemory::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("startAddress");
@@ -107,7 +107,7 @@ std::vector<std::string> RamMemory::getIntConfigParams()
    return retVal;
 }
 
-std::vector<std::string> RamMemory::getStringConfigParams()
+std::vector<std::string> RamMemory::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    return retVal;

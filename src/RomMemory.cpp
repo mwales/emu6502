@@ -100,19 +100,19 @@ bool RomMemory::write16(CpuAddress absAddr, uint16_t val)
 #define ROM_FILE_CONFIG 0x02
 #define ROM_CONFIG_DONE (ROM_ADDR_CONFIG | ROM_FILE_CONFIG)
 
-bool RomMemory::isFullyConfigured()
+bool RomMemory::isFullyConfigured() const
 {
    return (theConfigFlags == ROM_CONFIG_DONE);
 }
 
-std::vector<std::string> RomMemory::getIntConfigParams()
+std::vector<std::string> RomMemory::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("startAddress");
    return retVal;
 }
 
-std::vector<std::string> RomMemory::getStringConfigParams()
+std::vector<std::string> RomMemory::getStringConfigParams() const
 {
    std::vector<std::string> retVal;
    retVal.push_back("romFilename");
@@ -121,6 +121,8 @@ std::vector<std::string> RomMemory::getStringConfigParams()
 
 void RomMemory::setIntConfigValue(std::string paramName, int value)
 {
+   ROM_DEBUG() << "setIntConfigValue(" << paramName << "," << value << ")";
+
    if (paramName == "startAddress")
    {
       theAddress = value;
@@ -131,6 +133,8 @@ void RomMemory::setIntConfigValue(std::string paramName, int value)
 
 void RomMemory::setStringConfigValue(std::string paramName, std::string value)
 {
+   ROM_DEBUG() << "setStringConfigValue(" << paramName << "," << value << ")";
+
    if (paramName == "romFilename")
    {
       theRomFile = value;
@@ -143,7 +147,8 @@ void RomMemory::resetMemory()
 {
       if (!isFullyConfigured())
       {
-         LOG_FATAL() << "ROM " << theName << " not fully configured during reset";
+         LOG_FATAL() << "ROM " << theName << " not fully configured during reset ("
+                     << this << ")";
       }
 
       int fd = open(theRomFile.c_str(), O_RDONLY);

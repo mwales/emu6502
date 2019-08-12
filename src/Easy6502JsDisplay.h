@@ -48,21 +48,21 @@ public:
 
    virtual ~Easy6502JsDisplay();
 
-   virtual uint8_t read8(CpuAddress absAddr);
+   virtual uint8_t read8(CpuAddress absAddr) override;
 
-   virtual bool write8(CpuAddress absAddr, uint8_t val);
+   virtual bool write8(CpuAddress absAddr, uint8_t val) override;
 
-   virtual uint16_t read16(CpuAddress absAddr);
+   virtual uint16_t read16(CpuAddress absAddr) override;
 
-   virtual bool write16(CpuAddress absAddr, uint16_t val);
+   virtual bool write16(CpuAddress absAddr, uint16_t val) override;
 
-   virtual void resetMemory();
+   virtual void resetMemory() override;
 
    /**
     * Overloaded because we also need to set the memory controller for the
     * Easy6502JsInputDevice object we manage
     */
-   virtual void setMemoryController(MemoryController* mc);
+   virtual void setMemoryController(MemoryController* mc) override;
 
    /**
     * Sends the commands to the display to get the screen cleared and sets the
