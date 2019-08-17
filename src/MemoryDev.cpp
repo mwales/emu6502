@@ -122,15 +122,15 @@ std::string MemoryDev::dump()
    return retVal;
 }
 
-//bool MemoryDev::specifiesStartAddress() const
-//{
-//   return false;
-//}
+bool MemoryDev::specifiesStartAddress() const
+{
+   return false;
+}
 
-//CpuAddress MemoryDev::getStartPcAddress() const
-//{
-//   return 0;
-//}
+CpuAddress MemoryDev::getStartPcAddress() const
+{
+   return 0;
+}
 
 bool MemoryDev::isFullyConfigured() const
 {

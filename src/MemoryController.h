@@ -40,6 +40,8 @@ public:
 
     std::vector<MemoryDev*> getAllDevices();
 
+    bool getStartAddress(CpuAddress* addr) const;
+
 protected:
     /**
      * Do two memory ranges overlap each other for 1 or more addresses

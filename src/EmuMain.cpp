@@ -254,8 +254,11 @@ int main(int argc, char* argv[])
    if (jumpAddressSet)
    {
       executionEntryPoint = baseAddress;
-      LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint << " from CLI options";
+      LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint
+                  << " from CLI options";
    }
+
+   memControl->getStartAddress(&executionEntryPoint);
 
    // Start of emulation
    emu->setAddress(executionEntryPoint);

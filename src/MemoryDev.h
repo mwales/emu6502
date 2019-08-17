@@ -25,13 +25,13 @@ public:
 
    std::string getName() const;
 
-   virtual uint8_t read8(CpuAddress offset) = 0;
+   virtual uint8_t read8(CpuAddress absAddr) = 0;
 
-   virtual bool write8(CpuAddress offset, uint8_t val) = 0;
+   virtual bool write8(CpuAddress absAddr, uint8_t val) = 0;
 
-   virtual uint16_t read16(CpuAddress offset) = 0;
+   virtual uint16_t read16(CpuAddress absAddr) = 0;
 
-   virtual bool write16(CpuAddress offset, uint16_t val) = 0;
+   virtual bool write16(CpuAddress absAddr, uint16_t val) = 0;
 
    virtual CpuAddress getAddress() const;
 
@@ -61,6 +61,10 @@ public:
    std::string getDebugString() const;
 
    std::string dump();
+
+   virtual bool specifiesStartAddress() const;
+
+   virtual CpuAddress getStartPcAddress() const;
 
 protected:   
 

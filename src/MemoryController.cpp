@@ -123,6 +123,29 @@ std::vector<MemoryDev*> MemoryController::getAllDevices()
    return theDevices;
 }
 
+bool MemoryController::getStartAddress(CpuAddress* addr) const
+{
+   if (addr == 0)
+   {
+      LOG_FATAL() << "Null pointer error in getStartAddress()";
+      return false;
+   }
+
+   for(auto const curDev: theDevices)
+   {
+      if (curDev->specifiesStartAddress())
+      {
+         *addr = curDev->getStartPcAddress();
+         LOG_DEBUG() << curDev->getName() << "specifies a start address of"
+                     << addressToString(*addr);
+         return true;
+      }
+   }
+
+   LOG_DEBUG() << "No memory devices specified a start address";
+   return false;
+}
+
 bool MemoryController::doRangesOverlap(MemoryRange dev1, MemoryRange dev2)
 {
    // [ dev1 ]

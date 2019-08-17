@@ -116,6 +116,10 @@ public:
 
    virtual void resetMemory() override;
 
+   virtual bool specifiesStartAddress() const override;
+
+   virtual CpuAddress getStartPcAddress() const override;
+
    void dumpHeaderInfo() const;
 
    uint8_t getMapperNumber() const;
@@ -143,6 +147,8 @@ protected:
    uint8_t* thePlayChoicePromData;
 
    Mapper* theMapper;
+
+   const CpuAddress theAddressOfPcStart = 0xfffc;
 
 
 };

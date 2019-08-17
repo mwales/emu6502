@@ -68,7 +68,7 @@ public:
     * Sends the commands to the display to get the screen cleared and sets the
     * resolution
     */
-   virtual void startDisplay();
+   virtual void startDisplay() override;
 
 
 protected:

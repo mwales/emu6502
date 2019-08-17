@@ -13,27 +13,28 @@ set(COMMON_FILES Decoder6502.cpp
                  Utils.cpp
                  Disassembler6502.cpp)
 
-set(DISASS_FILES DisMain.cpp)
+set(DISASS_FILES  DisMain.cpp)
 
-set(EMULAT_FILES Cpu6502.cpp
-                 DebugServer.cpp
-                 DebuggerState.cpp
-                 RamMemory.cpp
-		 RngDev.cpp
-                 EmuMain.cpp
-		 MemoryConfig.cpp
-		 UartDevice.cpp
-		 MirrorMemory.cpp
-		 NesRom.cpp
-		 cjson/cJSON.c
-                 mappers/Mapper.cpp
-                 mappers/NRomMapper.cpp
-		 SimpleQueue.cpp
-		 Display.cpp
-		 DisplayDevice.cpp
-		 DisplayManager.cpp
-		 Easy6502JsDisplay.cpp
-		 Easy6502JsInputDevice.cpp )
+set(EMULAT_FILES  Cpu6502.cpp
+                  DebugServer.cpp
+                  DebuggerState.cpp
+                  RamMemory.cpp
+                  RngDev.cpp
+                  EmuMain.cpp
+                  MemoryConfig.cpp
+                  UartDevice.cpp
+                  MirrorMemory.cpp
+                  NesRom.cpp
+                  cjson/cJSON.c
+                  mappers/Mapper.cpp
+                  mappers/NRomMapper.cpp
+                  SimpleQueue.cpp
+                  Display.cpp
+                  DisplayDevice.cpp
+                  DisplayManager.cpp
+                  Easy6502JsDisplay.cpp
+                  Easy6502JsInputDevice.cpp
+                  NesPpuDisplayDevice.cpp)
 
 add_executable(emu6502 ${COMMON_FILES} ${EMULAT_FILES} )
 add_executable(dis6502 ${COMMON_FILES} ${DISASS_FILES} )

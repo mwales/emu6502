@@ -258,6 +258,45 @@ void NesRom::resetMemory()
 
 }
 
+
+bool NesRom::specifiesStartAddress() const
+{
+   if (!isAbsAddressValid(theAddressOfPcStart) || !isAbsAddressValid(theAddressOfPcStart + 1))
+   {
+      NES_ROM_DEBUG() << "specifiesStartAddress() for NesRom returning false becasuse address"
+                      << addressToString(theAddressOfPcStart) << "not in ROM space";
+      return false;
+   }
+
+   if (theMapper == nullptr)
+   {
+       NES_ROM_DEBUG() << "specifiesStartAddress() for NesRom returning false because mapper null";
+       return false;
+   }
+
+   return true;
+}
+
+CpuAddress NesRom::getStartPcAddress() const
+{
+   if (!specifiesStartAddress())
+   {
+      NES_ROM_WARNING() << "NesRom::getStartPcAddress called, but NesRom can't specify address";
+      return 0;
+   }
+
+   uint8_t secondByte = theMapper->read8(theAddressOfPcStart);
+   uint8_t firstByte = theMapper->read8(theAddressOfPcStart + 1);
+
+   CpuAddress retVal = firstByte;
+   retVal <<= 8;
+   retVal += secondByte;
+
+   NES_ROM_DEBUG() << "Start address from ROM:" << addressToString(retVal);
+
+   return retVal;
+}
+
 void NesRom::dumpHeaderInfo() const
 {
     char magicBytes[4];
