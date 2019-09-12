@@ -38,6 +38,10 @@ MirrorMemory::MirrorMemory(std::string name):
    theRealMemDev(nullptr)
 {
    MIRROR_DEBUG() << "Created a Mirror Memory device: " << name;
+
+   theUint16ConfigParams.emplace("size", &theSize);
+   theUint16ConfigParams.emplace("cloneDest", &theAddress);
+   theUint16ConfigParams.emplace("cloneSource", &theAddress);
 }
 
 MirrorMemory::~MirrorMemory()
@@ -120,6 +124,11 @@ bool MirrorMemory::isFullyConfigured() const
    MIRROR_DEBUG() << "MirrorMemory isFullConfigured." << Utils::toHex8(theConfigFlags)
                   << "==" << Utils::toHex8(MIRROR_CONFIG_DONE);
    return (theConfigFlags == MIRROR_CONFIG_DONE);
+}
+
+std::string MirrorMemory::getConfigTypeName() const
+{
+   return getTypeName();
 }
 
 std::vector<std::string> MirrorMemory::getIntConfigParams() const

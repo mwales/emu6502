@@ -192,7 +192,38 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
       return retVal;
    }
 
+   std::vector<std::string> Utils::tokenizeSting(std::string const & input)
+   {
+      std::vector<std::string> retVal;
+      int startToken = -1;
 
+      for(unsigned int i = 0; i < input.size(); i++)
+      {
+         char curChar = input.at(i);
+         if ( (curChar == ' ') || (curChar == '\t') || (curChar == '\n') || (curChar == '\r'))
+         {
+            // Found whitespace
+            if (startToken != -1)
+            {
+               // Found a token
+               std::string token = input.substr(startToken, i - startToken);
+               retVal.push_back(token);
+
+               startToken = -1;
+            }
+         }
+         else
+         {
+            // Not whitespace
+            if (startToken == -1)
+            {
+               startToken = i;
+            }
+         }
+      }
+
+      return retVal;
+   }
 
    int Utils::readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp)
    {

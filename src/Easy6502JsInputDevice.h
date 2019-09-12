@@ -35,6 +35,8 @@ public:
    /// Subscribes to SDL key up and down events
    void setupEventQueue();
 
+   virtual std::string getConfigTypeName() const;
+
 protected:
 
    void processEventQueue();

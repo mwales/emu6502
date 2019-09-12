@@ -27,6 +27,8 @@ UartDevice::UartDevice(std::string name):
 
    theSocketSet = SDLNet_AllocSocketSet(1);
 
+   theUint16ConfigParams.emplace("portNumber", &thePortNumber);
+   theUint16ConfigParams.emplace("startAddress", &theAddress);
 }
 
 MemoryDeviceConstructor UartDevice::getMDC()
@@ -153,6 +155,11 @@ bool UartDevice::write16(CpuAddress absAddr, uint16_t val)
 bool UartDevice::isFullyConfigured() const
 {
    return (theConfigFlags == UART_CONFIG_DONE);
+}
+
+std::string UartDevice::getConfigTypeName() const
+{
+   return getTypeName();
 }
 
 std::vector<std::string> UartDevice::getIntConfigParams() const

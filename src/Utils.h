@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdint.h>
+#include <vector>
 #include "EmulatorConfig.h"
 
 #include <SDL.h>
@@ -32,7 +33,17 @@ public:
    static uint32_t parseUInt32(std::string userInput, bool* success = nullptr);
    static uint64_t parseUInt64(std::string userInput, bool* success = nullptr);
 
+   /**
+    * Loads an entire file into a string
+    * @param name Filename to load
+    * @param[out] errorOut Returns an error if one occurs.  Intialize with empty string before
+    *             calling and check to see if still empty
+    * @return File contents
+    */
    static std::string loadFile(std::string& name, std::string& errorOut);
+
+   /// Converts a string into a list of the string parts (whitespace removed)
+   static std::vector<std::string> tokenizeSting(std::string const & input);
 
    /// Converts a buffer of data into "aa bb cc .."
    static std::string hexDump(uint8_t* buffer, int length);

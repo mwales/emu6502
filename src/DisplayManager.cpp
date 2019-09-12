@@ -88,21 +88,40 @@ void DisplayManager::setMemoryController(MemoryController* memCtrl)
    }
 }
 
-void DisplayManager::configureDisplay(std::string displayType, Cpu6502* cpu)
+void DisplayManager::configureDisplay(Cpu6502* cpu)
 {
    theCpu = cpu;
 
-   DM_DEBUG() << "Configuring display manager with display type:" << displayType;
-
-   if (displayType == "none")
+   if (theMemoryController == nullptr)
    {
-      // Do nothing, there won't be any display device
+      LOG_FATAL() << "Display Manager needs reference to memory controller before configuring";
+      return;
    }
 
-   if (displayType == "easy6502JsClone")
+   // Check the memory controller for memory device of known display types
+   std::vector<MemoryDev*> devList = theMemoryController->getAllDevices();
+   bool foundDisplayDevice = false;
+   for(auto const & memDev: devList)
    {
-      // Create the Easy 6502 JS Emulator display
-      theDisplayDevice = (DisplayDevice*) new Easy6502JsDisplay();
+      if (memDev->getConfigTypeName() == Easy6502JsDisplay::getTypeName())
+      {
+         theDisplayDevice = dynamic_cast<DisplayDevice*>(memDev);
+
+         if (theDisplayDevice == nullptr)
+         {
+            LOG_WARNING() << "Detected" << Easy6502JsDisplay::getTypeName()
+                          << "display device, but dynamic_cast failed!";
+            continue;
+         }
+
+         foundDisplayDevice = true;
+         break;
+      }
+   }
+
+   if (foundDisplayDevice)
+   {
+      theDisplayDevice->setMemoryController(theMemoryController);
    }
 
    theDisplay = new Display();

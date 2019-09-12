@@ -33,6 +33,8 @@ public:
 
    virtual bool isFullyConfigured() const override;
 
+   virtual std::string getConfigTypeName() const;
+
    virtual std::vector<std::string> getIntConfigParams() const override;
 
    virtual std::vector<std::string> getStringConfigParams() const override;

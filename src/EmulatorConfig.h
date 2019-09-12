@@ -7,6 +7,9 @@
  * are
  */
 
+// Turns on debug for the configuration manager
+#define CONFIG_MANAGER_DEBUG
+
 // Turns on debug output in the UartDevice class
 // #define UART_TRACE
 
@@ -17,7 +20,7 @@
 // #define SDL_INCLUDED
 
 // Prints all CPU instructions executed to a trace.txt log
-// #define TRACE_EXECUTION
+#define TRACE_EXECUTION
 
 // Turns on debug statements in Cpu6502 class
 // #define CPU_TRACE
@@ -43,14 +46,11 @@
 // Turns on debug statements for the Mapper class (and child mapper classes)
 #define MAPPER_TRACE
 
-// Turns on the debug statements in the MemoryConfig class
-#define CONFIG_TRACE
-
 // Turns on debug statements in the MirrorMemory class
-#define MIRROR_MEM_TRACE
+// #define MIRROR_MEM_TRACE
 
 // Turns on the debug statements in the RomMemory class
-#define ROM_TRACE
+// #define ROM_TRACE
 
 // Turns on debug statements in the RamMemory class
 // #define RAM_TRACE

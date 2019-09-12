@@ -18,7 +18,7 @@
 // Static methods
 std::string RngDev::getTypeName()
 {
-   return "RngDev";
+   return "RNG";
 }
 
 MemoryDev* rngDeviceConstructor(std::string name)
@@ -40,6 +40,9 @@ RngDev::RngDev(std::string name):
 
    RNG_DEBUG() << "Created a random number generator device: " << name;
    RNG_DEBUG() << "RNG Seed = " << timeSeed;
+
+   theUint16ConfigParams.emplace("size", &theSize);
+   theUint16ConfigParams.emplace("startAddress", &theAddress);
 }
 
 RngDev::~RngDev()
@@ -98,6 +101,11 @@ bool RngDev::write16(CpuAddress absAddr, uint16_t val)
 bool RngDev::isFullyConfigured() const
 {
    return (theConfigFlags == RNG_CONFIG_DONE);
+}
+
+std::string RngDev::getConfigTypeName() const
+{
+   return getTypeName();
 }
 
 std::vector<std::string> RngDev::getIntConfigParams() const

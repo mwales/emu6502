@@ -30,6 +30,8 @@ public:
 
    virtual bool isFullyConfigured() const override;
 
+   virtual std::string getConfigTypeName() const;
+
    virtual std::vector<std::string> getIntConfigParams() const override;
 
    virtual std::vector<std::string> getStringConfigParams() const override;
@@ -39,13 +41,25 @@ public:
 
    virtual void resetMemory() override;
 
+   virtual bool specifiesStartAddress() const;
+
+   virtual CpuAddress getStartPcAddress() const;
+
+   virtual bool configSelf();
+
 protected:
+
+   void loadRomIntoMemory();
 
    uint8_t* theData;
 
    std::string theRomFile;
 
    int theConfigFlags;
+
+   bool theStartEmulationAddressSetFlag;
+
+   CpuAddress theStartEmulationAddress;
 };
 
 #endif // ROMMEMORY_H

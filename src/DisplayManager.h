@@ -25,7 +25,7 @@ public:
 
    void setMemoryController(MemoryController* memCtrl);
 
-   void configureDisplay(std::string displayType, Cpu6502* cpu);
+   void configureDisplay(Cpu6502* cpu);
 
    bool isDisplayConfigured();
 

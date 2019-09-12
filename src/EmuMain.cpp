@@ -2,20 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <getopt.h>
+
 
 #include "EmulatorConfig.h"
-
 #include "DisplayManager.h"
-
-// Memory devices
-#include "NesRom.h"
-#include "RomMemory.h"
-#include "RamMemory.h"
-#include "UartDevice.h"
-#include "MirrorMemory.h"
-#include "RngDev.h"
-
+#include "ConfigManager.h"
+#include "MemoryFactory.h"
 #include "MemoryController.h"
 #include "Cpu6502.h"
 #include "Logger.h"
@@ -24,19 +16,53 @@
 #include <SDL.h>
 #include <SDL_net.h>
 
+const std::string DEBUGGER_TYPE = "debugger";
+const std::string DEBUGGER_PORT = "port";
+const std::string CONFIGFILE_TYPE = "config";
+const std::string CONFIGFILE_NAME = "filename";
+const std::string EMULATOR_TYPE = "emulator";
+const std::string EMUSTART_NAME = "startAddress";
+const std::string TRACESTEPS_NAME = "stepCount";
+
 void printUsage(char* appName)
 {
    std::cout << appName << " is 6502 emulator" << std::endl;
-   std::cout << appName << " -f filename -b baseaddr [-d port] [-j addr] [-h]" << std::endl;
-   std::cout << "  -f --file       Filename of binary data to load" << std::endl;
-   std::cout << "  -b --baseaddr   Base address of the file to disassemble" << std::endl;
-   std::cout << "  -d --debugger   Enable remote debugger (port number)" << std::endl;
-   std::cout << "  -j --jump       Address to jump to when emulation starts" << std::endl;
-   std::cout << "  -h --help       Show this help" << std::endl;
-   std::cout << "  -c --config     Configuration file" << std::endl;
+
+   std::cout << std::endl;
+
+   std::cout << "  " << CONFIGFILE_TYPE << ".uniquename." << CONFIGFILE_NAME << "=config.txt" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  ROM.uniquename.filename=data.bin" << std::endl;
+   std::cout << "  ROM.uniquename.address=0x1234" << std::endl;
+   std::cout << "  ROM.uniquename.startEmulatorAddress=0x1234   (optional)" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  RAM.uniquename.size=0x1000" << std::endl;
+   std::cout << "  RAM.uniquename.startAddress=0x0000" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  RNG.uniquename.size=1" << std::endl;
+   std::cout << "  RNG.uniquename.startAddress=0xff" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  " << DEBUGGER_TYPE << ".uniquename." << DEBUGGER_PORT << "=6502" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  iNES.uniquename.filename=game.nes" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  Easy6502InputDevice.uniquename.dontcare=dontcare" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  Easy6502JsDisplay.uniquename.dontcare=dontcare" << std::endl;
+   std::cout << std::endl;
+
+   std::cout << "  " << EMULATOR_TYPE << ".system." << EMUSTART_NAME << "=0x1234" << std::endl;
+
 
 #ifdef TRACE_EXECUTION
-   std::cout << "  -n --numsteps   Number of instructions to execute" << std::endl;
+   std::cout << "  " << EMULATOR_TYPE << ".system." << TRACESTEPS_NAME << "=100" << std::endl;
 #endif
 
    std::cout << std::endl;
@@ -71,99 +97,37 @@ void shutdownSdl()
 
 int main(int argc, char* argv[])
 {
-   struct option long_options[] = {
-      { "file",     required_argument, 0, 'f'},
-      { "baseaddr", required_argument, 0, 'b'},
-      { "jump",     required_argument, 0, 'j'},
-      { "debugger", required_argument, 0, 'd'},
-      { "help",     no_argument,       0, 'h'},
-#ifdef TRACE_EXECUTION
-      { "numsteps", required_argument, 0, 'n'},
-#endif
-      { 0,          0,                 0, 0}
-   };
+   if (argc == 1)
+   {
+      printUsage(argv[0]);
+      return 0;
+   }
+
+   ConfigManager* configMgr = ConfigManager::createInstance();
+   configMgr->processArgs(argc, argv);
+
+   // Did the user specify a config file
+   if(configMgr->isConfigPresent(CONFIGFILE_TYPE, CONFIGFILE_NAME))
+   {
+      std::string configFileName = configMgr->getStringConfigValue(CONFIGFILE_TYPE, CONFIGFILE_NAME);
+
+      LOG_DEBUG() << "Load configuration from file: " << configFileName;
+      configMgr->loadConfigFile(configFileName);
+   }
+   else
+   {
+      LOG_DEBUG() << "No config file specified";
+   }
 
    // Default settings
    std::string filename   = "";
    std::string configFilename = "";
-   CpuAddress baseAddress = 0x0;
-   bool baseAddressDefined = false;
    uint16_t debuggerPort = 0;
    bool debuggerEnabled = false;
-
-   CpuAddress executionEntryPoint = 0;
-   bool jumpAddressSet = false;
-
-   int optIndex;
 
 #ifdef TRACE_EXECUTION
    uint64_t numSteps = 0xffffffffffffffff;
 #endif
-
-   while(true)
-   {
-      char optChar = getopt_long(argc, argv, "c:f:b:j:d:h:n:", long_options, &optIndex);
-
-      if (optChar == -1)
-      {
-         //qDebug() << "Arg parsing complete";
-         break;
-      }
-
-      switch (optChar)
-      {
-      case 'f':
-         LOG_DEBUG() << "Filename:" << optarg;
-         filename = optarg;
-         break;
-
-      case 'b':
-      {
-         baseAddress = Utils::parseUInt16(optarg);
-         LOG_DEBUG() << "Base Address:" << addressToString(baseAddress);
-         baseAddressDefined = true;
-         break;
-      }
-
-      case 'j':
-      {
-         CpuAddress addr = Utils::parseUInt16(optarg);
-         LOG_DEBUG() << "Execution Entry Point:" << addressToString(addr);
-         executionEntryPoint = addr;
-         jumpAddressSet = true;
-         break;
-      }
-
-      case 'd':
-      {
-         debuggerPort = Utils::parseUInt16(optarg);
-         debuggerEnabled = true;
-         LOG_DEBUG() << "Debugger enabled on port:" << debuggerPort;
-         break;
-      }
-
-      case 'h':
-      {
-         printUsage(argv[0]);
-         return 0;
-      }
-
-      case 'c':
-         LOG_DEBUG() << "Config File:" << optarg;
-         configFilename = optarg;
-         break;
-
-#ifdef TRACE_EXECUTION
-      case 'n':
-         LOG_DEBUG() << "Num Steps:" << optarg;
-         numSteps = Utils::parseUInt64(optarg);
-         break;
-#endif
-
-      default:
-         std::cerr << "Invalid argument.  Use -h or --help to see usage" << std::endl;
-      }
-   }
 
    if (!initializeSdl())
    {
@@ -171,69 +135,44 @@ int main(int argc, char* argv[])
    }
 
    MemoryController* memControl = new MemoryController();
-   RomMemory* optionalRomMemory = nullptr;
 
-   if ( (filename != "") && baseAddressDefined)
+   MemoryFactory memFactory(memControl);
+   memFactory.processConfigData();
+
+   // Is the debugger configured?
+   if (configMgr->isConfigPresent(DEBUGGER_TYPE, DEBUGGER_PORT))
    {
-      // The user has specified they want to load a file directly into memory
-      optionalRomMemory = new RomMemory("User_CLI_Optional");
-      optionalRomMemory->setIntConfigValue("startAddress", baseAddress);
-      optionalRomMemory->setStringConfigValue("romFilename", filename);
-
-      if (optionalRomMemory->isFullyConfigured())
-      {
-         LOG_DEBUG() << "Adding optional CLI ROM memory to the memory controller";
-         optionalRomMemory->resetMemory();
-         memControl->addNewDevice(optionalRomMemory);
-      }
-      else
-      {
-         LOG_WARNING() << "Error adding the optional CLI ROM memory";
-      }
+      debuggerPort = configMgr->getIntegerConfigValue(DEBUGGER_TYPE, DEBUGGER_PORT);
+      debuggerEnabled = true;
    }
 
-   std::string displayType;
-
-   if (configFilename.length() != 0)
+   CpuAddress startAddress = 0;
+   if (configMgr->isConfigPresent(EMULATOR_TYPE, EMUSTART_NAME))
    {
-      MemoryConfig memConfig(memControl);
+      startAddress = configMgr->getIntegerConfigValue(EMULATOR_TYPE, EMUSTART_NAME);
+      LOG_DEBUG() << "Start Address set by CLI:" << addressToString(startAddress);
 
-      memConfig.registerMemoryDevice(RamMemory::getTypeName(),    RamMemory::getMDC());
-      memConfig.registerMemoryDevice(RomMemory::getTypeName(),    RomMemory::getMDC());
-      memConfig.registerMemoryDevice(UartDevice::getTypeName(),   UartDevice::getMDC());
-      memConfig.registerMemoryDevice(NesRom::getTypeName(),       NesRom::getMDC());
-      memConfig.registerMemoryDevice(MirrorMemory::getTypeName(), MirrorMemory::getMDC());
-      memConfig.registerMemoryDevice(RngDev::getTypeName(),       RngDev::getMDC());
-
-      std::string errorStr;
-      std::string configData = Utils::loadFile(configFilename, errorStr);
-
-      if (errorStr.length() != 0)
-      {
-         LOG_WARNING() << "Error loading file " << configFilename << ": " << errorStr;
-      }
-      else
-      {
-         // LOG_DEBUG() << "Here lies the config data\n" << configData;
-         memConfig.parseConfig(configData);
-      }
-
-      if (memConfig.isStartAddressSet())
-      {
-         executionEntryPoint = memConfig.getStartAddress();
-         LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint << " from config";
-      }
-
-      displayType = memConfig.getDisplayType();
+      // todo do something with the start address
+   } else if (memControl->getStartAddress(&startAddress))
+   {
+      LOG_DEBUG() << "Start Address set my memory controller:" << addressToString(startAddress);
+   }
+   else
+   {
+      LOG_WARNING() << "No start address found!";
    }
 
    constructCpuGlobals();
 
    Cpu6502* emu = new Cpu6502(memControl);
 
+   emu->setAddress(startAddress);
+
    DisplayManager* dispManager = DisplayManager::getInstance();
-   dispManager->configureDisplay(displayType, emu);
    dispManager->setMemoryController(memControl);
+   dispManager->configureDisplay(emu);
+
+   memControl->resetAll();
 
    if (debuggerEnabled)
    {
@@ -248,20 +187,13 @@ int main(int argc, char* argv[])
    }
 
 #ifdef TRACE_EXECUTION
+   if (configMgr->isConfigPresent(EMULATOR_TYPE, TRACESTEPS_NAME))
+   {
+      numSteps = configMgr->getIntegerConfigValue(EMULATOR_TYPE, TRACESTEPS_NAME);
+      LOG_DEBUG() << "Trace Exectuion limited to" << numSteps << "steps";
+   }
    emu->setStepLimit(numSteps);
 #endif
-
-   if (jumpAddressSet)
-   {
-      executionEntryPoint = baseAddress;
-      LOG_DEBUG() << "Set execution entry point to " << executionEntryPoint
-                  << " from CLI options";
-   }
-
-   memControl->getStartAddress(&executionEntryPoint);
-
-   // Start of emulation
-   emu->setAddress(executionEntryPoint);
 
    // Display manager will spawn emulator thread and block for the entire duration of emulation
    dispManager->startEmulator();
@@ -276,6 +208,8 @@ int main(int argc, char* argv[])
    delete memControl;
 
    shutdownSdl();
+
+   configMgr->destroyInstance();
 
    return 0;
 }

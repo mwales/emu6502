@@ -16,8 +16,24 @@
    #define EASY6502_WARNING   if(0) LOG_WARNING
 #endif
 
-Easy6502JsDisplay::Easy6502JsDisplay():
-   DisplayDevice("Easy JS 6502 Display")
+MemoryDev* easy6502JsDisplayConstructor(std::string name)
+{
+   return new Easy6502JsDisplay(name);
+}
+
+MemoryDeviceConstructor Easy6502JsDisplay::getMDC()
+{
+   return easy6502JsDisplayConstructor;
+}
+
+std::string Easy6502JsDisplay::getTypeName()
+{
+   return "Easy6502JsDisplay";
+}
+
+
+Easy6502JsDisplay::Easy6502JsDisplay(std::string name):
+   DisplayDevice(name)
 {
    EASY6502_DEBUG() << "Easy6502JsDisplay constructor";
 
@@ -157,8 +173,6 @@ void Easy6502JsDisplay::startDisplay()
       return;
    }
 
-   theMemController->addNewDevice(this);
-
    EASY6502_DEBUG() << "About to send display init commands";
 
    // We need to send resolution command to the GUI 640x640 is pixels that are 20x upscaling
@@ -187,6 +201,11 @@ void Easy6502JsDisplay::startDisplay()
    theInputDevice->setEventQueue(theEventQueue);
 
    theInputDevice->setupEventQueue();
+}
+
+std::string Easy6502JsDisplay::getConfigTypeName() const
+{
+   return getTypeName();
 }
 
 void Easy6502JsDisplay::setMemoryController(MemoryController* mc)

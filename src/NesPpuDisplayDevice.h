@@ -22,6 +22,8 @@ public:
 
    virtual void startDisplay() override;
 
+   virtual std::string getConfigTypeName() const;
+
 protected:
 
    enum ppuRegNames

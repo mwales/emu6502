@@ -97,6 +97,11 @@ void Easy6502JsInputDevice::setupEventQueue()
    theCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &dc);
 }
 
+std::string Easy6502JsInputDevice::getConfigTypeName() const
+{
+   return "Easy6502InputDevice";
+}
+
 void Easy6502JsInputDevice::processEventQueue()
 {
    EASYINPUT_DEBUG() << "Easy6502JsInputDevice::processEventQueue";

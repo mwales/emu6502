@@ -79,6 +79,11 @@ void NesPpuDisplayDevice::startDisplay()
 
 }
 
+std::string NesPpuDisplayDevice::getConfigTypeName() const
+{
+   return "NesPPU";
+}
+
 std::string NesPpuDisplayDevice::regNameToString(int offset) const
 {
    switch(offset)

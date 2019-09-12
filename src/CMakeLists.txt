@@ -11,21 +11,21 @@ set(COMMON_FILES Decoder6502.cpp
                  Logger.cpp
                  MemoryDev.cpp
                  Utils.cpp
+                 ConfigManager.cpp
                  Disassembler6502.cpp)
 
 set(DISASS_FILES  DisMain.cpp)
 
 set(EMULAT_FILES  Cpu6502.cpp
-                  DebugServer.cpp
+		  DebugServer.cpp
                   DebuggerState.cpp
                   RamMemory.cpp
                   RngDev.cpp
                   EmuMain.cpp
-                  MemoryConfig.cpp
+		  MemoryFactory.cpp
                   UartDevice.cpp
                   MirrorMemory.cpp
                   NesRom.cpp
-                  cjson/cJSON.c
                   mappers/Mapper.cpp
                   mappers/NRomMapper.cpp
                   SimpleQueue.cpp

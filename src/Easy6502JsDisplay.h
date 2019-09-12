@@ -44,7 +44,12 @@ class Easy6502JsInputDevice;
 class Easy6502JsDisplay : public DisplayDevice
 {
 public:
-   Easy6502JsDisplay();
+
+   static MemoryDeviceConstructor getMDC();
+
+   static std::string getTypeName();
+
+   Easy6502JsDisplay(std::string name);
 
    virtual ~Easy6502JsDisplay();
 
@@ -70,6 +75,7 @@ public:
     */
    virtual void startDisplay() override;
 
+   virtual std::string getConfigTypeName() const;
 
 protected:
 

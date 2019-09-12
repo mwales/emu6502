@@ -1,6 +1,7 @@
 #include"MemoryDev.h"
 #include "Logger.h"
 #include "Utils.h"
+#include "ConfigManager.h"
 
 MemoryDev::MemoryDev(std::string name):
    theAddress(0),
@@ -175,3 +176,75 @@ void MemoryDev::setStringConfigValue(std::string paramName, std::string value)
       theName = value;
    }
 }
+
+bool MemoryDev::configSelf()
+{
+   ConfigManager* theCfgMgr = ConfigManager::getInstance();
+   bool retVal = true;
+
+   // Get all of our int configuration parameters
+   for(auto it = theUint32ConfigParams.begin(); it != theUint32ConfigParams.end(); it++)
+   {
+      uint32_t temp;
+      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, it->first))
+      {
+         temp = theCfgMgr->getIntegerConfigValue(getConfigTypeName(),
+                                                 theName,
+                                                 it->first);
+         *(it->second) = temp;
+         LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
+                     << "." << it->first << "=" << Utils::toHex32(temp);
+      }
+      else
+      {
+         LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
+                       << theName << "." << it->first;
+         retVal = false;
+      }
+   }
+
+   // Get all of our int configuration parameters
+   for(auto it = theUint16ConfigParams.begin(); it != theUint16ConfigParams.end(); it++)
+   {
+      uint16_t temp;
+      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, it->first))
+      {
+         temp = theCfgMgr->getIntegerConfigValue(getConfigTypeName(),
+                                                 theName,
+                                                 it->first);
+         *(it->second) = temp;
+         LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
+                     << "." << it->first << "=" << Utils::toHex16(temp);
+      }
+      else
+      {
+         LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
+                       << theName << "." << it->first;
+         retVal = false;
+      }
+   }
+   // Get all of our string configuration parameters
+   for(auto it = theStrConfigParams.begin(); it != theStrConfigParams.end(); it++)
+   {
+      std::string temp;
+      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, it->first))
+      {
+         temp = theCfgMgr->getStringConfigValue(getConfigTypeName(),
+                                                theName,
+                                                it->first);
+         *(it->second) = temp;
+         LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
+                     << "." << it->first << "=" << temp;
+      }
+      else
+      {
+         LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
+                       << theName << "." << it->first;
+         retVal = false;
+      }
+   }
+
+   return retVal;
+}
+
+

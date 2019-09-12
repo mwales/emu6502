@@ -1,5 +1,6 @@
 #include "RomMemory.h"
 #include "EmulatorConfig.h"
+#include "ConfigManager.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -37,9 +38,15 @@ RomMemory::RomMemory(std::string name):
    MemoryDev(name),
    theData(nullptr),
    theRomFile(""),
-   theConfigFlags(0)
+   theConfigFlags(0),
+   theStartEmulationAddressSetFlag(false),
+   theStartEmulationAddress(0)
 {
    ROM_DEBUG() << "Created a ROM device: " << name;
+   
+   theUint16ConfigParams.emplace("startAddress", &theAddress);
+   theStrConfigParams.emplace("filename", &theRomFile);
+   // startEmulatorAddress also implemented in the configSelf method
 }
 
 RomMemory::~RomMemory()
@@ -105,6 +112,11 @@ bool RomMemory::isFullyConfigured() const
    return (theConfigFlags == ROM_CONFIG_DONE);
 }
 
+std::string RomMemory::getConfigTypeName() const
+{
+   return getTypeName();
+}
+
 std::vector<std::string> RomMemory::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
@@ -145,11 +157,16 @@ void RomMemory::setStringConfigValue(std::string paramName, std::string value)
 
 void RomMemory::resetMemory()
 {
-      if (!isFullyConfigured())
-      {
-         LOG_FATAL() << "ROM " << theName << " not fully configured during reset ("
-                     << this << ")";
-      }
+   loadRomIntoMemory();
+}
+
+void RomMemory::loadRomIntoMemory()
+{
+//      if (!isFullyConfigured())
+//      {
+//         LOG_FATAL() << "ROM " << theName << " not fully configured during reset ("
+//                     << this << ")";
+//      }
 
       int fd = open(theRomFile.c_str(), O_RDONLY);
 
@@ -214,4 +231,36 @@ void RomMemory::resetMemory()
       ROM_DEBUG() << "ROM INITIALIZED: " << theRomFile << " (" << theSize << " bytes) "
                   << addressToString(theAddress) << "-" << addressToString(theAddress + theSize -1);
       close(fd);
+}
+
+bool RomMemory::specifiesStartAddress() const
+{
+   return theStartEmulationAddressSetFlag;
+}
+
+CpuAddress RomMemory::getStartPcAddress() const
+{
+   return theStartEmulationAddress;
+}
+
+bool RomMemory::configSelf()
+{
+   // Is startEmulatorAddress config set for this instance?
+   ConfigManager* configMgr = ConfigManager::getInstance();
+   if (configMgr->isConfigPresent(getConfigTypeName(), theName, "startEmulatorAddress"))
+   {
+      uint32_t pc = configMgr->getIntegerConfigValue(getConfigTypeName(), theName, "startEmulatorAddress");
+      theStartEmulationAddress = (CpuAddress) pc;
+
+      ROM_DEBUG() << "ROM config specificies emulation start address:" << addressToString(theStartEmulationAddress);
+   }
+
+   bool retVal = MemoryDev::configSelf();
+
+   if (retVal)
+   {
+      loadRomIntoMemory();
+   }
+
+   return retVal;
 }

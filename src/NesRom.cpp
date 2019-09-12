@@ -53,6 +53,8 @@ NesRom::NesRom(std::string name):
 {
    NES_ROM_DEBUG() << "Created a iNES ROM device: " << name;
 
+   theStrConfigParams.emplace("filename", &theRomFile);
+
    memset(&theHeaderBytes, 0, sizeof(struct INesHeader));
 
    theAddress = 0x6000;
@@ -161,6 +163,11 @@ std::vector<std::string> NesRom::getStringConfigParams() const
    std::vector<std::string> retVal;
    retVal.push_back("romFilename");
    return retVal;
+}
+
+std::string NesRom::getConfigTypeName() const
+{
+   return getTypeName();
 }
 
 void NesRom::setIntConfigValue(std::string paramName, int value)

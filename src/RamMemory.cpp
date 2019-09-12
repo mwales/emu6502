@@ -34,6 +34,9 @@ RamMemory::RamMemory(std::string name):
    theData(nullptr)
 {
    RAM_DEBUG() << "Created a RAM device: " << name;
+
+   theUint16ConfigParams.emplace("size", &theSize);
+   theUint16ConfigParams.emplace("startAddress", &theAddress);
 }
 
 RamMemory::~RamMemory()
@@ -99,6 +102,11 @@ bool RamMemory::isFullyConfigured() const
    return (theConfigFlags == RAM_CONFIG_DONE);
 }
 
+std::string RamMemory::getConfigTypeName() const
+{
+   return getTypeName();
+}
+
 std::vector<std::string> RamMemory::getIntConfigParams() const
 {
    std::vector<std::string> retVal;
@@ -136,7 +144,7 @@ void RamMemory::setStringConfigValue(std::string paramName, std::string value)
 void RamMemory::resetMemory()
 {
    // If the object is completely configured, initialize itself properly
-   if (isFullyConfigured())
+   // if (isFullyConfigured())
    {
       if (theData != nullptr)
       {

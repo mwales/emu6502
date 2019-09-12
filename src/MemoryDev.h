@@ -4,6 +4,7 @@
 #include<iostream>
 #include<stdint.h>
 #include<vector>
+#include<map>
 #include "Cpu6502Defines.h"
 
 class MemoryDev;
@@ -41,6 +42,8 @@ public:
 
    virtual bool isFullyConfigured() const;
 
+   virtual std::string getConfigTypeName() const = 0;
+
    virtual std::vector<std::string> getIntConfigParams() const;
 
    virtual std::vector<std::string> getStringConfigParams() const;
@@ -66,6 +69,9 @@ public:
 
    virtual CpuAddress getStartPcAddress() const;
 
+   /// Configures self from ConfigManager.  Returns false if req'd config missing
+   virtual bool configSelf();
+
 protected:   
 
    CpuAddress theAddress;
@@ -75,6 +81,12 @@ protected:
    std::string theName;
 
    MemoryController* theMemController;
+
+   std::map<std::string, uint32_t*> theUint32ConfigParams;
+
+   std::map<std::string, uint16_t*> theUint16ConfigParams;
+
+   std::map<std::string, std::string*> theStrConfigParams;
 };
 
 #endif // MEMORYDEV_H
