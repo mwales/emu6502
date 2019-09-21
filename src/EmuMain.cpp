@@ -11,7 +11,6 @@
 #include "MemoryController.h"
 #include "Cpu6502.h"
 #include "Logger.h"
-#include "MemoryConfig.h"
 
 #include <SDL.h>
 #include <SDL_net.h>

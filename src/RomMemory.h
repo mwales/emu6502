@@ -41,11 +41,11 @@ public:
 
    virtual void resetMemory() override;
 
-   virtual bool specifiesStartAddress() const;
+   virtual bool specifiesStartAddress() const override;
 
    virtual CpuAddress getStartPcAddress() const;
 
-   virtual bool configSelf();
+   virtual bool configSelf() override;
 
 protected:
 

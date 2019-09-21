@@ -251,6 +251,7 @@ bool RomMemory::configSelf()
    {
       uint32_t pc = configMgr->getIntegerConfigValue(getConfigTypeName(), theName, "startEmulatorAddress");
       theStartEmulationAddress = (CpuAddress) pc;
+      theStartEmulationAddressSetFlag = true;
 
       ROM_DEBUG() << "ROM config specificies emulation start address:" << addressToString(theStartEmulationAddress);
    }
