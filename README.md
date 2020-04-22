@@ -5,6 +5,7 @@ Had fun creating a [chip 8 emulator](https://github.com/mwales/chip8).  Going to
 
 ## 6502 Based Systems
 
+* Want to expand this to more than just 6502 emulation
 * Apple IIe - I wonder if I still have a floppy disk around here of my 8th and 9th grade Apple IIe
   projects I made in computer class.  The Apple II was pretty cool because it was pretty easy to
   use the graphical modes from within BASIC.
