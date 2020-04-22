@@ -45,6 +45,11 @@ void printUsage(char* appName)
    std::cout << "  RNG.uniquename.startAddress=0xff" << std::endl;
    std::cout << std::endl;
 
+   std::cout << "  MirrorMemory.uniquename.size=0x100" << std::endl;
+   std::cout << "  MirrorMemory.uniquename.cloneDest=0x100" << std::endl;
+   std::cout << "  MirrorMemory.uniquename.cloneSource=0x200" << std::endl;
+   std::cout << std::endl;
+
    std::cout << "  " << DEBUGGER_TYPE << ".uniquename." << DEBUGGER_PORT << "=6502" << std::endl;
    std::cout << std::endl;
 

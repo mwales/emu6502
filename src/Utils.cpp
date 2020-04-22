@@ -266,6 +266,93 @@ std::string Utils::hexDump(uint8_t* buffer, int length)
    return oss.str();
 }
 
+std::string Utils::hexDumpMemory(uint8_t* buffer, uint32_t length,
+                                 uint32_t address, uint32_t addrBytes, bool asciiToo)
+{
+   std::string retVal;
+   uint32_t curAddress = address;
+   int64_t bytesLeft = length;
+   while(bytesLeft > 0)
+   {
+      retVal += hexDumpMemorySingleLine(buffer, bytesLeft,
+                                        curAddress, addrBytes, asciiToo);
+
+      int bytesToAdd = 0x10 - (curAddress & 0xf);
+
+      bytesLeft -= bytesToAdd;
+      curAddress += bytesToAdd;
+   }
+
+   return retVal;
+}
+
+std::string Utils::hexDumpMemorySingleLine(uint8_t* buffer, uint32_t length,
+                                           uint32_t address, uint32_t addrBytes,
+                                           bool asciiToo)
+{
+   std::string retVal;
+   std::string asciiDump = "|";
+
+   uint32_t startCol = address & 0xf;
+
+   uint32_t endCol = 0xf;
+   if (startCol + length < 0x10)
+   {
+      endCol = startCol + length;
+   }
+
+   // Write the address portion of the memory dump
+   if (addrBytes == 8)
+   {
+      retVal += toHex8(address & 0xf0);
+   }
+   else if (addrBytes == 16)
+   {
+      retVal += toHex16(address & 0xfff0);
+   }
+   else
+   {
+      retVal += toHex32(address & 0xfffffff0);
+   }
+
+   // Write the spacing before the hex data starts
+   for (uint32_t i = 0; i < startCol; i++)
+   {
+      retVal += "   ";
+      asciiDump += " ";
+   }
+
+   // Write the hex bytes
+   for(uint32_t i = startCol; i < endCol; i++)
+   {
+      retVal += hexDump(buffer + i, 1);
+      retVal += " ";
+
+      if ( (buffer[i] < 0x20) || (buffer[i] > 0x7e) )
+      {
+         asciiDump += ".";
+      }
+      else
+      {
+         asciiDump += (char) buffer[i];
+      }
+   }
+
+   // Write the trailing spaces
+   for(uint32_t i = endCol; i < 0x10; i++)
+   {
+      retVal += "   ";
+      asciiDump += " ";
+   }
+
+   asciiDump += "|";
+
+   retVal += "  ";
+   retVal += asciiDump;
+
+   return retVal;
+}
+
 bool Utils::isPowerOf2(int32_t val)
 {
    return ( (val & (val - 1)) == 0);

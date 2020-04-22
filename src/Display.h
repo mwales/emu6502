@@ -48,6 +48,8 @@ protected:
 
    bool handleDcSdlSubscribeEventType(DisplayCommand* cmd);
 
+   bool handleNoDisplayDevice(DisplayCommand* cmd);
+
    std::string sdlEventTypeToString(const uint32_t& et);
 
    bool isSdlEventInteresting(const uint32_t & et);

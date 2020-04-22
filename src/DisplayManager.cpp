@@ -165,9 +165,16 @@ void DisplayManager::startEmulator()
    // Open the display / This will until display is closed
    DM_DEBUG() << "DisplayManager starting the display";
 
-   if (theDisplayDevice != nullptr)
+   if (theDisplayDevice == nullptr)
    {
-      theDisplayDevice->startDisplay();
+      // Queue up the event that there is no device
+      DisplayCommand noDeviceCmd;
+      noDeviceCmd.id = NO_DISPLAY_DEVICE;
+      theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &noDeviceCmd);
+   }
+   else
+   {
+         theDisplayDevice->startDisplay();
    }
 
    bool externallyClosed = theDisplay->startDisplay();
@@ -202,11 +209,16 @@ int DisplayManager::emulationThread(void* data)
 
 void DisplayManager::shutdownEmulator()
 {
-   if (theDisplayDevice == nullptr)
-   {
-      DM_WARNING() << "Can't shutdown display, no display device";
-      return;
-   }
+    if (theDisplayDevice == nullptr)
+    {
+       DM_WARNING() << "Can't shutdown display device, no display device";
+
+       DisplayCommand shutdownDispCmd;
+       shutdownDispCmd.id = HALT_EMULATION;
+       theDisplayCommandQueue->writeMessage(sizeof(DisplayCommand), (char*) &shutdownDispCmd);
+
+       return;
+    }
 
    // Sends shutdown message into Q
    theDisplayDevice->stopDisplay();

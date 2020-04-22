@@ -38,6 +38,7 @@ void MemoryFactory::processConfigData()
    processSingleMemoryType(RngDev::getTypeName(), RngDev::getMDC());
    processSingleMemoryType(MirrorMemory::getTypeName(), MirrorMemory::getMDC());
    processSingleMemoryType(Easy6502JsDisplay::getTypeName(), Easy6502JsDisplay::getMDC());
+   processSingleMemoryType(NesRom::getTypeName(), NesRom::getMDC());
 
 }
 
@@ -51,6 +52,8 @@ void MemoryFactory::processSingleMemoryType(std::string typeName, MemoryDeviceCo
    for(auto const & singleInstance: devInstanceNames)
    {
       MemoryDev* currentDev = mdc(singleInstance);
+
+      currentDev->setMemoryController(theMemoryController);
 
       if (currentDev->configSelf())
       {

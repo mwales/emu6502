@@ -48,6 +48,14 @@ public:
    /// Converts a buffer of data into "aa bb cc .."
    static std::string hexDump(uint8_t* buffer, int length);
 
+   static std::string hexDumpMemory(uint8_t* buffer, uint32_t length,
+                                    uint32_t address, uint32_t addrBytes, bool asciiToo);
+
+   static std::string hexDumpMemorySingleLine(uint8_t* buffer, uint32_t length,
+                                              uint32_t address, uint32_t addrBytes,
+                                              bool asciiToo);
+
+
    static int readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp);
 
 

@@ -75,19 +75,22 @@ std::string MemoryDev::getDebugString() const
    return retVal;
 }
 
-std::string MemoryDev::dump()
+std::string MemoryDev::dump(bool asciiDump)
 {
-   CpuAddress dumpStart = (theAddress & 0xf) ^ theAddress;
-   CpuAddress dumpEnd = (theAddress - 1 + theSize) | 0xf;
-   CpuAddress numBytesToDump = dumpEnd - dumpStart;
+   CpuAddress dumpStart = theAddress - (theAddress & 0xf);
+   CpuAddress dumpEnd = (theAddress + theSize - 1) | 0xf ;
+   CpuAddress numBytesToDump = dumpEnd - dumpStart + 1;
    std::string retVal;
+   std::string asciiText;
 
-   retVal += "Dumping from address ";
-   retVal += addressToString(dumpStart);
+   retVal += "Dumping ";
+   retVal += theName;
+   retVal += " from address ";
+   retVal += addressToString(theAddress);
    retVal += " - ";
-   retVal += addressToString(dumpEnd);
+   retVal += addressToString(theAddress + theSize - 1);
    retVal += ". Size = ";
-   retVal += addressToString(numBytesToDump);
+   retVal += addressToString(theSize);
    retVal += "\n";
 
    CpuAddress numBytesDumped = 0;
@@ -98,22 +101,48 @@ std::string MemoryDev::dump()
       {
          retVal += Utils::toHex16(cur);
          retVal += "  ";
+         asciiText = "|";
       }
 
       // Is this address within memory
-      if ( (cur >= theAddress) && ( cur <= theAddress + theSize) )
+      if ( (cur >= theAddress) && ( cur < theAddress + theSize) )
       {
-         retVal += Utils::toHex8(read8(cur), false);
+         uint8_t memVal = read8(cur);
+         retVal += Utils::toHex8(memVal, false);
          retVal += " ";
+
+         if ( (memVal >= 0x20) && (memVal <= 0x7e) )
+         {
+            // It's ascii printable
+            asciiText += (char) memVal;
+         }
+         else
+         {
+            // Write a . for non-printable characters
+            asciiText += ".";
+         }
       }
       else
       {
          retVal += "   ";
+         asciiText += " ";
+      }
+
+      // Put a space between bytes 7 and 8
+      if ( (cur & 0xf) == 0x7)
+      {
+         retVal += " ";
       }
 
       // Is this the end of a line?
       if ( (cur & 0xf) == 0xf)
       {
+         if (asciiDump)
+         {
+            retVal += "   ";
+            retVal += asciiText;
+            retVal += "|";
+         }
          retVal += "\n";
       }
 

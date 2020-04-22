@@ -8,7 +8,7 @@
  */
 
 // Turns on debug for the configuration manager
-#define CONFIG_MANAGER_DEBUG
+// #define CONFIG_MANAGER_DEBUG
 
 // Turns on debug output in the UartDevice class
 // #define UART_TRACE
@@ -22,14 +22,17 @@
 // Prints all CPU instructions executed to a trace.txt log
 #define TRACE_EXECUTION
 
+// Dumps all of memory into a .dump file when emulator closes
+#define DUMP_MEMORY
+
 // Turns on debug statements in Cpu6502 class
-// #define CPU_TRACE
+#define CPU_TRACE
 
 // Turns on debug statements about the address mode in the Cpu6502 class
-// #define ADDR_MODE_TRACE                                                           
+#define ADDR_MODE_TRACE
 
 // Turns on debugger statements for the Decoder6502 class
-// #define DECODER_6502_DEBUG
+#define DECODER_6502_DEBUG
 
 // Turning this on implements the unofficial NES op-codes in Cpu6502 class
 #define UNOFFICIAL_NES_OPCODE_SUPPORT                         
@@ -47,10 +50,10 @@
 #define MAPPER_TRACE
 
 // Turns on debug statements in the MirrorMemory class
-// #define MIRROR_MEM_TRACE
+#define MIRROR_MEM_TRACE
 
-// Turns on the debug statements in the RomMemory class
-// #define ROM_TRACE
+// Turns on the debug statements in the RomMemory and NesRom class
+#define ROM_TRACE
 
 // Turns on debug statements in the RamMemory class
 // #define RAM_TRACE
@@ -62,10 +65,10 @@
 // #define SIMPLE_QUEUE_LOGGING
 
 // Turns on debug for the display manager
-// #define DISPLAY_MANAGER_TRACE
+#define DISPLAY_MANAGER_TRACE
 
 // Turns on debug statements for the display class
-// #define DISPLAYWINDOW_DEBUG
+#define DISPLAYWINDOW_DEBUG
 
 // Spits out a trace of all the SDL commands
 // #define SDL_TRACE_DEBUG

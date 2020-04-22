@@ -176,6 +176,9 @@ bool Display::handleDisplayQueueCommand(DisplayCommand* cmd)
    case SUBSCRIBE_SDL_EVENT_TYPE:
       return handleDcSdlSubscribeEventType(cmd);
 
+   case NO_DISPLAY_DEVICE:
+      return handleNoDisplayDevice(cmd);
+
    default:
       DISP_WARNING() << "Invalid command ID sent to display" << (int) cmd->id;
       return false;
@@ -331,6 +334,53 @@ bool Display::handleDcSdlSubscribeEventType(DisplayCommand* cmd)
     theEventsOfInterest.push_back(cmd->data.DcSubscribeSdlEventType.eventType);
 
     return true;
+}
+
+bool Display::handleNoDisplayDevice(DisplayCommand* cmd)
+{
+   if(theWindow == nullptr)
+   {
+      DISP_WARNING() << "There was an SDL window already created and we received No Display Device command";
+      return true;
+   }
+
+   // Time to create the SDL window
+   DISP_DEBUG() << "Creating SDL window";
+
+   SDL_TRACE() << "SDL_CreateWindow(\"EMU 6502\", SDL_WINDOWPOS_CENTERED, SDLWINDOWPOS_CENTERED,"
+               << cmd->data.DcSetResolution.width << "," << cmd->data.DcSetResolution.height << ",0)";
+
+   theWindow = SDL_CreateWindow("EMU 6502", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                640, 480, 0);
+
+   if (theWindow == NULL)
+   {
+      LOG_FATAL() << "Error creating the SDL window: " << SDL_GetError();
+   }
+
+   SDL_TRACE() << "SDL_CreateRenderer(pointer, -1, SDL_RENDERER_SOFTWARE)";
+   theRenderer = SDL_CreateRenderer(theWindow, -1, SDL_RENDERER_SOFTWARE);
+
+   if (theRenderer == NULL)
+   {
+      LOG_FATAL() << "Error creating the SDL renderer:" << SDL_GetError();
+      return true;
+   }
+
+   if (SDL_SetRenderDrawColor(theRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE))
+   {
+      DISP_WARNING() << "Error setting the color of renderer before clearing screen:"
+                     << SDL_GetError();
+   }
+
+   SDL_TRACE() << "SDL_RenderClear(pointer)";
+
+   if (SDL_RenderClear(theRenderer))
+   {
+      DISP_WARNING() << "Error clearing the screen:" << SDL_GetError();
+   }
+
+   return true;
 }
 
 std::string Display::sdlEventTypeToString(const uint32_t& et)

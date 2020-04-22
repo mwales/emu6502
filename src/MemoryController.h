@@ -42,6 +42,8 @@ public:
 
     bool getStartAddress(CpuAddress* addr) const;
 
+
+
 protected:
     /**
      * Do two memory ranges overlap each other for 1 or more addresses
@@ -60,6 +62,8 @@ protected:
      * @note Only call if doRangesMerge returns true!
      */
     MemoryRange mergeRanges(MemoryRange dev1, MemoryRange dev2);
+
+    void debugDumpMemoryController(bool dumpContents = false);
 
     std::vector<MemoryDev*> theDevices;
 };

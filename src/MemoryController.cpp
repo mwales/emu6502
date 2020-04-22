@@ -1,6 +1,9 @@
+#include <stdio.h>
 #include "MemoryController.h"
 #include "MemoryDev.h"
 #include "Logger.h"
+#include "EmulatorConfig.h"
+
 
 MemoryController::MemoryController()
 {
@@ -9,6 +12,10 @@ MemoryController::MemoryController()
 
 MemoryController::~MemoryController()
 {
+#ifdef DUMP_MEMORY
+   debugDumpMemoryController(true);
+#endif
+
    while(theDevices.size() > 0)
    {
       MemoryDev* theCurrentDev = theDevices.back();
@@ -93,6 +100,7 @@ MemoryDev* MemoryController::getDevice(CpuAddress address)
 
    // No matching device found
    LOG_WARNING() << "Memory Controller has no device for address " << Utils::toHex16(address);
+   debugDumpMemoryController();
    return nullptr;
 }
 
@@ -199,4 +207,39 @@ MemoryRange MemoryController::mergeRanges(MemoryRange dev1, MemoryRange dev2)
    retVal.second = 0;
    return retVal;
 
+}
+
+void MemoryController::debugDumpMemoryController(bool dumpContents)
+{
+   FILE* dumpFile = NULL;
+   if (dumpContents)
+   {
+      // Open the memory.dump file
+      LOG_DEBUG() << "Opening dump.txt for memory dump";
+      dumpFile = fopen("dump.txt", "w+");
+
+      if (dumpFile == NULL)
+      {
+         LOG_WARNING() << "Can't dump memory contents to file.  Unable to open file";
+         LOG_WARNING() << strerror(errno);
+         dumpContents = false;
+      }
+   }
+
+   for(auto * singleDev : theDevices)
+   {
+      LOG_DEBUG() << singleDev->getDebugString();
+
+      if (dumpContents)
+      {
+         fprintf(dumpFile, "%s", singleDev->dump(true).c_str());
+      }
+   }
+
+   if (dumpContents)
+   {
+      // Close the memory.dump file
+      LOG_DEBUG() << "Closing dump.txt memory dump file";
+      fclose(dumpFile);
+   }
 }

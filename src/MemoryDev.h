@@ -63,7 +63,8 @@ public:
 
    std::string getDebugString() const;
 
-   std::string dump();
+   /// @todo Add ascii dump too
+   std::string dump(bool asciiDump = false);
 
    virtual bool specifiesStartAddress() const;
 

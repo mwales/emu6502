@@ -39,9 +39,10 @@ MirrorMemory::MirrorMemory(std::string name):
 {
    MIRROR_DEBUG() << "Created a Mirror Memory device: " << name;
 
-   theUint16ConfigParams.emplace("size", &theSize);
-   theUint16ConfigParams.emplace("cloneDest", &theAddress);
-   theUint16ConfigParams.emplace("cloneSource", &theAddress);
+   theUint16ConfigParams.emplace("sourceAddress", &theAddrOfMemoryMirrored);
+   theUint16ConfigParams.emplace("sourceSize", &theSizeOfMemoryMirrored);
+   theUint16ConfigParams.emplace("destAddress", &theAddress);
+   theUint16ConfigParams.emplace("destSize", &theSize);
 }
 
 MirrorMemory::~MirrorMemory()
@@ -181,8 +182,8 @@ void MirrorMemory::setStringConfigValue(std::string paramName, std::string value
 void MirrorMemory::resetMemory()
 {
    // If the object is completely configured, initialize itself properly
-   if (isFullyConfigured())
-   {
+   //if (isFullyConfigured())
+   //{
       // Get a pointer to the original memory device
 
       if (theMemController == nullptr)
@@ -212,9 +213,9 @@ void MirrorMemory::resetMemory()
       MIRROR_DEBUG() << "MIRROR MEMORY INITIALIZED: " << theSize << " bytes "
                      << addressToString(theAddress) << "-"
                      << addressToString(theAddress + theSize - 1);
-   }
-   else
-   {
-      LOG_FATAL() << "Mirror Memory has incomplete configuration!";
-   }
+   //}
+   //else
+   //{
+   //   LOG_FATAL() << "Mirror Memory has incomplete configuration!";
+   //}
 }

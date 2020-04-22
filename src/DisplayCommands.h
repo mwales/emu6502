@@ -17,7 +17,8 @@ typedef enum
    SET_LOGICAL_SIZE,
    CLEAR_SCREEN,
    DRAW_PIXEL,
-   SUBSCRIBE_SDL_EVENT_TYPE
+   SUBSCRIBE_SDL_EVENT_TYPE,
+   NO_DISPLAY_DEVICE,
 } DisplayCommandId;
 
 typedef union
