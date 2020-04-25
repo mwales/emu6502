@@ -1,10 +1,18 @@
 #ifndef MEMORYFACTORY_H
 #define MEMORYFACTORY_H
 
-#include "Cpu6502Defines.h"
+
+#include "EmulatorCommon.h"
+#include <string>
+#include <vector>
+#include <utility> // std::pair
 #include "MemoryDev.h"
 
+
 class MemoryController;
+
+// The memory factory will probably get instantiated by C++ static constructors,
+// so it must stay a tradition singleton
 
 /**
  * Class instantiates all the memory devices from the configuration data and adds them to the
@@ -14,23 +22,29 @@ class MemoryController;
 class MemoryFactory
 {
 public:
-   MemoryFactory(MemoryController* memController);
-
-   void processConfigData();
-
-   bool isStartAddessSet();
-
-   CpuAddress getStartAddress();
-
+   static MemoryFactory* getInstance();
+   
+   static void deleteInstance();
+   
+   std::vector<std::string> getMemoryTypes();
+   
+   MemoryDev* createMemoryDevice(std::string const & memoryType,
+                                 std::string const & instanceName);
+   
+   void registerMemoryDeviceType(std::string const & memoryType, MemoryDeviceConstructor mdc);
+   
 protected:
-
+   
+   // Singleton protections
+   MemoryFactory();
+   ~MemoryFactory();
+   
    void processSingleMemoryType(std::string typeName, MemoryDeviceConstructor mdc);
-
-   MemoryController* theMemoryController;
-
-   bool theStartAddressSetFlag;
-
-   CpuAddress theStartAddress;
+   
+   /// Always add and remove from both of these vectors
+   std::vector<std::pair<std::string, MemoryDeviceConstructor> > theMemoryTypes;
+   
+   static MemoryFactory* theInstance;
 };
 
 #endif // MEMORYFACTORY_H

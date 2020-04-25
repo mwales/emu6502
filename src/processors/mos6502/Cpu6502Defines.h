@@ -3,14 +3,9 @@
 
 #include "Utils.h"
 
-typedef uint16_t CpuAddress;
+#include "EmulatorCommon.h"
 
-typedef std::pair<CpuAddress, CpuAddress> MemoryRange;
 
-inline std::string addressToString(CpuAddress val)
-{
-   return Utils::toHex16(val);
-}
 
 class Decoder6502;
 

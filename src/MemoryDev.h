@@ -5,7 +5,7 @@
 #include<stdint.h>
 #include<vector>
 #include<map>
-#include "Cpu6502Defines.h"
+#include "EmulatorCommon.h"
 
 class MemoryDev;
 class MemoryController;

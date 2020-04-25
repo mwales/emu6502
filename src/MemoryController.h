@@ -4,7 +4,7 @@
 #include <vector>
 #include <stdint.h>
 #include <iostream>
-#include "Cpu6502Defines.h"
+
 
 class MemoryDev;
 
@@ -39,8 +39,6 @@ public:
     void resetAll();
 
     std::vector<MemoryDev*> getAllDevices();
-
-    bool getStartAddress(CpuAddress* addr) const;
 
 
 
