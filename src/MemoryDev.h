@@ -6,6 +6,7 @@
 #include<vector>
 #include<map>
 #include "EmulatorCommon.h"
+#include "SimpleMap.h"
 
 class MemoryDev;
 class MemoryController;
@@ -83,11 +84,11 @@ protected:
 
    MemoryController* theMemController;
 
-   std::map<std::string, uint32_t*> theUint32ConfigParams;
+   SimpleMap<std::string, uint32_t*> theUint32ConfigParams;
 
-   std::map<std::string, uint16_t*> theUint16ConfigParams;
+   SimpleMap<std::string, uint16_t*> theUint16ConfigParams;
 
-   std::map<std::string, std::string*> theStrConfigParams;
+   SimpleMap<std::string, std::string*> theStrConfigParams;
 };
 
 #endif // MEMORYDEV_H

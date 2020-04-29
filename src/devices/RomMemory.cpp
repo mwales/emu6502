@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "force_execute.h"
+#include "MemoryFactory.h"
+#include "Utils.h"
+
 
 #include "Logger.h"
 
@@ -44,8 +48,8 @@ RomMemory::RomMemory(std::string name):
 {
    ROM_DEBUG() << "Created a ROM device: " << name;
    
-   theUint16ConfigParams.emplace("startAddress", &theAddress);
-   theStrConfigParams.emplace("filename", &theRomFile);
+   theUint32ConfigParams.add("startAddress", &theAddress);
+   theStrConfigParams.add("filename", &theRomFile);
    // startEmulatorAddress also implemented in the configSelf method
 }
 
@@ -184,18 +188,18 @@ void RomMemory::loadRomIntoMemory()
          return;
       }
 
-      if (sizeStatus > UINT16_MAX)
+      if (sizeStatus > UINT32_MAX)
       {
-         ROM_WARNING() << "ROM INIT ERROR: ROM File too large for 6502 memory space";
+         ROM_WARNING() << "ROM INIT ERROR: ROM File too large for 32-bit memory space";
          close(fd);
          return;
       }
 
-      if (sizeStatus > (UINT16_MAX - theAddress + 1))
+      if (sizeStatus > (UINT32_MAX - theAddress + 1))
       {
          ROM_WARNING() << "ROM INIT ERROR: ROM file will not fit in the memory region.  Space ="
-                       << Utils::toHex16(UINT16_MAX - theAddress + 1) << ", ROM size = "
-                       << Utils::toHex16(sizeStatus);
+                       << Utils::toHex32(UINT32_MAX - theAddress + 1) << ", ROM size = "
+                       << Utils::toHex32(sizeStatus);
          close(fd);
          return;
       }
@@ -264,4 +268,10 @@ bool RomMemory::configSelf()
    }
 
    return retVal;
+}
+
+FORCE_EXECUTE(fe_rom_memory)
+{
+	MemoryFactory* mf = MemoryFactory::getInstance();
+	mf->registerMemoryDeviceType(RomMemory::getTypeName(), RomMemory::getMDC());
 }

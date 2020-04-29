@@ -1,6 +1,7 @@
 #ifndef RNGDEV_H
 #define RNGDEV_H
 
+#include "EmulatorCommon.h"
 #include "MemoryDev.h"
 #include <iostream>
 

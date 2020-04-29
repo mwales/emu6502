@@ -2,7 +2,11 @@
 #define RAMMEMORY_H
 
 #include "MemoryDev.h"
+#include "EmulatorCommon.h"
 #include <iostream>
+#include <vector>
+#include <cstdint>
+
 
 /**
  * A memory device that is initialized to all zeros.  The emulator can read and

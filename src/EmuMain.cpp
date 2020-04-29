@@ -8,6 +8,7 @@
 #include "ConfigManager.h"
 #include "MemoryFactory.h"
 #include "MemoryController.h"
+#include "SimpleMap.h"
 
 #include "Logger.h"
 

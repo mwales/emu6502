@@ -3,7 +3,7 @@
 
 #include <SDL.h>
 #include "Mapper.h"
-#include "../NesRom.h"
+#include "NesRom.h"
 
 
 /**

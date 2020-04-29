@@ -3,6 +3,9 @@
 #include "RamMemory.h"
 #include "EmulatorConfig.h"
 #include "Logger.h"
+#include "MemoryFactory.h"
+#include "force_execute.h"
+#include "Utils.h"
 
 #ifdef RAM_TRACE
    #define RAM_DEBUG    LOG_DEBUG
@@ -35,8 +38,8 @@ RamMemory::RamMemory(std::string name):
 {
    RAM_DEBUG() << "Created a RAM device: " << name;
 
-   theUint16ConfigParams.emplace("size", &theSize);
-   theUint16ConfigParams.emplace("startAddress", &theAddress);
+   theUint32ConfigParams.add("size", &theSize);
+   theUint32ConfigParams.add("startAddress", &theAddress);
 }
 
 RamMemory::~RamMemory()
@@ -160,3 +163,10 @@ void RamMemory::resetMemory()
                   << addressToString(theAddress + theSize - 1);
    }
 }
+
+FORCE_EXECUTE(fe_ram_memory)
+{
+	MemoryFactory* mf = MemoryFactory::getInstance();
+	mf->registerMemoryDeviceType(RamMemory::getTypeName(), RamMemory::getMDC());
+}
+

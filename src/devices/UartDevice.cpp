@@ -2,6 +2,8 @@
 #include "EmulatorConfig.h"
 #include "Utils.h"
 #include "Logger.h"
+#include "MemoryFactory.h"
+#include "force_execute.h"
 
 #ifdef UART_TRACE
    #define UART_DEBUG   LOG_DEBUG
@@ -27,8 +29,8 @@ UartDevice::UartDevice(std::string name):
 
    theSocketSet = SDLNet_AllocSocketSet(1);
 
-   theUint16ConfigParams.emplace("portNumber", &thePortNumber);
-   theUint16ConfigParams.emplace("startAddress", &theAddress);
+   theUint16ConfigParams.add("portNumber", &thePortNumber);
+   theUint32ConfigParams.add("startAddress", &theAddress);
 }
 
 MemoryDeviceConstructor UartDevice::getMDC()
@@ -240,3 +242,8 @@ void UartDevice::resetMemory()
 
 }
 
+FORCE_EXECUTE(fe_uart_device)
+{
+	MemoryFactory* mf = MemoryFactory::getInstance();
+	mf->registerMemoryDeviceType(UartDevice::getTypeName(), UartDevice::getMDC());
+}

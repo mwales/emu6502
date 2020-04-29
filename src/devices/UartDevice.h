@@ -2,6 +2,8 @@
 #define UART_H
 
 #include "MemoryDev.h"
+#include "EmulatorCommon.h"
+#include <cstdint>
 #include <iostream>
 #include <vector>
 

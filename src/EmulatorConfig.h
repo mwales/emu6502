@@ -7,6 +7,8 @@
  * are
  */
 
+#define MEMORY_FACTORY_DEBUG
+
 // Turns on debug for the configuration manager
 // #define CONFIG_MANAGER_DEBUG
 

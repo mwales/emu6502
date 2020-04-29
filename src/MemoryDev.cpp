@@ -212,63 +212,64 @@ bool MemoryDev::configSelf()
    bool retVal = true;
 
    // Get all of our int configuration parameters
-   for(auto it = theUint32ConfigParams.begin(); it != theUint32ConfigParams.end(); it++)
+   for(auto key32bit: theUint32ConfigParams.getKeys())
    {
       uint32_t temp;
-      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, it->first))
+      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, key32bit))
       {
          temp = theCfgMgr->getIntegerConfigValue(getConfigTypeName(),
                                                  theName,
-                                                 it->first);
-         *(it->second) = temp;
+                                                 key32bit);
+         *(theUint32ConfigParams.getValue(key32bit)) = temp;
          LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
-                     << "." << it->first << "=" << Utils::toHex32(temp);
+                     << "." << key32bit << "=" << Utils::toHex32(temp);
       }
       else
       {
          LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
-                       << theName << "." << it->first;
+                       << theName << "." << key32bit;
          retVal = false;
       }
    }
 
    // Get all of our int configuration parameters
-   for(auto it = theUint16ConfigParams.begin(); it != theUint16ConfigParams.end(); it++)
+   for(auto key16bit: theUint16ConfigParams.getKeys())
    {
       uint16_t temp;
-      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, it->first))
+      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, key16bit))
       {
          temp = theCfgMgr->getIntegerConfigValue(getConfigTypeName(),
                                                  theName,
-                                                 it->first);
-         *(it->second) = temp;
+                                                 key16bit);
+         *(theUint16ConfigParams.getValue(key16bit)) = temp;
          LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
-                     << "." << it->first << "=" << Utils::toHex16(temp);
+                     << "." << key16bit << "=" << Utils::toHex16(temp);
       }
       else
       {
          LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
-                       << theName << "." << it->first;
+                       << theName << "." << key16bit;
          retVal = false;
       }
    }
+   
    // Get all of our string configuration parameters
-   for(auto it = theStrConfigParams.begin(); it != theStrConfigParams.end(); it++)
+   for(auto keyStr: theStrConfigParams.getKeys())
    {
       std::string temp;
-      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, it->first))
+      if (theCfgMgr->isConfigPresent(getConfigTypeName(), theName, keyStr))
       {
          temp = theCfgMgr->getStringConfigValue(getConfigTypeName(),
                                                 theName,
-                                                it->first);
-         *(it->second) = temp;
+                                                keyStr);
+         *(theStrConfigParams.getValue(keyStr)) = temp;
          LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
-                     << "." << it->first << "=" << temp;
+                     << "." << keyStr << "=" << temp;
       }
       else
       {
          LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
-                       << theName << "." << it->first;
+                       << theName << "." << keyStr;
          retVal = false;
       }
    }

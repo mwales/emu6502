@@ -1,8 +1,10 @@
 #ifndef MIRRORMEMORY_H
 #define MIRRORMEMORY_H
 
+#include "EmulatorCommon.h"
 #include "MemoryDev.h"
 #include <iostream>
+#include <cstdint>
 
 /**
  * A memory device that is a mirror of other memory devices.

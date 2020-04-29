@@ -7,6 +7,7 @@
 #include <vector>
 #include <utility> // std::pair
 #include "MemoryDev.h"
+#include "SimpleMap.h"
 
 
 class MemoryController;
@@ -42,7 +43,7 @@ protected:
    void processSingleMemoryType(std::string typeName, MemoryDeviceConstructor mdc);
    
    /// Always add and remove from both of these vectors
-   std::vector<std::pair<std::string, MemoryDeviceConstructor> > theMemoryTypes;
+   SimpleMap<std::string, MemoryDeviceConstructor> theMemoryTypes;
    
    static MemoryFactory* theInstance;
 };

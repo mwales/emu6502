@@ -1,9 +1,11 @@
 #ifndef ROMMEMORY_H
 #define ROMMEMORY_H
 
+#include "EmulatorCommon.h"
 #include "MemoryDev.h"
 #include <iostream>
-#include <stdint.h>
+#include <cstdint>
+
 
 class RomMemory : public MemoryDev
 {

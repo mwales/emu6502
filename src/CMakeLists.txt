@@ -2,7 +2,19 @@ cmake_minimum_required (VERSION 2.6)
 project (emu6502)
 
 INCLUDE_DIRECTORIES(./
-                    mappers)
+                    devices)
+
+set (DEVICE_FILES
+	devices/RomMemory.cpp
+	devices/RngDev.cpp
+	devices/MirrorMemory.cpp
+	devices/RamMemory.cpp
+	devices/UartDevice.cpp
+	devices/NesRom.cpp
+	devices/mappers/Mapper.cpp
+	devices/mappers/NRomMapper.cpp
+	)
+
 
 set(COMMON_FILES 
 	MemoryController.cpp
@@ -18,7 +30,7 @@ set(EMULAT_FILES
 	MemoryFactory.cpp
 	)
 
-add_executable(emu ${COMMON_FILES} ${EMULAT_FILES} )
+add_executable(emu ${COMMON_FILES} ${EMULAT_FILES} ${DEVICE_FILES})
 INCLUDE(FindPkgConfig)
 
 # Include SDL

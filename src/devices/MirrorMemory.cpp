@@ -4,6 +4,9 @@
 #include "EmulatorConfig.h"
 #include "Logger.h"
 #include "MemoryController.h"
+#include "force_execute.h"
+#include "Utils.h"
+#include "MemoryFactory.h"
 
 
 #ifdef MIRROR_MEM_TRACE
@@ -39,10 +42,10 @@ MirrorMemory::MirrorMemory(std::string name):
 {
    MIRROR_DEBUG() << "Created a Mirror Memory device: " << name;
 
-   theUint16ConfigParams.emplace("sourceAddress", &theAddrOfMemoryMirrored);
-   theUint16ConfigParams.emplace("sourceSize", &theSizeOfMemoryMirrored);
-   theUint16ConfigParams.emplace("destAddress", &theAddress);
-   theUint16ConfigParams.emplace("destSize", &theSize);
+   theUint32ConfigParams.add("sourceAddress", &theAddrOfMemoryMirrored);
+   theUint32ConfigParams.add("sourceSize", &theSizeOfMemoryMirrored);
+   theUint32ConfigParams.add("destAddress", &theAddress);
+   theUint32ConfigParams.add("destSize", &theSize);
 }
 
 MirrorMemory::~MirrorMemory()
@@ -218,4 +221,10 @@ void MirrorMemory::resetMemory()
    //{
    //   LOG_FATAL() << "Mirror Memory has incomplete configuration!";
    //}
+}
+
+FORCE_EXECUTE(fe_mirror_memory)
+{
+	MemoryFactory* mf = MemoryFactory::getInstance();
+	mf->registerMemoryDeviceType(MirrorMemory::getTypeName(), MirrorMemory::getMDC());
 }

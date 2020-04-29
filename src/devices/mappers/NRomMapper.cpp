@@ -1,4 +1,5 @@
 #include "NRomMapper.h"
+#include "Utils.h"
 
 const int NRomMapper::PRG_RAM_SIZE = 0x1000;  // 4KB
 const int NRomMapper::PRG_ROM_SIZE = 0x4000;  // 16KB

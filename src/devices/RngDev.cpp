@@ -3,6 +3,10 @@
 #include "RngDev.h"
 #include "EmulatorConfig.h"
 #include "Logger.h"
+#include "force_execute.h"
+#include "MemoryFactory.h"
+#include "Utils.h"
+
 
 #include <stdlib.h>
 #include <time.h>
@@ -41,8 +45,8 @@ RngDev::RngDev(std::string name):
    RNG_DEBUG() << "Created a random number generator device: " << name;
    RNG_DEBUG() << "RNG Seed = " << timeSeed;
 
-   theUint16ConfigParams.emplace("size", &theSize);
-   theUint16ConfigParams.emplace("startAddress", &theAddress);
+   theUint32ConfigParams.add("size", &theSize);
+   theUint32ConfigParams.add("startAddress", &theAddress);
 }
 
 RngDev::~RngDev()
@@ -151,4 +155,10 @@ void RngDev::resetMemory()
                   << addressToString(theAddress) << "-"
                   << addressToString(theAddress + theSize - 1);
    }
+}
+
+FORCE_EXECUTE(fe_rng_device)
+{
+	MemoryFactory* mf = MemoryFactory::getInstance();
+	mf->registerMemoryDeviceType(RngDev::getTypeName(), RngDev::getMDC());
 }

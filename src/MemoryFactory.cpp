@@ -3,6 +3,7 @@
 #include "ConfigManager.h"
 #include "MemoryController.h"
 #include "Logger.h"
+#include "EmulatorConfig.h"
 
 
 #ifdef MEMORY_FACTORY_DEBUG
@@ -56,6 +57,7 @@ void MemoryFactory::registerMemoryDeviceType(std::string const & memoryType,
                                              MemoryDeviceConstructor mdc)
 {
    /// @todo implement
+   MFACTORY_DEBUG() << "Registering memory type: " << memoryType;
 }
 
 

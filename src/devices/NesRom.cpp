@@ -11,7 +11,12 @@
 
 #include "Logger.h"
 
-#include "NRomMapper.h"
+#include "mappers/NRomMapper.h"
+
+#include "Utils.h"
+#include "force_execute.h"
+#include "MemoryFactory.h"
+
 
 #define ROM_TRACE
 
@@ -53,7 +58,7 @@ NesRom::NesRom(std::string name):
 {
    NES_ROM_DEBUG() << "Created a iNES ROM device: " << name;
 
-   theStrConfigParams.emplace("filename", &theRomFile);
+   theStrConfigParams.add("filename", &theRomFile);
 
    memset(&theHeaderBytes, 0, sizeof(struct INesHeader));
 
@@ -187,10 +192,10 @@ void NesRom::setStringConfigValue(std::string paramName, std::string value)
 
 void NesRom::resetMemory()
 {
-      if (!isFullyConfigured())
-      {
-         LOG_FATAL() << "ROM " << theName << " not fully configured during reset";
-      }
+      //if (!isFullyConfigured())
+      //{
+      //   LOG_FATAL() << "ROM " << theName << " not fully configured during reset";
+      //}
 
       int fd = open(theRomFile.c_str(), O_RDONLY);
 
@@ -365,4 +370,10 @@ uint32_t NesRom::getPrgRomSize() const
 uint32_t NesRom::getChrRomSize() const
 {
     return theHeaderBytes.theChrRomSizeBlocks * 1024 * 8;
+}
+
+FORCE_EXECUTE(fe_nes_rom)
+{
+	MemoryFactory* mf = MemoryFactory::getInstance();
+	mf->registerMemoryDeviceType(NesRom::getTypeName(), NesRom::getMDC());
 }

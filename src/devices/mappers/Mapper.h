@@ -1,10 +1,10 @@
 #ifndef MAPPER_H
 #define MAPPER_H
 
-#include <stdint.h>
-#include "../EmulatorConfig.h"
-#include "../Cpu6502Defines.h"
-#include "../Logger.h"
+#include "EmulatorCommon.h"
+#include <cstdint>
+#include "EmulatorConfig.h"
+#include "Logger.h"
 
 #ifdef MAPPER_TRACE
    #define MAPPER_DEBUG  LOG_DEBUG
