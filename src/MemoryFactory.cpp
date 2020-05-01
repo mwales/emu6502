@@ -3,7 +3,6 @@
 #include "ConfigManager.h"
 #include "MemoryController.h"
 #include "Logger.h"
-#include "EmulatorConfig.h"
 
 
 #ifdef MEMORY_FACTORY_DEBUG
@@ -41,23 +40,22 @@ void MemoryFactory::deleteInstance()
 
 std::vector<std::string> MemoryFactory::getMemoryTypes()
 {
-   /// @todo implement
-   std::vector<std::string> retVal;
-   return retVal;
+   return theMemoryTypes.getKeys();
 }
 
 MemoryDev* MemoryFactory::createMemoryDevice(std::string const & memoryType, 
                                              std::string const & instanceName)
 {
-   /// @todo implement
-   return nullptr;
+   MFACTORY_DEBUG() << "Creating a new" << memoryType << "(" << instanceName << ")";
+   MemoryDeviceConstructor mdc = theMemoryTypes.getValue(memoryType);
+   return mdc(instanceName);
 }
 
 void MemoryFactory::registerMemoryDeviceType(std::string const & memoryType,
                                              MemoryDeviceConstructor mdc)
 {
-   /// @todo implement
    MFACTORY_DEBUG() << "Registering memory type: " << memoryType;
+   theMemoryTypes.add(memoryType, mdc);
 }
 
 
@@ -71,32 +69,5 @@ MemoryFactory::~MemoryFactory()
    MFACTORY_DEBUG() << "Destroying a Memory Factory";
 }
 
-
-void MemoryFactory::processSingleMemoryType(std::string typeName, MemoryDeviceConstructor mdc)
-{
-   //   ConfigManager* theConfig = ConfigManager::getInstance();
-   
-   //   // Process RAM configuration
-   //   std::set<std::string> devInstanceNames;
-   //   devInstanceNames = theConfig->getConfigTypeInstanceNames(typeName);
-   //   for(auto const & singleInstance: devInstanceNames)
-   //   {
-   //      MemoryDev* currentDev = mdc(singleInstance);
-   
-   //      currentDev->setMemoryController(theMemoryController);
-   
-   //      if (currentDev->configSelf())
-   //      {
-   //         LOG_DEBUG() << "ConfigSelf success for " << typeName << "." << singleInstance;
-   //         // currentDev->resetMemory();
-   //         theMemoryController->addNewDevice(currentDev);
-   //      }
-   //      else
-   //      {
-   //         LOG_DEBUG() << "ConfigSelf failed for " << typeName << "." << singleInstance;
-   //         delete currentDev;
-   //      }
-   //   }
-}
 
 

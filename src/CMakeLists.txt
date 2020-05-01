@@ -2,7 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 project (emu6502)
 
 INCLUDE_DIRECTORIES(./
-                    devices)
+                    devices
+		    processors)
 
 set (DEVICE_FILES
 	devices/RomMemory.cpp
@@ -16,7 +17,10 @@ set (DEVICE_FILES
 	)
 
 
-set(COMMON_FILES 
+set(EMULATOR_FILES  
+	EmuMain.cpp
+	MemoryFactory.cpp
+	ProcessorFactory.cpp
 	MemoryController.cpp
 	Logger.cpp
 	MemoryDev.cpp
@@ -24,13 +28,7 @@ set(COMMON_FILES
 	ConfigManager.cpp
 	)
 
-
-set(EMULAT_FILES  
-	EmuMain.cpp
-	MemoryFactory.cpp
-	)
-
-add_executable(emu ${COMMON_FILES} ${EMULAT_FILES} ${DEVICE_FILES})
+add_executable(emu ${EMULATOR_FILES} ${DEVICE_FILES})
 INCLUDE(FindPkgConfig)
 
 # Include SDL

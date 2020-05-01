@@ -180,7 +180,7 @@ void RomMemory::loadRomIntoMemory()
          return;
       }
 
-      int32_t sizeStatus =  lseek(fd, 0, SEEK_END);
+      int64_t sizeStatus =  lseek(fd, 0, SEEK_END);
       if (sizeStatus < 0)
       {
          ROM_WARNING() << "ROM INIT ERROR: Couldn't seek to the end of the ROM";
@@ -188,14 +188,7 @@ void RomMemory::loadRomIntoMemory()
          return;
       }
 
-      if (sizeStatus > UINT32_MAX)
-      {
-         ROM_WARNING() << "ROM INIT ERROR: ROM File too large for 32-bit memory space";
-         close(fd);
-         return;
-      }
-
-      if (sizeStatus > (UINT32_MAX - theAddress + 1))
+      if (sizeStatus > (UINT32_MAX - theAddress + 1U))
       {
          ROM_WARNING() << "ROM INIT ERROR: ROM file will not fit in the memory region.  Space ="
                        << Utils::toHex32(UINT32_MAX - theAddress + 1) << ", ROM size = "

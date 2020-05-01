@@ -40,8 +40,6 @@ protected:
    MemoryFactory();
    ~MemoryFactory();
    
-   void processSingleMemoryType(std::string typeName, MemoryDeviceConstructor mdc);
-   
    /// Always add and remove from both of these vectors
    SimpleMap<std::string, MemoryDeviceConstructor> theMemoryTypes;
    

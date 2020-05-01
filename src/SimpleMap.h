@@ -50,7 +50,7 @@ public:
     
     void remove(K const & key)
     {
-        for(int i = 0; i < theList.size(); i++)
+        for(unsigned int i = 0; i < theList.size(); i++)
         {
             if (theList[i].first == key)
             {
