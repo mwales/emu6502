@@ -7,8 +7,13 @@
 #include "Utils.h"
 
 
+const char* DUMP_BYTE_COMMAND = "d8";
+const char* DUMP_WORD_COMMAND = "d16";
+const char* DUMP_DWORD_COMMAND = "d32";
 
-MemoryController::MemoryController()
+MemoryController::MemoryController():
+   theLastDumpAddress(0),
+   theLittleEndianFlag(true)
 {
 
 }
@@ -225,3 +230,285 @@ void MemoryController::debugDumpMemoryController(bool dumpContents)
       fclose(dumpFile);
    }
 }
+
+void MemoryController::setLittleEndianMode(bool le)
+{
+    theLittleEndianFlag = le;
+}
+
+bool MemoryController::read8(CpuAddress addr, uint8_t* val)
+{
+   MemoryDev* mdev = getDevice(addr);
+   if (mdev == nullptr)
+   {
+      LOG_WARNING() << "Invalid read8 @ " << addressToString(addr);
+      return false;
+   }
+   
+   *val = mdev->read8(addr);
+   return true;
+}
+
+bool MemoryController::read16(CpuAddress addr, uint16_t* val)
+{
+   uint16_t retVal = 0;
+   int numBytesShift = (theLittleEndianFlag ? 8 : 0);
+   
+   for(int byteNum = 0; byteNum < 2; byteNum++)
+   {
+      MemoryDev* mdev = getDevice(addr + byteNum);
+      if (mdev == nullptr)
+      {
+         LOG_DEBUG() << "Error reading memory for read16 @ " << addressToString(addr);
+         return false;
+      }
+      
+      uint16_t temp = mdev->read8(addr + byteNum);
+      temp = temp << numBytesShift;
+      retVal |= temp;
+      
+      if (theLittleEndianFlag)
+      {
+         numBytesShift -= 8;
+      }
+      else
+      {
+         numBytesShift += 8;
+      }
+   }
+   
+   *val = retVal;
+   return true;
+}
+
+bool MemoryController::read32(CpuAddress addr, uint32_t* val)
+{
+   uint32_t retVal = 0;
+   int numBytesShift = (theLittleEndianFlag ? 24 : 0);
+   
+   for(int byteNum = 0; byteNum < 4; byteNum++)
+   {
+      MemoryDev* mdev = getDevice(addr + byteNum);
+      if (mdev == nullptr)
+      {
+         LOG_DEBUG() << "Error reading memory for read32 @ " << addressToString(addr);
+         return false;
+      }
+      
+      uint32_t temp = mdev->read8(addr + byteNum);
+      temp = temp << numBytesShift;
+      retVal |= temp;
+      
+      if (theLittleEndianFlag)
+      {
+         numBytesShift -= 8;
+      }
+      else
+      {
+         numBytesShift += 8;
+      }
+   }
+   
+   *val = retVal;
+   return true;
+}
+
+bool MemoryController::write8(CpuAddress addr, uint8_t val)
+{
+   MemoryDev* mdev = getDevice(addr);
+   if (mdev == nullptr)
+   {
+      LOG_WARNING() << "Invalid write8 @ " << addressToString(addr);
+      return false;
+   }
+   
+   mdev->write8(addr, val);
+   return true;
+}
+
+bool MemoryController::write16(CpuAddress addr, uint16_t val)
+{
+   int numBytesShift = (theLittleEndianFlag ? 8 : 0);
+   
+   for(int byteNum = 0; byteNum < 2; byteNum++)
+   {
+      MemoryDev* mdev = getDevice(addr + byteNum);
+      if (mdev == nullptr)
+      {
+         LOG_DEBUG() << "Error reading memory for write16 @ " << addressToString(addr);
+         return false;
+      }
+      
+      uint8_t temp = val >> numBytesShift & 0xff;
+      mdev->write8(addr + byteNum, temp);
+            
+      if (theLittleEndianFlag)
+      {
+         numBytesShift -= 8;
+      }
+      else
+      {
+         numBytesShift += 8;
+      }
+   }
+   
+   return true;
+}
+
+bool MemoryController::write32(CpuAddress addr, uint32_t val)
+{
+   int numBytesShift = (theLittleEndianFlag ? 24 : 0);
+   
+   for(int byteNum = 0; byteNum < 4; byteNum++)
+   {
+      MemoryDev* mdev = getDevice(addr + byteNum);
+      if (mdev == nullptr)
+      {
+         LOG_DEBUG() << "Error reading memory for write32 @ " << addressToString(addr);
+         return false;
+      }
+      
+      uint8_t temp = val >> numBytesShift & 0xff;
+      mdev->write8(addr + byteNum, temp);
+            
+      if (theLittleEndianFlag)
+      {
+         numBytesShift -= 8;
+      }
+      else
+      {
+         numBytesShift += 8;
+      }
+   }
+   
+   return true;
+}
+
+void MemoryController::registerDebuggerCommands(Debugger* dbgr)
+{
+   dbgr->registerNewCommandHandler(DUMP_BYTE_COMMAND, "Dump memory by 8-bit byte",
+                                   &MemoryController::dump8CommandHandlerStatic,
+                                   this);
+   dbgr->registerNewCommandHandler(DUMP_WORD_COMMAND, "Dump memory by 16-bit word",
+                                   &MemoryController::dump16CommandHandlerStatic,
+                                   this);
+   dbgr->registerNewCommandHandler(DUMP_DWORD_COMMAND, "Dump memory by 32-bit dword",
+                                   &MemoryController::dump32CommandHandlerStatic,
+                                   this);
+   
+   
+}
+
+
+
+void MemoryController::printDebuggerUsage(std::string commandName)
+{
+   std::cout << commandName << " help" << std::endl;
+   std::cout << "  " << commandName << ": Dumps 40 bytes after the last dump call" << std::endl;;
+   std::cout << "  " << commandName << " [address]: Dumps 40 bytes after the specified address" << std::endl;
+   std::cout << "  " << commandName << " [address] [numbytes]: Dumps numbytes after the specified address" << std::endl;
+}
+void MemoryController::dump8CommandHandlerStatic(std::vector<std::string> const & args, 
+                                     void* context)
+{
+   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
+   mc->dump8CommandHandler(args);
+}
+
+void MemoryController::dump16CommandHandlerStatic(std::vector<std::string> const & args, 
+                                     void* context)
+{
+   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
+   mc->dump16CommandHandler(args);
+}
+
+void MemoryController::dump32CommandHandlerStatic(std::vector<std::string> const & args, 
+                                     void* context)
+{
+   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
+   mc->dump32CommandHandler(args);
+}
+
+void MemoryController::dump8CommandHandler(std::vector<std::string> const & args)
+{
+   if ( (args.size() >= 1) && (args[0] == "help") )
+   {
+      printDebuggerUsage(DUMP_BYTE_COMMAND);
+      return;
+   }
+   
+   CpuAddress addrToDump = theLastDumpAddress;
+   uint32_t numDump = 16 * 8;
+   if ( args.size() >= 1)
+   {
+      if(!stringToAddress(args[0], &addrToDump))
+      {
+         std::cout << "Address " << args[0] << " invalid" << std::endl;
+         return;
+      }
+   }
+   
+   if ( args.size() >= 2)
+   {
+      bool success;
+      uint32_t nb = Utils::parseUInt32(args[1], &success);
+      if(success)
+      {
+         numDump = nb;
+      }
+      else
+      {
+         std::cout << "Num bytes to dump " << args[1] << " invalid" << std::endl;
+         return;
+      }
+   }
+   
+   CpuAddress currentDumpAddr = addrToDump & (~0xf);
+   CpuAddress endDumpAddr = addrToDump + numDump;
+   uint32_t numBytesDumped = 0;
+   while(numBytesDumped < numDump)
+   {
+      // Dump single line
+      std::cout << addressToString(currentDumpAddr) << ":  ";
+      for(int i = 0; i < 16; i++)
+      {
+         if ( (currentDumpAddr >= addrToDump) && (currentDumpAddr <= endDumpAddr) )
+         {
+            uint8_t value;
+            bool readSuccess = read8(currentDumpAddr, &value);
+            if (readSuccess)
+            {
+               std::cout << Utils::toHex8(value, false) << " ";
+            }
+            else
+            {
+               std::cout << "-- ";
+            }
+            numBytesDumped++;
+         }
+         else
+         {
+            std::cout << "   ";
+         }
+         
+         currentDumpAddr++;
+      }
+      
+      std::cout << std::endl;
+   }
+   
+}
+
+void MemoryController::dump16CommandHandler(std::vector<std::string> const & args)
+{
+   
+}
+
+void MemoryController::dump32CommandHandler(std::vector<std::string> const & args)
+{
+   
+}
+
+
+
+
