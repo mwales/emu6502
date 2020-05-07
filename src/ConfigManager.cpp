@@ -210,7 +210,7 @@ void ConfigManager::loadConfigFile(std::string filename)
       return;
    }
 
-   std::vector<std::string> configTokens = Utils::tokenizeSting(fileContents);
+   std::vector<std::string> configTokens = Utils::tokenizeString(fileContents);
 
    CFGMGR_DEBUG() << "Found" << configTokens.size() << "tokens in config file";
 

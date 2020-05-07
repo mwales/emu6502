@@ -1,4 +1,5 @@
 #include "Processor.h"
+#include "Logger.h"
 
 Processor::Processor():
     theMemoryController(nullptr),
@@ -19,3 +20,19 @@ uint64_t Processor::getInstructionsCount()
 {
 	return theInstructionsExecuted;
 }
+
+virtual int Processor::getNumberOfBytesForState()
+{
+    return -1;
+}
+
+virtual void Processor::writeState(uint8_t* stateData)
+{
+    LOG_DEBUG() << "Processor doesn't implement save states";
+}
+
+virtual void Processor::loadState(uint8_t stateData)
+{
+    LOG_DEBUG() << "Processor doesn't implement save states";
+}
+

@@ -26,6 +26,7 @@ set(EMULATOR_FILES
 	MemoryDev.cpp
 	Utils.cpp
 	ConfigManager.cpp
+	Debugger.cpp
 	)
 
 add_executable(emu ${EMULATOR_FILES} ${DEVICE_FILES})
@@ -40,9 +41,10 @@ set(SDL2_net_LIBRARIES "-lSDL2_net")
 
 target_link_libraries(emu ${SDL2_LIBRARIES})
 target_link_libraries(emu ${SDL2_net_LIBRARIES})
+target_link_libraries(emu readline)
 
 # Modern C++ support
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --std=c++11 -Wall -D_FORTIFY_SOURCE=2 -O2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --std=c++11 -Wall -D_FORTIFY_SOURCE=2")
 
 MESSAGE("Compiler flags=${CMAKE_CXX_FLAGS}")
 

@@ -9,6 +9,7 @@
 #include "MemoryFactory.h"
 #include "MemoryController.h"
 #include "SimpleMap.h"
+#include "Debugger.h"
 
 #include "Logger.h"
 
@@ -61,6 +62,7 @@ int main(int argc, char* argv[])
    if (argc == 1)
    {
       printUsage(argv[0]);
+      MemoryFactory::getInstance()->printMemoryConfigHelp();
       return 0;
    }
 
@@ -91,11 +93,12 @@ int main(int argc, char* argv[])
 
    MemoryController* memControl = new MemoryController();
 
-//   MemoryFactory memFactory(memControl);
-//   memFactory.processConfigData();
+   MemoryFactory::getInstance()->instantiateMemoryDevices(memControl);
 
-
-
+   Debugger d(memControl);
+   
+   memControl->registerDebuggerCommands(&d);
+   d.start();
 
 
 //   constructCpuGlobals();

@@ -43,8 +43,9 @@ public:
    static std::string loadFile(std::string& name, std::string& errorOut);
 
    /// Converts a string into a list of the string parts (whitespace removed)
-   static std::vector<std::string> tokenizeSting(std::string const & input);
-
+   static std::vector<std::string> tokenizeString(std::string const & input);
+   static std::vector<std::string> tokenizeString(std::string const & text, char delimiter);
+   
    /// Converts a buffer of data into "aa bb cc .."
    static std::string hexDump(uint8_t* buffer, int length);
 

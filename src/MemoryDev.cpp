@@ -277,4 +277,59 @@ bool MemoryDev::configSelf()
    return retVal;
 }
 
+ std::string MemoryDev::getMemoryConfigHelp()
+{
+   std::string retVal;
+   retVal += "Memory Device Type: ";
+   retVal += getConfigTypeName();
+      
+   bool isFirst = true;
+   for(auto curConfig: theUint16ConfigParams.getKeys())
+   {
+      if (isFirst)
+      {
+         retVal += "\n    16-bit integer config: ";
+         isFirst = false;
+      }
+      else
+      {
+         retVal += ", ";
+      }
+      retVal += curConfig;
+   }
+      
+   isFirst = true;
+   for(auto curConfig: theUint32ConfigParams.getKeys())
+   {
+      if (isFirst)
+      {
+         retVal += "\n    32-bit integer config: ";
+         isFirst = false;
+      }
+      else
+      {
+         retVal += ", ";
+      }
+      retVal += curConfig;
+   }
+      
+   isFirst = true;
+   for(auto curConfig: theStrConfigParams.getKeys())
+   {
+      if (isFirst)
+      {
+         retVal += "\n    String config: ";
+         isFirst = false;
+      }
+      else
+      {
+         retVal += ", ";
+      }
+      retVal += curConfig;
+   }
+   retVal += "\n";
+   
+   return retVal;
+}
+
 

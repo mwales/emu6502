@@ -34,6 +34,10 @@ public:
    
    void registerMemoryDeviceType(std::string const & memoryType, MemoryDeviceConstructor mdc);
    
+   void printMemoryConfigHelp();
+   
+   bool instantiateMemoryDevices(MemoryController* mc);
+   
 protected:
    
    // Singleton protections

@@ -1,10 +1,11 @@
 #ifndef EMULATOR_COMMON
 #define EMULATOR_COMMON
 
-#include <stdint.h>
+#include <cstdint>
 #include <utility>
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
+#include "Utils.h"
 
 typedef uint32_t CpuAddress;
 
@@ -17,6 +18,18 @@ inline std::string addressToString(CpuAddress val)
    return std::string(buf);
 }
 
+inline bool stringToAddress(std::string userInput, CpuAddress* addr)
+{
+   bool retVal;
+   CpuAddress data = Utils::parseUInt32(userInput, &retVal);
+   
+   if (retVal)
+   {
+      *addr = data;
+   }
+   
+   return retVal;
+}
 
 #endif
 

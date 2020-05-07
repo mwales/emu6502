@@ -58,6 +58,17 @@ void MemoryFactory::registerMemoryDeviceType(std::string const & memoryType,
    theMemoryTypes.add(memoryType, mdc);
 }
 
+void MemoryFactory::printMemoryConfigHelp()
+{
+   // Construct an instance of each type  of memory and see what configuration it wants
+   for(auto curMemType: theMemoryTypes.getKeys())
+   {
+      MemoryDev* curDev = theMemoryTypes.getValue(curMemType)("dummy");
+      std::cout << curDev->getMemoryConfigHelp();
+      delete curDev;
+   }
+}
+
 
 MemoryFactory::MemoryFactory()
 {
@@ -69,5 +80,40 @@ MemoryFactory::~MemoryFactory()
    MFACTORY_DEBUG() << "Destroying a Memory Factory";
 }
 
-
+bool MemoryFactory::instantiateMemoryDevices(MemoryController* mc)
+{
+   MFACTORY_DEBUG() << "Instantiate Memory Devices";
+   ConfigManager* cfgMgr = ConfigManager::getInstance();
+   std::set<std::string> typeList = cfgMgr->getConfigTypeNames();
+   for(auto curType: typeList)
+   {
+      if (theMemoryTypes.contains(curType))
+      {
+         // Lets instantiate, config, and add memory device to the memory controller
+         MFACTORY_DEBUG() << "Creating all MemoryDev instances of type" << curType;
+         
+         std::set<std::string> instanceNames = cfgMgr->getConfigTypeInstanceNames(curType);
+         for(auto curInstName: instanceNames)
+         {
+            MemoryDev* md = theMemoryTypes.getValue(curType)(curInstName);
+            
+            if (md->configSelf())
+            {
+               MFACTORY_DEBUG() << "Successfully created and configured" << curType << "."
+                                << curInstName;
+               md->setMemoryController(mc);
+               mc->addNewDevice(md);
+            }
+            else
+            {
+               MFACTORY_WARNING() << "Failed to create and configure" << curType << "."
+                                << curInstName;
+               delete md;
+            }
+            
+         }
+      }
+   }
+   
+}
 

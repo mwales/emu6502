@@ -73,6 +73,8 @@ public:
 
    /// Configures self from ConfigManager.  Returns false if req'd config missing
    virtual bool configSelf();
+   
+   virtual std::string getMemoryConfigHelp();
 
 protected:   
 

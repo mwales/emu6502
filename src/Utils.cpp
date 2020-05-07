@@ -146,6 +146,8 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
 }
 
 
+
+
    std::string Utils::loadFile(std::string& name, std::string& errorOut)
    {
       std::string retVal;
@@ -192,7 +194,7 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
       return retVal;
    }
 
-   std::vector<std::string> Utils::tokenizeSting(std::string const & input)
+   std::vector<std::string> Utils::tokenizeString(std::string const & input)
    {
       std::vector<std::string> retVal;
       int startToken = -1;
@@ -369,4 +371,34 @@ int32_t Utils::nextPowerOf2(int32_t v)
    v |= v >> 16;
    v++;
    return v;
+}
+
+std::vector<std::string> Utils::tokenizeString(std::string const & text, char delimiter)
+{
+   std::vector<std::string> retVal;
+   
+   std::string curToken;
+   for(auto singleChar: text)
+   {
+      if (singleChar == delimiter)
+      {
+         // Found a delimter
+         if (curToken.size() > 0)
+         {
+            retVal.push_back(curToken);
+         }
+         
+         curToken = "";
+         continue;
+      }
+      
+      curToken += singleChar;
+   }
+   
+   if (curToken.size() > 0)
+   {
+      retVal.push_back(curToken);
+   }
+   
+   return retVal;
 }

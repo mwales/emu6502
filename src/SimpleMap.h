@@ -24,7 +24,7 @@ public:
         
     }
     
-    bool doesExist(K const & key)
+    bool contains(K const & key)
     {
         for(auto elem: theList)
         {
@@ -39,7 +39,7 @@ public:
     
     void add(K const & key, V const & value)
     {
-        if (doesExist(key))
+        if (contains(key))
         {
             remove(key);
         }
