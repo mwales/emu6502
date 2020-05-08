@@ -33,6 +33,8 @@ public:
    
    MemoryDev* getDevice(CpuAddress address);
    
+   MemoryDev* getDevice(std::string instanceName);
+   
    /**
      * Gets a list of all the valid memory ranges available to the processor
      */
@@ -87,11 +89,13 @@ protected:
                                           void* context);
    static void dump32CommandHandlerStatic(std::vector<std::string> const & args, 
                                           void* context);
+   static void memdevsCommandHandlerStatic(std::vector<std::string> const & args, 
+                                           void* context);
+   
    void dump8CommandHandler(std::vector<std::string> const & args);
    void dump16CommandHandler(std::vector<std::string> const & args);
    void dump32CommandHandler(std::vector<std::string> const & args);
-   
-   
+   void memdevsCommandHandler(std::vector<std::string> const & args);
    
    void debugDumpMemoryController(bool dumpContents = false);
    

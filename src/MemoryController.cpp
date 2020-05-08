@@ -112,6 +112,21 @@ MemoryDev* MemoryController::getDevice(CpuAddress address)
    return nullptr;
 }
 
+MemoryDev* MemoryController::getDevice(std::string instanceName)
+{
+   for(auto curDevice: theDevices)
+   {
+      if (instanceName == curDevice->getName())
+      {
+         return curDevice;
+      }
+   }
+
+   // No matching device found
+   LOG_WARNING() << "Memory Controller has no device for instance name " << instanceName;
+   return nullptr;
+}
+
 std::vector<MemoryRange> MemoryController::getOrderedRangeList()
 {
    std::vector<MemoryRange> retVal;
@@ -395,7 +410,9 @@ void MemoryController::registerDebuggerCommands(Debugger* dbgr)
    dbgr->registerNewCommandHandler(DUMP_DWORD_COMMAND, "Dump memory by 32-bit dword",
                                    &MemoryController::dump32CommandHandlerStatic,
                                    this);
-   
+   dbgr->registerNewCommandHandler("memdevs", "List Memory Devices",
+                                   &MemoryController::memdevsCommandHandlerStatic,
+                                   this);
    
 }
 
@@ -409,24 +426,31 @@ void MemoryController::printDebuggerUsage(std::string commandName)
    std::cout << "  " << commandName << " [address] [numbytes]: Dumps numbytes after the specified address" << std::endl;
 }
 void MemoryController::dump8CommandHandlerStatic(std::vector<std::string> const & args, 
-                                     void* context)
+                                                 void* context)
 {
    MemoryController* mc = reinterpret_cast<MemoryController*>(context);
    mc->dump8CommandHandler(args);
 }
 
 void MemoryController::dump16CommandHandlerStatic(std::vector<std::string> const & args, 
-                                     void* context)
+                                                  void* context)
 {
    MemoryController* mc = reinterpret_cast<MemoryController*>(context);
    mc->dump16CommandHandler(args);
 }
 
 void MemoryController::dump32CommandHandlerStatic(std::vector<std::string> const & args, 
-                                     void* context)
+                                                  void* context)
 {
    MemoryController* mc = reinterpret_cast<MemoryController*>(context);
    mc->dump32CommandHandler(args);
+}
+
+void MemoryController::memdevsCommandHandlerStatic(std::vector<std::string> const & args, 
+                                                   void* context)
+{
+   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
+   mc->memdevsCommandHandler(args);
 }
 
 void MemoryController::dump8CommandHandler(std::vector<std::string> const & args)
@@ -472,7 +496,7 @@ void MemoryController::dump8CommandHandler(std::vector<std::string> const & args
       std::cout << addressToString(currentDumpAddr) << ":  ";
       for(int i = 0; i < 16; i++)
       {
-         if ( (currentDumpAddr >= addrToDump) && (currentDumpAddr <= endDumpAddr) )
+         if ( (currentDumpAddr >= addrToDump) && (currentDumpAddr < endDumpAddr) )
          {
             uint8_t value;
             bool readSuccess = read8(currentDumpAddr, &value);
@@ -497,18 +521,175 @@ void MemoryController::dump8CommandHandler(std::vector<std::string> const & args
       std::cout << std::endl;
    }
    
+   theLastDumpAddress = addrToDump + numDump;
+   
 }
 
 void MemoryController::dump16CommandHandler(std::vector<std::string> const & args)
 {
+   if ( (args.size() >= 1) && (args[0] == "help") )
+   {
+      printDebuggerUsage(DUMP_WORD_COMMAND);
+      return;
+   }
    
+   CpuAddress addrToDump = theLastDumpAddress;
+   uint32_t numDump = 16 * 8;
+   if ( args.size() >= 1)
+   {
+      if(!stringToAddress(args[0], &addrToDump))
+      {
+         std::cout << "Address " << args[0] << " invalid" << std::endl;
+         return;
+      }
+   }
+   
+   // Put on a word boundary
+   theLastDumpAddress &= ~0x1;
+   
+   if ( args.size() >= 2)
+   {
+      bool success;
+      uint32_t nb = Utils::parseUInt32(args[1], &success);
+      if(success)
+      {
+         numDump = nb;
+      }
+      else
+      {
+         std::cout << "Num bytes to dump " << args[1] << " invalid" << std::endl;
+         return;
+      }
+   }
+   
+   CpuAddress currentDumpAddr = addrToDump & (~0xf);
+   CpuAddress endDumpAddr = addrToDump + numDump;
+   uint32_t numBytesDumped = 0;
+   while(numBytesDumped < numDump)
+   {
+      // Dump single line
+      std::cout << addressToString(currentDumpAddr) << ":  ";
+      for(int i = 0; i < 16; i += 2)
+      {
+         if ( (currentDumpAddr >= addrToDump) && (currentDumpAddr < endDumpAddr) )
+         {
+            uint16_t value;
+            bool readSuccess = read16(currentDumpAddr, &value);
+            if (readSuccess)
+            {
+               std::cout << Utils::toHex16(value, false) << " ";
+            }
+            else
+            {
+               std::cout << "---- ";
+            }
+            numBytesDumped += 2;
+         }
+         else
+         {
+            std::cout << "     ";
+         }
+         
+         currentDumpAddr += 2;
+      }
+      
+      std::cout << std::endl;
+   }
+   
+   theLastDumpAddress = addrToDump + numDump;
 }
 
 void MemoryController::dump32CommandHandler(std::vector<std::string> const & args)
 {
+   if ( (args.size() >= 1) && (args[0] == "help") )
+   {
+      printDebuggerUsage(DUMP_DWORD_COMMAND);
+      return;
+   }
    
+   CpuAddress addrToDump = theLastDumpAddress;
+   uint32_t numDump = 16 * 8;
+   if ( args.size() >= 1)
+   {
+      if(!stringToAddress(args[0], &addrToDump))
+      {
+         std::cout << "Address " << args[0] << " invalid" << std::endl;
+         return;
+      }
+   }
+   
+   // Put on a dword boundary
+   theLastDumpAddress &= ~0x3;
+   
+   if ( args.size() >= 2)
+   {
+      bool success;
+      uint32_t nb = Utils::parseUInt32(args[1], &success);
+      if(success)
+      {
+         numDump = nb;
+      }
+      else
+      {
+         std::cout << "Num bytes to dump " << args[1] << " invalid" << std::endl;
+         return;
+      }
+   }
+   
+   CpuAddress currentDumpAddr = addrToDump & (~0xf);
+   CpuAddress endDumpAddr = addrToDump + numDump;
+   uint32_t numBytesDumped = 0;
+   while(numBytesDumped < numDump)
+   {
+      // Dump single line
+      std::cout << addressToString(currentDumpAddr) << ":  ";
+      for(int i = 0; i < 16; i += 4)
+      {
+         if ( (currentDumpAddr >= addrToDump) && (currentDumpAddr < endDumpAddr) )
+         {
+            uint32_t value;
+            bool readSuccess = read32(currentDumpAddr, &value);
+            if (readSuccess)
+            {
+               std::cout << Utils::toHex32(value, false) << " ";
+            }
+            else
+            {
+               std::cout << "-------- ";
+            }
+            numBytesDumped += 4;
+         }
+         else
+         {
+            std::cout << "         ";
+         }
+         
+         currentDumpAddr += 4;
+      }
+      
+      std::cout << std::endl;
+   }
+   
+   theLastDumpAddress = addrToDump + numDump;
 }
 
 
+void MemoryController::memdevsCommandHandler(std::vector<std::string> const & args)
+{
+   for(auto curDevName: getDeviceNames())
+   {
+      std::cout << "Device: " << curDevName << std::endl;
+      MemoryDev* md = getDevice(curDevName);
+      if (md == nullptr)
+      {
+         std::cout << "  internal error: device nullptr" << std::endl;
+      }
+      else
+      {
+         std::cout << "  Address: " << addressToString(md->getAddress()) << " ("
+                   << md->getSize() << " bytes)" << std::endl;
+      }
+   }
+}
 
 
