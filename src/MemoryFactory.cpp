@@ -102,6 +102,7 @@ bool MemoryFactory::instantiateMemoryDevices(MemoryController* mc)
                MFACTORY_DEBUG() << "Successfully created and configured" << curType << "."
                                 << curInstName;
                md->setMemoryController(mc);
+               md->resetMemory();
                mc->addNewDevice(md);
             }
             else
