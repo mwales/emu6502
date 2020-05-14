@@ -16,6 +16,11 @@ set (DEVICE_FILES
 	devices/mappers/NRomMapper.cpp
 	)
 
+set (PROCESSOR_FILES
+	processors/Processor.cpp
+	processors/chip8/Chip8Decoder.cpp
+	processors/chip8/Chip8Processor.cpp
+	)
 
 set(EMULATOR_FILES  
 	EmuMain.cpp
@@ -29,7 +34,7 @@ set(EMULATOR_FILES
 	Debugger.cpp
 	)
 
-add_executable(emu ${EMULATOR_FILES} ${DEVICE_FILES})
+add_executable(emu ${EMULATOR_FILES} ${DEVICE_FILES} ${PROCESSOR_FILES})
 INCLUDE(FindPkgConfig)
 
 # Include SDL

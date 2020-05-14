@@ -7,7 +7,9 @@
  * are
  */
 
-#define MEMORY_FACTORY_DEBUG
+// #define MEMORY_FACTORY_DEBUG
+
+#define PROCESSOR_FACTORY_DEBUG
 
 // Turns on debug for the configuration manager
 // #define CONFIG_MANAGER_DEBUG
@@ -83,6 +85,9 @@
 
 // Turns on the debug for the NES PPU Device
 #define PPUDEV_TRACE
+
+// Chip-8 CPU debug
+#define CHIP8_CPU_DEBUG
 
 #endif
 

@@ -9,6 +9,7 @@
 #include "Processor.h"
 #include "SimpleMap.h"
 
+class Debugger;
 
 // The processor factory will probably get instantiated by C++ static constructors,
 // so it must stay a tradition singleton
@@ -31,18 +32,25 @@ public:
    
    void registerProcessorType(std::string const & memoryType, ProcessorConstructor mdc);
    
+   /** 
+    * Call this after processor instantiated.  If no CPU, the start/stop/step
+    * commands will not be added
+    */
+   void registerDebuggerCommands(Debugger* dbgr);
+   
 protected:
    
    // Singleton protections
    ProcessorFactory();
    ~ProcessorFactory();
    
-   void registerProcessorType(std::string typeName, ProcessorConstructor mdc);
    
    /// Always add and remove from both of these vectors
    SimpleMap<std::string, ProcessorConstructor> theProcessorTypeList;
    
    static ProcessorFactory* theInstance;
+   
+   Processor* theCpu;
 };
 
 #endif // PROCESSORFACTORY_H

@@ -2,7 +2,7 @@
 #include "EmulatorConfig.h"
 #include "Logger.h"
 #include "EmulatorConfig.h"
-
+#include "Debugger.h"
 
 #ifdef PROCESSOR_FACTORY_DEBUG
    #define PFACTORY_DEBUG   LOG_DEBUG
@@ -59,7 +59,8 @@ void ProcessorFactory::registerProcessorType(std::string const &  processorType,
 
 
 
-ProcessorFactory::ProcessorFactory()
+ProcessorFactory::ProcessorFactory():
+   theCpu(nullptr)
 {
    PFACTORY_DEBUG() << "Created a Processor Factory";
 }
@@ -69,7 +70,16 @@ ProcessorFactory::~ProcessorFactory()
    PFACTORY_DEBUG() << "Destroying a Processor Factory";
 }
 
-
+void ProcessorFactory::registerDebuggerCommands(Debugger* dbgr)
+{
+   if (theCpu == nullptr)
+   {
+      std::cout << "No CPU configured - no debugger commands for processor control available" << std::endl;
+      return;
+   }
+   
+   
+}
 
 
 

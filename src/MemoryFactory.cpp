@@ -116,5 +116,6 @@ bool MemoryFactory::instantiateMemoryDevices(MemoryController* mc)
       }
    }
    
+   return true;
 }
 

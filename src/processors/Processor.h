@@ -8,6 +8,7 @@
 #include "EmulatorCommon.h"
 #include "MemoryController.h"
 
+class Debugger;
 
 /**
  * Processor
@@ -27,8 +28,6 @@ public:
    
    virtual uint32_t getInstructionLength(CpuAddress addr) = 0;
    
-   virtual std::string getDisassembly(CpuAddress addr) = 0;
-   
    virtual std::string getCpuName() = 0;
    
    CpuAddress getPc();
@@ -36,8 +35,6 @@ public:
    uint64_t getInstructionsCount();
    
    virtual void setMemoryController(MemoryController* mc);
-   
-   virtual void setDisassemblyOptions(bool includeOpCodes, bool includeAddress);
    
    virtual bool step() = 0;
    
@@ -50,6 +47,14 @@ public:
    
    virtual void resetState() = 0;
    
+   // Return the number of byte disassembled, or negative on fault
+   virtual int disassembleAddr(CpuAddress addr, std::string* listingDataRet) = 0;
+   
+   static void printRegistersCommandHandlerStatic(std::vector<std::string> const & args, 
+                                             void* context);
+   
+   void printRegistersCommandHandler(std::vector<std::string> const & args);
+   
 protected:
    
    MemoryController* theMemoryController;
@@ -57,10 +62,7 @@ protected:
    CpuAddress thePc;
    
    uint64_t theInstructionsExecuted;
-   
-   bool theDisassFlagIncludeOpCodes;
-   
-   bool theDisassFlagIncludeAddress;
+  
 };
 
 typedef Processor* (*ProcessorConstructor)(std::string instanceName);
