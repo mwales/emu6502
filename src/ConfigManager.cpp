@@ -1,3 +1,6 @@
+#include <cstdlib>
+#include <limits.h>
+
 #include "ConfigManager.h"
 #include "Logger.h"
 #include "EmulatorConfig.h"
@@ -220,6 +223,11 @@ void ConfigManager::loadConfigFile(std::string filename)
    }
 
    CFGMGR_DEBUG() << "Done processing config file:" << filename;
+   
+   // Save the configuration file path
+   char tempPath[PATH_MAX];
+   realpath(filename.c_str(), tempPath);
+   theConfigPath = tempPath;
 }
 
 bool ConfigManager::isConfigPresent(std::string const & typeName, std::string const & memberName)
@@ -284,6 +292,23 @@ std::string ConfigManager::getStringConfigValue(std::string const & typeName,
 
    CFGMGR_DEBUG() << "getStringConfigValue(" << typeName << "," << memberName << ") failed";
    return "";
+}
+
+std::string ConfigManager::getConfigDirectory()
+{
+   if (theConfigPath.empty())
+   {
+      return theConfigPath;
+   }
+   
+   // Find the last /, remove everything after the slash
+   size_t pos = theConfigPath.rfind("/");
+   if (pos == std::string::npos)
+   {
+      return "";
+   }
+   
+   return theConfigPath.substr(0, pos+1);
 }
 
 void ConfigManager::processSingleArg(std::string const & arg)

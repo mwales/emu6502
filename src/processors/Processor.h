@@ -50,6 +50,8 @@ public:
    // Return the number of byte disassembled, or negative on fault
    virtual int disassembleAddr(CpuAddress addr, std::string* listingDataRet) = 0;
    
+   void registerDebugHandlerCommands(Debugger* dbgr);
+   
    static void printRegistersCommandHandlerStatic(std::vector<std::string> const & args, 
                                              void* context);
    

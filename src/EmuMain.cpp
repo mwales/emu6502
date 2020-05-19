@@ -10,6 +10,8 @@
 #include "MemoryController.h"
 #include "SimpleMap.h"
 #include "Debugger.h"
+#include "ProcessorFactory.h"
+#include "Processor.h"
 
 #include "Logger.h"
 
@@ -94,10 +96,18 @@ int main(int argc, char* argv[])
    MemoryController* memControl = new MemoryController();
 
    MemoryFactory::getInstance()->instantiateMemoryDevices(memControl);
+   
+   Processor* cpu = ProcessorFactory::getInstance()->instantiateProcessor();
 
    Debugger d(memControl);
    
    memControl->registerDebuggerCommands(&d);
+   
+   if (cpu)
+   {
+      cpu->registerDebugHandlerCommands(&d);
+   }
+   
    d.start();
 
 

@@ -1,5 +1,6 @@
 #include "Processor.h"
 #include "Logger.h"
+#include "Debugger.h"
 
 Processor::Processor():
     theMemoryController(nullptr),
@@ -42,6 +43,13 @@ void Processor::writeState(uint8_t* stateData)
 void Processor::loadState(uint8_t stateData)
 {
     LOG_DEBUG() << "Processor doesn't implement save states";
+}
+
+void Processor::registerDebugHandlerCommands(Debugger* dbgr)
+{
+   dbgr->registerNewCommandHandler("regs", "Prints values of the registers",
+                                   Processor::printRegistersCommandHandlerStatic,
+                                   this);
 }
 
 void Processor::printRegistersCommandHandlerStatic(std::vector<std::string> const & args, 

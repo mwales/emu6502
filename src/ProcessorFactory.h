@@ -32,11 +32,10 @@ public:
    
    void registerProcessorType(std::string const & memoryType, ProcessorConstructor mdc);
    
-   /** 
-    * Call this after processor instantiated.  If no CPU, the start/stop/step
-    * commands will not be added
+   /**
+    * Requires a CPU.processor.type=cpuTypeName configuration variable set
     */
-   void registerDebuggerCommands(Debugger* dbgr);
+   Processor* instantiateProcessor();
    
 protected:
    

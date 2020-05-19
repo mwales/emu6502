@@ -9,6 +9,16 @@
 /**
  * Loads the configuration from a file or from command line arguments.  Generally just ignores
  * stuff it doesn't understand.
+ * 
+ * Configuration params can be on the command line or in a configuration file.  The
+ * configuration data can be retrieved from this singleton by asking for a string or integer
+ * configuration value.
+ * 
+ * Format is:
+ * typeName.instanceName.memberName=value
+ * 
+ * The config filename needs to be specified as a configuration parameter itself, it should be
+ * config.anythingUnique.filename=pathToFile
  */
 class ConfigManager
 {
@@ -56,6 +66,8 @@ public:
 
    std::string getStringConfigValue(std::string const & typeName,
                                     std::string const & memberName);
+   
+   std::string getConfigDirectory();
 
 protected:
 
@@ -74,6 +86,8 @@ protected:
    static ConfigManager* theInstance;
 
    std::vector<ConfigDataEntry> theConfigData;
+   
+   std::string theConfigPath;
 };
 
 #endif // CONFIGMANAGER_H

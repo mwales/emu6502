@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "EmulatorConfig.h"
 #include "Debugger.h"
+#include "ConfigManager.h"
 
 #ifdef PROCESSOR_FACTORY_DEBUG
    #define PFACTORY_DEBUG   LOG_DEBUG
@@ -70,12 +71,36 @@ ProcessorFactory::~ProcessorFactory()
    PFACTORY_DEBUG() << "Destroying a Processor Factory";
 }
 
-void ProcessorFactory::registerDebuggerCommands(Debugger* dbgr)
+Processor* ProcessorFactory::instantiateProcessor()
 {
-   if (theCpu == nullptr)
+   PFACTORY_DEBUG() << "Instantiate Processor";
+   ConfigManager* cfgMgr = ConfigManager::getInstance();
+   std::set<std::string> typeList = cfgMgr->getConfigTypeNames();
+   
+   const std::string CONFIG_TYPE = "CPU";
+   const std::string CONFIG_INSTANCE = "processor";
+   const std::string CONFIG_MEMBER = "type";
+   
+   if (cfgMgr->isConfigPresent(CONFIG_TYPE, CONFIG_INSTANCE, CONFIG_MEMBER))
    {
-      std::cout << "No CPU configured - no debugger commands for processor control available" << std::endl;
-      return;
+      // Lets instantiate, config, and add memory device to the memory controller
+      std::string cpuType = cfgMgr->getStringConfigValue(CONFIG_TYPE, CONFIG_INSTANCE, CONFIG_MEMBER);
+      
+      PFACTORY_DEBUG() << "Instantiating a processor of type" << cpuType;
+      
+      if (theCpu != nullptr)
+      {
+         PFACTORY_WARNING() << "The CPU has already been instantiated!";
+         return theCpu;
+      }
+      
+      theCpu = createProcessorInstance(cpuType, CONFIG_INSTANCE);
+      return theCpu;
+   }
+   else
+   {
+      std::cerr << "No processor configuration found!" << std::endl;
+      return nullptr;
    }
    
    

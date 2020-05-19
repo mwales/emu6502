@@ -172,7 +172,9 @@ void RomMemory::loadRomIntoMemory()
 //                     << this << ")";
 //      }
 
-      int fd = open(theRomFile.c_str(), O_RDONLY);
+   std::string absRomFilePath = ConfigManager::getInstance()->getConfigDirectory();
+   absRomFilePath += theRomFile;
+      int fd = open(absRomFilePath.c_str(), O_RDONLY);
 
       if (fd <= 0)
       {
