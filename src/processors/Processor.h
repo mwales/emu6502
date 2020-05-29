@@ -47,15 +47,23 @@ public:
    
    virtual void resetState() = 0;
    
-   // Return the number of byte disassembled, or negative on fault
+   // Return the number of byte disassembled, or negative on fault, 0 on end of code path
    virtual int disassembleAddr(CpuAddress addr, std::string* listingDataRet) = 0;
    
-   void registerDebugHandlerCommands(Debugger* dbgr);
+   virtual void registerDebugHandlerCommands(Debugger* dbgr);
    
-   static void printRegistersCommandHandlerStatic(std::vector<std::string> const & args, 
-                                             void* context);
+   static void registersCommandHandlerStatic(std::vector<std::string> const & args, 
+                                             void* context);   
+   void registersCommandHandler(std::vector<std::string> const & args);
    
-   void printRegistersCommandHandler(std::vector<std::string> const & args);
+   static void stepCommandHandlerStatic(std::vector<std::string> const & args, 
+                                             void* context);   
+   void stepCommandHandler(std::vector<std::string> const & args);
+   
+   static void disassCommandHandlerStatic(std::vector<std::string> const & args, 
+                                             void* context);   
+   void disassCommandHandler(std::vector<std::string> const & args);
+   
    
 protected:
    

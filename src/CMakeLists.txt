@@ -20,6 +20,7 @@ set (PROCESSOR_FILES
 	processors/Processor.cpp
 	processors/chip8/Chip8Decoder.cpp
 	processors/chip8/Chip8Processor.cpp
+	processors/chip8/Chip8Disassembler.cpp
 	)
 
 set(EMULATOR_FILES  

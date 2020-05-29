@@ -95,21 +95,7 @@ Cpu6502::~Cpu6502()
 #endif
 }
 
-bool Cpu6502::enableDebugger(uint16_t portNumber)
-{
-   if (theDebugger == nullptr)
-   {
-      CPU_DEBUG() << "Enabling debugger on port " << portNumber;
-      theDebugger = new DebugServer(this, portNumber, theMemoryController);
 
-      return theDebugger->startDebugServer();
-   }
-   else
-   {
-      CPU_WARNING() << "Debugger was already running!";
-      return true;
-   }
-}
 
 #ifdef TRACE_EXECUTION
 void Cpu6502::setStepLimit(uint64_t numSteps)

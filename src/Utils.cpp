@@ -7,6 +7,13 @@ Utils::Utils()
 
 }
 
+std::string Utils::toHexNibble(uint8_t val)
+{
+   char buf[5];
+   sprintf(buf, "%x", val & 0x0f);
+   return buf;
+}
+
 std::string Utils::toHex8(uint8_t val, bool withPrefix)
 {
    char buf[5];

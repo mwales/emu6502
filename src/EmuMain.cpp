@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
    
    if (cpu)
    {
+      cpu->setMemoryController(memControl);
       cpu->registerDebugHandlerCommands(&d);
    }
    
@@ -151,7 +152,12 @@ int main(int argc, char* argv[])
 
 //   // Emulation complete, cleanup
 //   DisplayManager::destroyInstance();
-
+   
+   if(cpu)
+   {
+      delete cpu;
+      cpu = nullptr;
+   }
 
    delete memControl;
 

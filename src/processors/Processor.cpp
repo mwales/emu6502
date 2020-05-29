@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Processor.h"
 #include "Logger.h"
 #include "Debugger.h"
@@ -47,20 +48,63 @@ void Processor::loadState(uint8_t stateData)
 
 void Processor::registerDebugHandlerCommands(Debugger* dbgr)
 {
-   dbgr->registerNewCommandHandler("regs", "Prints values of the registers",
-                                   Processor::printRegistersCommandHandlerStatic,
+   dbgr->registerNewCommandHandler("regs", "Prints / Sets values of the registers",
+                                   Processor::registersCommandHandlerStatic,
+                                   this);
+   dbgr->registerNewCommandHandler("step", "Steps CPU through 1 instruction",
+                                   Processor::stepCommandHandlerStatic,
+                                   this);
+   dbgr->registerNewCommandHandler("disass", "Disassembles instructions",
+                                   Processor::disassCommandHandlerStatic,
                                    this);
 }
 
-void Processor::printRegistersCommandHandlerStatic(std::vector<std::string> const & args, 
+void Processor::registersCommandHandlerStatic(std::vector<std::string> const & args, 
                                           void* context)
 {
     Processor* p = reinterpret_cast<Processor*>(context);
-    p->printRegistersCommandHandler(args);
+    p->registersCommandHandler(args);
 }
 
-void Processor::printRegistersCommandHandler(std::vector<std::string> const & args)
+void Processor::stepCommandHandlerStatic(std::vector<std::string> const & args, void* context)
 {
+   Processor* p = reinterpret_cast<Processor*>(context);
+   p->stepCommandHandler(args);
+}
+
+void Processor::disassCommandHandlerStatic(std::vector<std::string> const & args, 
+                                          void* context)
+{
+   Processor* p = reinterpret_cast<Processor*>(context);
+   p->disassCommandHandler(args);
+}
+
+
+
+void Processor::registersCommandHandler(std::vector<std::string> const & args)
+{
+    if (args.size() == 2)
+    {
+       // Trying to set a register?
+       std::vector<std::string> nameList = getRegisterNames();
+       if(std::find(nameList.begin(), nameList.end(), args[0]) == nameList.end())
+       {
+          std::cout << "No register named " << args[0] << std::endl;
+          return;
+       }
+       
+       bool success = false;
+       uint32_t value = Utils::parseUInt32(args[1], &success);
+       if (!success)
+       {
+          std::cout << "Invalid value to set register: " << args[1] << std::endl;
+          return;
+       }
+       
+       setRegisterValue(args[0], value);
+       return;
+    }
+   
     int i = 0;
     char buffer[200];
     for(auto curReg: getRegisterNames())
@@ -86,3 +130,42 @@ void Processor::printRegistersCommandHandler(std::vector<std::string> const & ar
 }
 
 
+void Processor::stepCommandHandler(std::vector<std::string> const & args)
+{
+   step();
+}
+
+void Processor::disassCommandHandler(std::vector<std::string> const & args)
+{
+   // Is there a specific address the user wants to disassemble?
+   CpuAddress addr = getPc();
+   if (args.size() >= 1)
+   {
+      if (!stringToAddress(args[0], &addr))
+      {
+         std::cout << "Error converting param to address: " << args[0] << std::endl;
+         return;
+      }
+   }
+   
+   for(int i = 0; i < 10; i++)
+   {
+      std::string listing;
+      int numBytes = disassembleAddr(addr, &listing);
+      
+      if (numBytes < 0)
+      {
+         std::cout << "Error disassembling @ " << addressToString(addr) << std::endl;;
+         return;
+      }
+      
+      std::cout << listing << std::endl;
+      addr += numBytes;
+      
+      if (numBytes == 0)
+      {
+         // End of code path
+         return;
+      }
+   }
+}

@@ -22,6 +22,7 @@ class Utils
 public:
 
    // Convert an integer into hex string (includes 0x prefix)
+   static std::string toHexNibble(uint8_t val);
    static std::string toHex8(uint8_t val, bool withPrefix = true);
    static std::string toHex16(uint16_t val, bool withPrefix = true);
    static std::string toHex32(uint32_t val, bool withPrefix = true);

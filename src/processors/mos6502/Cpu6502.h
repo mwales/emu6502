@@ -25,12 +25,7 @@ public:
 
     virtual void start();
 
-    /**
-     * Opens the debug server socket.
-     * @param portNumber
-     * @return False on errror
-     */
-    bool enableDebugger(uint16_t portNumber);
+
 
 #ifdef TRACE_EXECUTION
     /**

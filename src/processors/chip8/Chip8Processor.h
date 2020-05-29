@@ -8,13 +8,16 @@
 #include <vector>
 #include <set>
 
+class Chip8Disassembler;
+
 /**
  * Chip-8 Processor class
  */
 class Chip8Processor : public Chip8Decoder, public Processor
 {
 public:
-   Chip8Processor(std::string instanceName);   
+   Chip8Processor(std::string instanceName);
+   virtual ~Chip8Processor();
    
    // Connect to GUI keypress up/down events
    void keyDown(unsigned char key);
@@ -74,6 +77,8 @@ protected:
    
    
    // EmulationScreen* theScreen;
+   
+   Chip8Disassembler* theDisassembler;
    
 
    

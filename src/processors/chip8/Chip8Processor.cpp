@@ -1,6 +1,7 @@
 #include "EmulatorCommon.h"
 #include "Chip8Processor.h"
 //#include "audio_player.h"
+#include "Chip8Disassembler.h"
 #include "ctype.h"
 #include "Logger.h"
 #include <cstdlib>
@@ -31,8 +32,8 @@
 
 Chip8Processor::Chip8Processor(std::string instanceName):
    theHighResMode(false),
+   theDisassembler(nullptr),
    theSoundEnabled(true)
-
 {
    C8DEBUG() << "Creating an instance of" << instanceName;
    
@@ -44,6 +45,17 @@ Chip8Processor::Chip8Processor(std::string instanceName):
    loadFonts();
    
 
+}
+
+Chip8Processor::~Chip8Processor()
+{
+   C8DEBUG() << "Deleting instance of Chip8 CPU";
+   
+   if(theDisassembler)
+   {
+      delete theDisassembler;
+      theDisassembler = nullptr;
+   }
 }
 
 
@@ -793,6 +805,7 @@ std::vector<std::string> Chip8Processor::getRegisterNames()
     retVal.push_back("SP");
     retVal.push_back("SndTmr");
     retVal.push_back("DlyTmr");
+    retVal.push_back("PC");
     
     return retVal;
 }
@@ -806,7 +819,7 @@ uint32_t Chip8Processor::getRegisterValue(std::string regName)
     
     if (regName == "SP")
     {
-        return 0;
+        return theCpuStack.size();
     }
     
     if (regName == "SndTmr")
@@ -817,6 +830,11 @@ uint32_t Chip8Processor::getRegisterValue(std::string regName)
     if (regName == "DlyTmr")
     {
         return 2;
+    }
+    
+    if (regName == "PC")
+    {
+       return thePc;
     }
     
     if (regName[0] == 'V')
@@ -840,24 +858,35 @@ uint32_t Chip8Processor::getRegisterValue(std::string regName)
 
 bool Chip8Processor::setRegisterValue(std::string regName, uint32_t value)
 {
+   
     if (regName == "I")
     {
-        theIndexRegister = value;
+        theIndexRegister = value & 0xfff;
+        return true;
     }
     
     if (regName == "SP")
     {
         LOG_DEBUG() << "Set SP not implemented";
+        return false;
     }
     
     if (regName == "SndTmr")
     {
         LOG_DEBUG() << "Set SndTimer not implemented";
+        return false;
     }
     
     if (regName == "DlyTmr")
     {
         LOG_DEBUG() << "Set DlyTmr not implemented";
+        return false;
+    }
+    
+    if (regName == "PC")
+    {
+       thePc = value & 0xfff;
+       return true;
     }
     
     if (regName[0] == 'V')
@@ -867,29 +896,46 @@ bool Chip8Processor::setRegisterValue(std::string regName, uint32_t value)
         if ( (registerLetter >= '0') && (registerLetter <= '9') )
         {
             theCpuRegisters[(registerLetter - '0') & 0xff] = value;
+            return true;
         }
         
         if ( (registerLetter >= 'A') && (registerLetter <= 'F') )
         {
             theCpuRegisters[(registerLetter - 'A' + 10) & 0xff] = value;
+            return true;
         }
     }
     
     LOG_WARNING() << "Invalid register name: " << regName;
-    return 0;    
+    return false;    
 }
 
 uint32_t Chip8Processor::getInstructionLength(CpuAddress addr)
 {
-   /// @todo implement
-   return 0;
+   // Fixed instruction length
+   return 2;
 }
 
 int Chip8Processor::disassembleAddr(CpuAddress addr, std::string* listingDataRet)
 {
-   /// @todo implement
-   return -1;
-   *listingDataRet =  "disass so sad";
+   if (theDisassembler == nullptr)
+   {
+      theDisassembler = new Chip8Disassembler(theMemoryController);
+   }
+   
+   if(!theDisassembler->getDisassembly(addr, *listingDataRet))
+   {
+      return -1;
+   }
+   
+   if (theDisassembler->isInsEndOfBlock(addr))
+   {
+      return 0;
+   }
+   else
+   {
+      return getInstructionLength(addr);
+   }
 }
 
 std::string Chip8Processor::getCpuName()
