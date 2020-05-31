@@ -133,6 +133,13 @@ void Processor::registersCommandHandler(std::vector<std::string> const & args)
 void Processor::stepCommandHandler(std::vector<std::string> const & args)
 {
    step();
+   
+   std::vector<std::string> emptyArgList;
+   registersCommandHandler(emptyArgList);
+   
+   std::string assembly;
+   disassembleAddr(thePc, &assembly);
+   std::cout << assembly << std::endl; 
 }
 
 void Processor::disassCommandHandler(std::vector<std::string> const & args)

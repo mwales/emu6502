@@ -43,6 +43,11 @@ Chip8Decoder::Chip8Decoder()
    
 }
 
+Chip8Decoder::~Chip8Decoder()
+{
+   
+}
+
 bool Chip8Decoder::decodeInstruction(CpuAddress addr)
 {
    uint8_t lsb, msb;
@@ -57,6 +62,8 @@ bool Chip8Decoder::decodeInstruction(CpuAddress addr)
 	   setError("Error retreiving opcode bytes at " + addressToString(addr+1));
 	   return false;
    }
+   
+   
 
    unsigned int word = lsb * 0x100 + msb;
    unsigned int prefix = word & MASK_PREFIX;

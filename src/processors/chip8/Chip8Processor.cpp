@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include "ProcessorFactory.h"
+#include "MemoryDev.h"
 #include "force_execute.h"
 
 
@@ -44,7 +45,7 @@ Chip8Processor::Chip8Processor(std::string instanceName):
 
    loadFonts();
    
-
+   thePc = 0x200;
 }
 
 Chip8Processor::~Chip8Processor()
@@ -94,7 +95,14 @@ bool Chip8Processor::step()
       return false;
    }
 
-   decodeInstruction(thePc);
+   if (!decodeInstruction(thePc))
+   {
+      std::cout << "Error executing instruction:" << std::endl;
+      
+      return false;
+   }
+   
+   thePc += 2;
    return true;
 }
 
@@ -945,8 +953,15 @@ std::string Chip8Processor::getCpuName()
 
 bool Chip8Processor::getByteFromAddress(CpuAddress address, uint8_t* retByte)
 {
-   /// @todo implement
-   return false;
+   MemoryDev* dev = theMemoryController->getDevice(address);
+   
+   if (dev == nullptr)
+   {
+      return false;
+   }
+   
+   *retByte = dev->read8(address);
+   return true;
 }
 
 Processor* CreateChip8Processor(std::string instanceName)

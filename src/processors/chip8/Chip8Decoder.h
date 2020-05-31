@@ -20,6 +20,8 @@ class Chip8Decoder
 public:
 
    Chip8Decoder();
+   
+   virtual ~Chip8Decoder();
 
 
    /**
