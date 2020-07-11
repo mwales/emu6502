@@ -45,13 +45,6 @@ public:
 
    virtual std::string getConfigTypeName() const = 0;
 
-   virtual std::vector<std::string> getIntConfigParams() const;
-
-   virtual std::vector<std::string> getStringConfigParams() const;
-
-   virtual void setIntConfigValue(std::string paramName, int value);
-   virtual void setStringConfigValue(std::string paramName, std::string value);
-
    /**
     * This should be called after configuration complete.  Initializes the memory to starting
     * conditions
@@ -86,11 +79,26 @@ protected:
 
    MemoryController* theMemController;
 
+   /**
+    * For the new framework, all instances of memory devs should add their configuration
+    * parameters to the following lists.  After the device is instantiated, these config
+    * values will be looked for and configured.  The pointer points to the variable that
+    * the configuration will be stored in.  These will all be required unless listed in
+    * the optional map
+    */
    SimpleMap<std::string, uint32_t*> theUint32ConfigParams;
 
    SimpleMap<std::string, uint16_t*> theUint16ConfigParams;
 
    SimpleMap<std::string, std::string*> theStrConfigParams;
+
+   /**
+    * For any optional configuration values, add to this map with the value false.  If
+    * the value is found in configuration, the optional param will be set to true.
+    * @todo Implement me / Add me to the help output too
+    */
+   SimpleMap<std::string, bool> theOptionalParams;
+
 };
 
 #endif // MEMORYDEV_H

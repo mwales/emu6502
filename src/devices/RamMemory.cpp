@@ -110,40 +110,6 @@ std::string RamMemory::getConfigTypeName() const
    return getTypeName();
 }
 
-std::vector<std::string> RamMemory::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("startAddress");
-   retVal.push_back("size");
-   return retVal;
-}
-
-std::vector<std::string> RamMemory::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   return retVal;
-}
-
-void RamMemory::setIntConfigValue(std::string paramName, int value)
-{
-   if (paramName == "startAddress")
-   {
-      theAddress = value;
-      theConfigFlags |= RAM_ADDR_CONFIG;
-   }
-
-   if (paramName == "size")
-   {
-      theSize = value;
-      theConfigFlags |= RAM_SIZE_CONFIG;
-   }
-}
-
-void RamMemory::setStringConfigValue(std::string paramName, std::string value)
-{
-   // Purposely empty
-}
-
 void RamMemory::resetMemory()
 {
    // If the object is completely configured, initialize itself properly

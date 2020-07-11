@@ -37,13 +37,6 @@ public:
 
    virtual std::string getConfigTypeName() const;
 
-   virtual std::vector<std::string> getIntConfigParams() const override;
-
-   virtual std::vector<std::string> getStringConfigParams() const override;
-
-   virtual void setIntConfigValue(std::string paramName, int value) override;
-   virtual void setStringConfigValue(std::string paramName, std::string value) override;
-
    virtual void resetMemory() override;
 
 protected:

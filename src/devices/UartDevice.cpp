@@ -164,42 +164,6 @@ std::string UartDevice::getConfigTypeName() const
    return getTypeName();
 }
 
-std::vector<std::string> UartDevice::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("portNumber");
-   retVal.push_back("startAddress");
-   return retVal;
-}
-
-std::vector<std::string> UartDevice::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   return retVal;
-}
-
-void UartDevice::setIntConfigValue(std::string paramName, int value)
-{
-   if (paramName == "portNumber")
-   {
-      UART_DEBUG() << "UART" << theName << "configured for TCP port" << value;
-      theConfigFlags |= UART_PORT_CONFIG;
-      thePortNumber = value;
-   }
-
-   if (paramName == "startAddress")
-   {
-      UART_DEBUG() << "UART" << theName << "configured at address" << addressToString(value);
-      theConfigFlags |= UART_ADDR_CONFIG;
-      theAddress = value;
-   }
-}
-
-void UartDevice::setStringConfigValue(std::string paramName, std::string value)
-{
-   // Empty
-}
-
 void UartDevice::resetMemory()
 {
    if(!isFullyConfigured())

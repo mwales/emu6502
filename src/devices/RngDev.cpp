@@ -112,40 +112,6 @@ std::string RngDev::getConfigTypeName() const
    return getTypeName();
 }
 
-std::vector<std::string> RngDev::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("startAddress");
-   retVal.push_back("size");
-   return retVal;
-}
-
-std::vector<std::string> RngDev::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   return retVal;
-}
-
-void RngDev::setIntConfigValue(std::string paramName, int value)
-{
-   if (paramName == "startAddress")
-   {
-      theAddress = value;
-      theConfigFlags |= RNG_ADDR_CONFIG;
-   }
-
-   if (paramName == "size")
-   {
-      theSize = value;
-      theConfigFlags |= RNG_SIZE_CONFIG;
-   }
-}
-
-void RngDev::setStringConfigValue(std::string paramName, std::string value)
-{
-   // Purposely empty
-}
-
 void RngDev::resetMemory()
 {
    // If the object is completely configured, initialize itself properly

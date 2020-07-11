@@ -167,45 +167,6 @@ bool MemoryDev::isFullyConfigured() const
    return true;
 }
 
-std::vector<std::string> MemoryDev::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("startAddress");
-   retVal.push_back("size");
-   return retVal;
-}
-
-std::vector<std::string> MemoryDev::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("instanceName");
-   return retVal;
-}
-
-void MemoryDev::setIntConfigValue(std::string paramName, int value)
-{
-   LOG_DEBUG() << "Device " << theName << " config " << paramName << " = " << value;
-
-   if (paramName == "startAddress")
-   {
-      theAddress = value;
-   }
-
-   if (paramName == "size")
-   {
-      theSize = value;
-   }
-}
-void MemoryDev::setStringConfigValue(std::string paramName, std::string value)
-{
-   LOG_DEBUG() << "Device " << theName << " config " << paramName << " = " << value;
-
-   if (paramName == "instanceName")
-   {
-      theName = value;
-   }
-}
-
 bool MemoryDev::configSelf()
 {
    ConfigManager* theCfgMgr = ConfigManager::getInstance();

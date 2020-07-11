@@ -121,44 +121,6 @@ std::string RomMemory::getConfigTypeName() const
    return getTypeName();
 }
 
-std::vector<std::string> RomMemory::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("startAddress");
-   return retVal;
-}
-
-std::vector<std::string> RomMemory::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("romFilename");
-   return retVal;
-}
-
-void RomMemory::setIntConfigValue(std::string paramName, int value)
-{
-   ROM_DEBUG() << "setIntConfigValue(" << paramName << "," << value << ")";
-
-   if (paramName == "startAddress")
-   {
-      theAddress = value;
-      theConfigFlags |= ROM_ADDR_CONFIG;
-      ROM_DEBUG() << "ROM " << theName << " startAddress = " << addressToString(theAddress);
-   }
-}
-
-void RomMemory::setStringConfigValue(std::string paramName, std::string value)
-{
-   ROM_DEBUG() << "setStringConfigValue(" << paramName << "," << value << ")";
-
-   if (paramName == "romFilename")
-   {
-      theRomFile = value;
-      theConfigFlags |= ROM_FILE_CONFIG;
-      ROM_DEBUG() << "ROM " << theName << " filename = " << theRomFile;
-   }
-}
-
 void RomMemory::resetMemory()
 {
    loadRomIntoMemory();

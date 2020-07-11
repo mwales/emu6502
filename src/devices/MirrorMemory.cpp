@@ -135,53 +135,6 @@ std::string MirrorMemory::getConfigTypeName() const
    return getTypeName();
 }
 
-std::vector<std::string> MirrorMemory::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("startAddress");
-   retVal.push_back("size");
-   retVal.push_back("originalMemoryAddress");
-   return retVal;
-}
-
-std::vector<std::string> MirrorMemory::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   return retVal;
-}
-
-void MirrorMemory::setIntConfigValue(std::string paramName, int value)
-{
-   MIRROR_DEBUG() << "setIntConfigValue(" << paramName << "," << value << ")";
-
-   if (paramName == "startAddress")
-   {
-      theAddress = value;
-      theConfigFlags |= MIRROR_ADDR_CONFIG;
-      MIRROR_DEBUG() << "Mirror memory start address config =" << addressToString(theAddress);
-   }
-
-   if (paramName == "size")
-   {
-      theSize = value;
-      theConfigFlags |= MIRROR_SIZE_CONFIG;
-      MIRROR_DEBUG() << "Mirror memory size config =" << Utils::toHex16(theSize);
-   }
-
-   if (paramName == "originalMemoryAddress")
-   {
-      theAddrOfMemoryMirrored = value;
-      theConfigFlags |= ORIGINAL_ADDR_CONFIG;
-      MIRROR_DEBUG() << "Mirror memory original addr config=" << addressToString(value);
-   }
-
-}
-
-void MirrorMemory::setStringConfigValue(std::string paramName, std::string value)
-{
-   // Empty
-}
-
 void MirrorMemory::resetMemory()
 {
    // If the object is completely configured, initialize itself properly

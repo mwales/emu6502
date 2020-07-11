@@ -157,37 +157,9 @@ bool NesRom::isFullyConfigured() const
    return (theConfigFlags == ROM_CONFIG_DONE);
 }
 
-std::vector<std::string> NesRom::getIntConfigParams() const
-{
-   std::vector<std::string> retVal;
-   return retVal;
-}
-
-std::vector<std::string> NesRom::getStringConfigParams() const
-{
-   std::vector<std::string> retVal;
-   retVal.push_back("romFilename");
-   return retVal;
-}
-
 std::string NesRom::getConfigTypeName() const
 {
    return getTypeName();
-}
-
-void NesRom::setIntConfigValue(std::string paramName, int value)
-{
-    // Empty
-}
-
-void NesRom::setStringConfigValue(std::string paramName, std::string value)
-{
-   if (paramName == "romFilename")
-   {
-      theRomFile = value;
-      theConfigFlags |= ROM_FILE_CONFIG;
-      NES_ROM_DEBUG() << "iNES ROM " << theName << " filename = " << theRomFile;
-   }
 }
 
 void NesRom::resetMemory()
