@@ -155,103 +155,152 @@ uint64_t Utils::parseUInt64(std::string userInput, bool* success)
 
 
 
-   std::string Utils::loadFile(std::string& name, std::string& errorOut)
+std::string Utils::loadFile(std::string& name, std::string& errorOut)
+{
+   std::string retVal;
+
+   SDL_RWops* f = SDL_RWFromFile(name.c_str(), "r");
+
+   if (f == NULL)
    {
-      std::string retVal;
+      errorOut = SDL_GetError();
+      return retVal;
+   }
 
-      SDL_RWops* f = SDL_RWFromFile(name.c_str(), "r");
-
-      if (f == NULL)
-      {
-         errorOut = SDL_GetError();
-         return retVal;
-      }
-
-      int fileSize = SDL_RWsize(f);
-      if (fileSize == -1)
-      {
-         errorOut = "Error getting the file size: ";
-         errorOut += SDL_GetError();
-         SDL_RWclose(f);
-         return retVal;
-      }
-
-      retVal.reserve(fileSize);
-
-      char buf[4097];
-      int bytesToRead = fileSize;
-      while(bytesToRead)
-      {
-         int bytesToReadIntoBuf = 4096;
-         if ( bytesToReadIntoBuf > bytesToRead)
-            bytesToReadIntoBuf = bytesToRead;
-
-         int numBytes = SDL_RWread(f, buf, 1, bytesToReadIntoBuf);
-
-         if (numBytes == 0)
-            break;
-
-         buf[numBytes] = 0;
-         retVal += buf;
-
-         bytesToRead -= numBytes;
-      }
-
+   int fileSize = SDL_RWsize(f);
+   if (fileSize == -1)
+   {
+      errorOut = "Error getting the file size: ";
+      errorOut += SDL_GetError();
       SDL_RWclose(f);
       return retVal;
    }
 
-   std::vector<std::string> Utils::tokenizeString(std::string const & input)
+   retVal.reserve(fileSize);
+
+   char buf[4097];
+   int bytesToRead = fileSize;
+   while(bytesToRead)
    {
-      std::vector<std::string> retVal;
-      int startToken = -1;
+      int bytesToReadIntoBuf = 4096;
+      if ( bytesToReadIntoBuf > bytesToRead)
+         bytesToReadIntoBuf = bytesToRead;
 
-      for(unsigned int i = 0; i < input.size(); i++)
-      {
-         char curChar = input.at(i);
-         if ( (curChar == ' ') || (curChar == '\t') || (curChar == '\n') || (curChar == '\r'))
-         {
-            // Found whitespace
-            if (startToken != -1)
-            {
-               // Found a token
-               std::string token = input.substr(startToken, i - startToken);
-               retVal.push_back(token);
+      int numBytes = SDL_RWread(f, buf, 1, bytesToReadIntoBuf);
 
-               startToken = -1;
-            }
-         }
-         else
-         {
-            // Not whitespace
-            if (startToken == -1)
-            {
-               startToken = i;
-            }
-         }
-      }
+      if (numBytes == 0)
+         break;
 
+      buf[numBytes] = 0;
+      retVal += buf;
+
+      bytesToRead -= numBytes;
+   }
+
+   SDL_RWclose(f);
+   return retVal;
+}
+
+std::vector<uint8_t> Utils::loadFileBytes(std::string& name, std::string& errorOut)
+{
+   std::vector<uint8_t> retVal;
+
+   SDL_RWops* f = SDL_RWFromFile(name.c_str(), "r");
+
+   if (f == NULL)
+   {
+      errorOut = SDL_GetError();
       return retVal;
    }
 
-   int Utils::readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp)
+   int fileSize = SDL_RWsize(f);
+   if (fileSize == -1)
    {
-       int bytesReadTotal = 0;
-       while (bytesReadTotal < numBytes)
-       {
-           int bytesRead = SDL_RWread(fp, buffer + bytesReadTotal, 1, numBytes - bytesReadTotal);
-
-           if (bytesRead == 0)
-           {
-               // We are out of bytes to read
-               return bytesReadTotal;
-           }
-
-           bytesReadTotal += bytesRead;
-       }
-
-       return bytesReadTotal;
+      errorOut = "Error getting the file size: ";
+      errorOut += SDL_GetError();
+      SDL_RWclose(f);
+      return retVal;
    }
+
+   retVal.reserve(fileSize);
+
+   uint8_t buf[4096];
+   int bytesToRead = fileSize;
+   while(bytesToRead)
+   {
+      int bytesToReadIntoBuf = 4096;
+      if ( bytesToReadIntoBuf > bytesToRead)
+         bytesToReadIntoBuf = bytesToRead;
+
+      int numBytes = SDL_RWread(f, buf, 1, bytesToReadIntoBuf);
+
+      if (numBytes == 0)
+         break;
+
+      buf[numBytes] = 0;
+      for(int i = 0; i < numBytes; i++)
+      {
+         retVal.push_back(buf[i]);
+      }
+      
+      bytesToRead -= numBytes;
+   }
+
+   SDL_RWclose(f);
+   return retVal;
+}
+
+std::vector<std::string> Utils::tokenizeString(std::string const & input)
+{
+   std::vector<std::string> retVal;
+   int startToken = -1;
+
+   for(unsigned int i = 0; i < input.size(); i++)
+   {
+      char curChar = input.at(i);
+      if ( (curChar == ' ') || (curChar == '\t') || (curChar == '\n') || (curChar == '\r'))
+      {
+         // Found whitespace
+         if (startToken != -1)
+         {
+            // Found a token
+            std::string token = input.substr(startToken, i - startToken);
+            retVal.push_back(token);
+
+            startToken = -1;
+         }
+      }
+      else
+      {
+         // Not whitespace
+         if (startToken == -1)
+         {
+            startToken = i;
+         }
+      }
+   }
+
+   return retVal;
+}
+
+int Utils::readUntilEof(uint8_t* buffer, int numBytes, SDL_RWops* fp)
+{
+    int bytesReadTotal = 0;
+    while (bytesReadTotal < numBytes)
+    {
+        int bytesRead = SDL_RWread(fp, buffer + bytesReadTotal, 1, numBytes - bytesReadTotal);
+
+        if (bytesRead == 0)
+        {
+            // We are out of bytes to read
+            return bytesReadTotal;
+        }
+
+        bytesReadTotal += bytesRead;
+    }
+
+    return bytesReadTotal;
+}
 
 
 std::string Utils::hexDump(uint8_t* buffer, int length)

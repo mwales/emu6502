@@ -9,6 +9,8 @@
 #include "ProcessorFactory.h"
 #include "MemoryDev.h"
 #include "force_execute.h"
+#include "Display.h"
+#include "DisplayCommands.h"
 
 
 #ifdef CHIP8_CPU_DEBUG
@@ -32,9 +34,10 @@
 
 
 Chip8Processor::Chip8Processor(std::string instanceName):
-   theHighResMode(false),
    theDisassembler(nullptr),
-   theSoundEnabled(true)
+   theSoundEnabled(true),
+   theDisplayQueue(nullptr),
+   theEventQueue(nullptr)
 {
    C8DEBUG() << "Creating an instance of" << instanceName;
    
@@ -62,6 +65,8 @@ Chip8Processor::~Chip8Processor()
 
 void Chip8Processor::resetState()
 {
+   C8DEBUG() << "resetState() called";
+
    // Reset the IP
    thePc = 0x0200;
 
@@ -77,14 +82,15 @@ void Chip8Processor::resetState()
    theKeysDown.clear();
    theCpuStack.clear();
 
-   //theScreen->clearScreen();
-   //theScreen->hiResModeEnable(false);
-   theHighResMode = false;
 
    // unsigned int loadAddr = thePc;
      
 
     // theDelayTimerExpiration = QDateTime::currentDateTime();
+
+   C8DEBUG() << "Going to start the display";
+
+
 }
 
 bool Chip8Processor::step()
@@ -105,6 +111,7 @@ bool Chip8Processor::step()
    thePc += 2;
    return true;
 }
+
 
 void Chip8Processor::keyDown(unsigned char key)
 {
@@ -169,7 +176,9 @@ unsigned char Chip8Processor::getDelayTimer()
 
 void Chip8Processor::insClearScreen()
 {
-   //theScreen->clearScreen();
+
+   theDisplay.clearScreen();
+
 }
 
 void Chip8Processor::insReturnFromSub()
@@ -590,72 +599,72 @@ void Chip8Processor::insLoadRegsFromIndexMemoryXo(unsigned regStart, unsigned re
 
 void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height)
 {
-//   QVector<unsigned char> spriteData;
-//   bool collision;
+   std::vector<uint8_t> spriteData;
+   bool collision;
 
-//   int numBytesRequired = height;
-//   if (height == 0)
-//   {
-//     if (theHighResMode)
-//     {
-//        // Sprite is 16-bits wide, 16 bits tall, 32 total bytes
-//        numBytesRequired = 32;
-//     }
-//     else
-//     {
-//        // Normal-res, sprite of 0 rows = 16 rows of 8 bits, 16 total bytes
-//        numBytesRequired = 16;
-//     }
-//   }
+   int numBytesRequired = height;
+   if (height == 0)
+   {
+     if (theDisplay.isHighResMode())
+     {
+        // Sprite is 16-bits wide, 16 bits tall, 32 total bytes
+        numBytesRequired = 32;
+     }
+     else
+     {
+        // Normal-res, sprite of 0 rows = 16 rows of 8 bits, 16 total bytes
+        numBytesRequired = 16;
+     }
+   }
 
-//   // For XO mode, there are multiple bit planes, see how many bit planes are active
-//   numBytesRequired *= theScreen->getNumBitPlanes();
+   // For XO mode, there are multiple bit planes, see how many bit planes are active
+   numBytesRequired *= theDisplay.getNumBitPlanes();
 
-//   // Does the memory fit the sprite data required
-//   if (theIndexRegister + numBytesRequired >= MAX_MEMORY)
-//   {
-//      C8DEBUG() << "Index register out of valid memory range for the draw sprite instruction.  Index = "
-//               << addressToString(theIndexRegister) << "and" << QString::number(numBytesRequired, 16)
-//               << "bytes are required.  CPU address is" << QString::number(thePc, 16);
-//      theStopFlag = true;
-//      return;
-//   }
+   // Does the memory fit the sprite data required
+   if (theIndexRegister + numBytesRequired >= MAX_MEMORY)
+   {
+      C8DEBUG() << "Index register out of valid memory range for the draw sprite instruction.  Index = "
+               << addressToString(theIndexRegister) << "and" << Utils::toHex16(numBytesRequired)
+               << "bytes are required.  CPU address is" << Utils::toHex16(thePc, 16);
+      theStopFlag = true;
+      return;
+   }
 
-//   for(unsigned int i = 0; i < numBytesRequired; i++)
-//   {
-//      spriteData.push_back(theMemory[theIndexRegister+i]);
-//   }
+   for(int i = 0; i < numBytesRequired; i++)
+   {
+      // spriteData.push_back(theMemory[theIndexRegister+i]);
+   }
 
-//   if (height > 0)
-//   {
-//      collision = theScreen->drawSprite(theCpuRegisters[xReg] % (theHighResMode ? 128 : 64),
-//                                        theCpuRegisters[yReg] % (theHighResMode ? 64 : 32),
-//                                        spriteData);
+   if (height > 0)
+   {
+      collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
+                                        theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
+                                        spriteData);
 
-//   }
-//   else
-//   {
-//      // height = 0, special super chip-8 form of instruction
-//      if (theHighResMode)
-//      {
-//         // Draw super sprite!
-//         collision = theScreen->drawSuperSprite(theCpuRegisters[xReg] % 128,
-//                                                theCpuRegisters[yReg] % 64,
-//                                                spriteData);
-//      }
-//      else
-//      {
-//         // Draw 16 row sprite!
-//         collision = theScreen->drawSprite(theCpuRegisters[xReg] % 64,
-//                                           theCpuRegisters[yReg] % 32,
-//                                           spriteData);
-//      }
-//   }
+   }
+   else
+   {
+      // height = 0, special super chip-8 form of instruction
+      if (theDisplay.isHighResMode())
+      {
+         // Draw super sprite!
+         collision = theDisplay.drawSuperSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
+                                                theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
+                                                spriteData);
+      }
+      else
+      {
+         // Draw 16 row sprite!
+         collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
+                                           theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
+                                           spriteData);
+      }
+   }
 
-//   if (collision)
-//      theCpuRegisters[0xf] = 1;
-//   else
-//      theCpuRegisters[0xf] = 0;
+   if (collision)
+      theCpuRegisters[0xf] = 1;
+   else
+      theCpuRegisters[0xf] = 0;
 }
 
 void Chip8Processor::insScrollDown(unsigned char numLines)
@@ -791,6 +800,9 @@ void Chip8Processor::loadFonts()
 //{
 //   theSoundEnabled = enable;
 //}
+
+
+
 
 std::vector<std::string> Chip8Processor::getRegisterNames()
 {

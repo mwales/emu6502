@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "EmulatorConfig.h"
-#include "DisplayManager.h"
+#include "Display.h"
 #include "ConfigManager.h"
 #include "MemoryFactory.h"
 #include "MemoryController.h"
@@ -29,6 +29,13 @@ const std::string TRACESTEPS_NAME = "stepCount";
 void printUsage(char* appName)
 {
    std::cout << appName << " is generic debugger / emulator" << std::endl;
+   std::cout << std::endl;
+   std::cout << "Configuration can be provided to the emulator via command line args or through" << std::endl;
+   std::cout << "Coniguration variable format is type.instance_name.var_name=value" << std::endl;
+   std::cout << std::endl;
+   std::cout << "Configuration Type: config" << std::endl;
+   std::cout << "    String config: filename" << std::endl;
+   std::cout << std::endl;
    std::cout << std::endl;
 }
 
@@ -108,8 +115,19 @@ int main(int argc, char* argv[])
       cpu->setMemoryController(memControl);
       cpu->registerDebugHandlerCommands(&d);
    }
+
+   Display* disp = Display::createInstance();
+   disp->registerDebuggerCommands(&d);
+   disp->processQueues();
+
+   cpu->resetState();
    
    d.start();
+
+   LOG_DEBUG() << "Shutting down emulator";
+
+   disp->destroyInstance();
+   disp = nullptr;
 
 
 //   constructCpuGlobals();

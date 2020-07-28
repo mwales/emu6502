@@ -47,6 +47,10 @@ protected:
    int theConfigFlags;
 
    uint8_t* theData;
+   
+   CpuAddress theLoadDataOffset;
+   
+   std::string theLoadDataFile;
 };
 
 #endif // RAMMEMORY_H

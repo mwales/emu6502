@@ -47,6 +47,11 @@ public:
         theList.push_back(std::make_pair(key, value));
         
     }
+
+    void set(K const & key, V const & value)
+    {
+       add(key, value);
+    }
     
     void remove(K const & key)
     {

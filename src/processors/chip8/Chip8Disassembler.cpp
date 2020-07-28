@@ -75,15 +75,15 @@ bool Chip8Disassembler::isInsEndOfBlock(CpuAddress addr)
 
 bool Chip8Disassembler::getByteFromAddress(CpuAddress address, uint8_t* retByte)
 {
-    MemoryDev* dev = theMemoryController->getDevice(address);
-    
-    if (dev == nullptr)
-    {
-       return false;
-    }
-    
-    *retByte = dev->read8(address);
-    return true;
+   MemoryDev* dev = theMemoryController->getDevice(address);
+   
+   if (dev == nullptr)
+   {
+      return false;
+   }
+   
+   *retByte = dev->read8(address);
+   return true;
 }
 
 void Chip8Disassembler::insClearScreen()

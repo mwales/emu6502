@@ -2,13 +2,16 @@
 #define CHIP8_PROCESSOR_H
 
 #include "Chip8Decoder.h"
-//#include "Chip8Screen.h"
+#include "Chip8Display.h"
 #include "Processor.h"
 
 #include <vector>
 #include <set>
 
+#include "SimpleQueue.h"
+
 class Chip8Disassembler;
+class Display;
 
 /**
  * Chip-8 Processor class
@@ -53,6 +56,8 @@ public:
    
    // From the decoder
    virtual bool getByteFromAddress(CpuAddress address, uint8_t* retByte);
+
+
    
 protected:
    
@@ -64,7 +69,6 @@ protected:
 
    // QDateTime theDelayTimerExpiration;
    std::vector<unsigned char> theHp48Flags;
-   bool theHighResMode;
    
    /**
     * Stop the emulator when it is running and hits one of these addresses with the IP
@@ -79,6 +83,8 @@ protected:
    // EmulationScreen* theScreen;
    
    Chip8Disassembler* theDisassembler;
+
+   Chip8Display theDisplay;
    
 
    
@@ -97,9 +103,9 @@ protected:
     * Loads the Chip-8 font sprites into memory below 0x200
     */
    void loadFonts();
-   
-   
-   
+
+
+
    // Chip-8 instruction handlers
    
    void insClearScreen();
@@ -198,6 +204,12 @@ protected:
    void insGraphicsPlane(unsigned char planeNum);
    
    void insBad(unsigned opCode);
+
+   SimpleQueue* theDisplayQueue;
+
+   SimpleQueue* theEventQueue;
+
+
 };
 
 #endif // CHIP8_PROCESSOR_H

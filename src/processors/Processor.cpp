@@ -2,6 +2,7 @@
 #include "Processor.h"
 #include "Logger.h"
 #include "Debugger.h"
+#include "Display.h"
 
 Processor::Processor():
     theMemoryController(nullptr),
@@ -51,7 +52,7 @@ void Processor::registerDebugHandlerCommands(Debugger* dbgr)
    dbgr->registerNewCommandHandler("regs", "Prints / Sets values of the registers",
                                    Processor::registersCommandHandlerStatic,
                                    this);
-   dbgr->registerNewCommandHandler("step", "Steps CPU through 1 instruction",
+   dbgr->registerNewCommandHandler("step", "Steps CPU through 1 or more instruction",
                                    Processor::stepCommandHandlerStatic,
                                    this);
    dbgr->registerNewCommandHandler("disass", "Disassembles instructions",
@@ -132,7 +133,18 @@ void Processor::registersCommandHandler(std::vector<std::string> const & args)
 
 void Processor::stepCommandHandler(std::vector<std::string> const & args)
 {
-   step();
+   int stepCount = 1;
+   if (args.size() > 0)
+   {
+      // User specified a step count
+      stepCount = atoi(args[0].c_str());
+   }
+
+   for(int i = 0; i < stepCount; i++)
+   {
+      step();
+      Display::getInstance()->processQueues();
+   }
    
    std::vector<std::string> emptyArgList;
    registersCommandHandler(emptyArgList);

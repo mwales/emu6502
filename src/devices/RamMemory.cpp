@@ -6,6 +6,7 @@
 #include "MemoryFactory.h"
 #include "force_execute.h"
 #include "Utils.h"
+#include "ConfigManager.h"
 
 #ifdef RAM_TRACE
    #define RAM_DEBUG    LOG_DEBUG
@@ -34,12 +35,17 @@ MemoryDeviceConstructor RamMemory::getMDC()
 RamMemory::RamMemory(std::string name):
    MemoryDev(name),
    theConfigFlags(0),
-   theData(nullptr)
+   theData(nullptr),
+   theLoadDataOffset(0)
 {
    RAM_DEBUG() << "Created a RAM device: " << name;
 
    theUint32ConfigParams.add("size", &theSize);
    theUint32ConfigParams.add("startAddress", &theAddress);
+   theUint32ConfigParams.add("loadDataOffset", &theLoadDataOffset);
+   theOptionalParams.add("loadDataOffset", false);
+   theStrConfigParams.add("loadDataFile", &theLoadDataFile);
+   theOptionalParams.add("loadDataFile", false);
 }
 
 RamMemory::~RamMemory()
@@ -117,16 +123,55 @@ void RamMemory::resetMemory()
    {
       if (theData != nullptr)
       {
-         LOG_WARNING() << "Reconfiguring RAM that was already initialized once";
+         RAM_WARNING() << "Reconfiguring RAM that was already initialized once";
          delete[] theData;
       }
 
       theData = new uint8_t[theSize];
       memset(theData, 0, theSize);
 
-      LOG_DEBUG() << "RAM INITIALIZED: " << theSize << " bytes "
+      RAM_DEBUG() << "RAM INITIALIZED: " << theSize << " bytes "
                   << addressToString(theAddress) << "-"
                   << addressToString(theAddress + theSize - 1);
+   } 
+   
+   if (!theLoadDataFile.empty())
+   {
+      // There is a file with initial RAM state to load
+      std::string configStr = ConfigManager::getInstance()->getConfigDirectory();
+
+      std::string fullPath = configStr + "/" + theLoadDataFile;
+
+      RAM_DEBUG() << "Going to load initial RAM data from" << fullPath << " at " << addressToString(theLoadDataOffset);
+      std::string errorStr;
+      std::vector<uint8_t> data = Utils::loadFileBytes(fullPath, errorStr);
+      
+      if (!errorStr.empty())
+      {
+         RAM_WARNING() << "Error loading RAM data from file: " << fullPath
+                       << ": " << errorStr;
+         return;
+      }
+      
+      // copy the  file contents into RAM
+      CpuAddress dataWriteLoc = theLoadDataOffset;
+      for(auto curByte: data)
+      {
+         if (dataWriteLoc >= theSize)
+         {
+            RAM_WARNING() << "Error loading RAM data, out of RAM";
+            return;
+         }
+         
+         theData[dataWriteLoc] = curByte;
+         dataWriteLoc += 1;
+      }
+
+      RAM_DEBUG() << "Data Loaded from file:" << Utils::hexDump(data.data(), data.size());
+   }
+   else
+   {
+      RAM_DEBUG() << "No filename for data to load into RAM";
    }
 }
 

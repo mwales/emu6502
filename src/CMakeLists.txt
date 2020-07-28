@@ -21,6 +21,7 @@ set (PROCESSOR_FILES
 	processors/chip8/Chip8Decoder.cpp
 	processors/chip8/Chip8Processor.cpp
 	processors/chip8/Chip8Disassembler.cpp
+   processors/chip8/Chip8Display.cpp
 	)
 
 set(EMULATOR_FILES  
@@ -33,6 +34,8 @@ set(EMULATOR_FILES
 	Utils.cpp
 	ConfigManager.cpp
 	Debugger.cpp
+	Display.cpp
+	SimpleQueue.cpp
 	)
 
 add_executable(emu ${EMULATOR_FILES} ${DEVICE_FILES} ${PROCESSOR_FILES})
