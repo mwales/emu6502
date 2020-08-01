@@ -2,6 +2,7 @@
 #include "Debugger.h"
 
 #include <cstring>
+#include <cstdlib>
 
 #include "Logger.h"
 #include "Utils.h"
@@ -471,6 +472,8 @@ bool Display::drawPixel(int x, int y, Color24 col)
        return true;
    }
 
+   SDL_RenderPresent(theRenderer);
+
    DISP_DEBUG() << "  pixel @ " << x << "," << y << ", color = " << colorToString(col);
    return true;
 }
@@ -478,6 +481,7 @@ bool Display::drawPixel(int x, int y, Color24 col)
 bool Display::handleDcHaltEmulation(DisplayCommand* cmd)
 {
    haltEmulation();
+   return false;
 }
 
 bool Display::haltEmulation()
@@ -674,6 +678,8 @@ void Display::registerDebuggerCommands(Debugger* d)
 {
    d->registerNewCommandHandler("displayres", "Sets the resolution of display screen",
                                 Display::setResolutionDebugHandlerStatic, this);
+   d->registerNewCommandHandler("drawpixel", "Draws a pixel on screen",
+                                Display::drawPixelDebugHandlerStatic, this);
 }
 
 void Display::setResolutionDebugHandlerStatic(std::vector<std::string> const & args, void* context)
@@ -686,3 +692,31 @@ void Display::setResolutionDebugHandler(std::vector<std::string> const & args)
 {
    DISP_DEBUG() << "Display Set Resolution Command called!";
 }
+
+void Display::drawPixelDebugHandlerStatic(std::vector<std::string> const & args, void* context)
+{
+   Display* disp = reinterpret_cast<Display*>(context);
+   disp->drawPixelDebugHandler(args);
+}
+
+void Display::drawPixelDebugHandler(std::vector<std::string> const & args)
+{
+   // args are x, y, r, g , b
+   if (args.size() != 5)
+   {
+      std::cout << "Usage: drawPixel x y redVal greenVal blueVal" << std::endl;
+      return;
+   }
+
+   int x, y;
+   uint8_t r, g, b;
+   x = atoi(args[0].c_str());
+   y = atoi(args[1].c_str());
+   r = (uint8_t) atoi(args[2].c_str());
+   g = (uint8_t) atoi(args[3].c_str());
+   b = (uint8_t) atoi(args[4].c_str());
+
+   Color24 col = {r, g, b};
+   drawPixel(x, y, col);
+}
+

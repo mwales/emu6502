@@ -51,6 +51,11 @@ public:
 
    void setResolutionDebugHandler(std::vector<std::string> const & args);
 
+   static void drawPixelDebugHandlerStatic(std::vector<std::string> const & args, void* context);
+
+   void drawPixelDebugHandler(std::vector<std::string> const & args);
+
+
    // Command Functions
    bool setResolution(int width, int height);
    bool setLogicalSize(int width, int height);
