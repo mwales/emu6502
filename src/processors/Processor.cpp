@@ -142,8 +142,17 @@ void Processor::stepCommandHandler(std::vector<std::string> const & args)
 
    for(int i = 0; i < stepCount; i++)
    {
-      step();
-      Display::getInstance()->processQueues();
+      if (!step())
+      {
+         std::cout << "Emulation halted in step function";
+         break;
+      }
+
+      if(!Display::getInstance()->processQueues())
+      {
+         std::cout << "Emulation halted by SDL event";
+         break;
+      }
    }
    
    std::vector<std::string> emptyArgList;

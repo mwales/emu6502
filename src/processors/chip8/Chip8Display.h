@@ -23,12 +23,23 @@ public:
    void clearScreen();
 
    // Returns true on collision
-   bool drawSprite(int x, int y, std::vector<uint8_t> spriteData);
+   bool drawSprite(unsigned int x, unsigned int y, unsigned int rowsToDraw,
+                   std::vector<uint8_t> spriteData);
    bool drawSuperSprite(int x, int y, std::vector<uint8_t> spriteData);
 
    bool isHighResMode();
 
+   void setResolution(bool highMode);
+
+   void redrawScreen();
+
 protected:
+
+   /**
+    * Gets the mask for a single plane.  Indexes the list of planes that are
+    * currently turned on (index should be less than getNumBitPlanes())
+    */
+   uint8_t getPlaneMask(int index);
 
    Display* theDisplay;
 

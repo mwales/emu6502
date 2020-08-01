@@ -17,7 +17,7 @@
    #define C8DEBUG  LOG_DEBUG
    #define C8WARNING  LOG_WARNING
 #else
-   #define C89DEBUG    if(0) LOG_DEBUG
+   #define C8DEBUG    if(0) LOG_DEBUG
    #define C8WARNING  if(0) LOG_WARNING
 #endif
 
@@ -89,7 +89,7 @@ void Chip8Processor::resetState()
     // theDelayTimerExpiration = QDateTime::currentDateTime();
 
    C8DEBUG() << "Going to start the display";
-
+   theDisplay.resetDisplay();
 
 }
 
@@ -474,13 +474,29 @@ void Chip8Processor::insSetIndexMemoryToRegBcd(unsigned reg)
 
    unsigned char val = theCpuRegisters[reg];
 
-   //theMemory[theIndexRegister] = val / 100;
+   if (!theMemoryController->write8(theIndexRegister, val/100))
+   {
+      C8WARNING() << "BCD operation accessed invalid memory address";
+      theStopFlag = true;
+      return;
+   }
+
    val = val % 100;
 
-   //theMemory[theIndexRegister+1] = val / 10;
+   if (!theMemoryController->write8(theIndexRegister + 1, val/10))
+   {
+      C8WARNING() << "BCD operation accessed invalid memory address";
+      theStopFlag = true;
+      return;
+   }
+
    val = val % 10;
 
-  // theMemory[theIndexRegister+2] = val;
+   if (!theMemoryController->write8(theIndexRegister + 2, val))
+   {
+      C8WARNING() << "BCD operation accessed invalid memory address";
+      theStopFlag = true;
+   }
 }
 
 void Chip8Processor::insStoreRegsToIndexMemory(unsigned reg)
@@ -495,7 +511,11 @@ void Chip8Processor::insStoreRegsToIndexMemory(unsigned reg)
 
    for(unsigned int i = 0; i <= reg; i++)
    {
-      //theMemory[theIndexRegister + i] = theCpuRegisters[i];
+      if (!theMemoryController->write8(theIndexRegister + i, theCpuRegisters[i]))
+      {
+         C8WARNING() << "Store operation accessed invalid memory address";
+         theStopFlag = true;
+      }
    }
 }
 
@@ -511,7 +531,16 @@ void Chip8Processor::insLoadRegsFromIndexMemory(unsigned reg)
 
    for(unsigned int i = 0; i <= reg; i++)
    {
-      //theCpuRegisters[i] = theMemory[theIndexRegister + i];
+      uint8_t val;
+      if (theMemoryController->read8(theIndexRegister + i, &val))
+      {
+         theCpuRegisters[i] = val;
+      }
+      else
+      {
+         C8WARNING() << "Load operation accessed invalid memory address";
+         theStopFlag = true;
+      }
    }
 }
 
@@ -542,7 +571,11 @@ void Chip8Processor::insStoreRegsToIndexMemoryXo(unsigned regStart, unsigned reg
    for(int i = 0; i < numRegisters; i++)
    {
 
-      //theMemory[theIndexRegister + i] = theCpuRegisters[regIndex];
+      if (!theMemoryController->write8(theIndexRegister + i, theCpuRegisters[regIndex]))
+      {
+         C8WARNING() << "StoreXo operation accessed invalid memory address";
+         theStopFlag = true;
+      }
 
       if (regStop > regStart)
       {
@@ -582,7 +615,16 @@ void Chip8Processor::insLoadRegsFromIndexMemoryXo(unsigned regStart, unsigned re
    for(int i = 0; i < numRegisters; i++)
    {
 
-      //theCpuRegisters[regIndex] = theMemory[theIndexRegister + i];
+      uint8_t val;
+      if (theMemoryController->read8(theIndexRegister + i, &val))
+      {
+         theCpuRegisters[regIndex] = val;
+      }
+      else
+      {
+         C8WARNING() << "LoadXo operation accessed invalid memory address";
+         theStopFlag = true;
+      }
 
       if (regStop > regStart)
       {
@@ -632,14 +674,20 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
 
    for(int i = 0; i < numBytesRequired; i++)
    {
-      // spriteData.push_back(theMemory[theIndexRegister+i]);
+      uint8_t val = 0;
+      if (!theMemoryController->read8(theIndexRegister + i, &val))
+      {
+         C8WARNING() << "Load operation accessed invalid memory address";
+         theStopFlag = true;
+      }
+      spriteData.push_back(val);
    }
 
    if (height > 0)
    {
       collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
                                         theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
-                                        spriteData);
+                                        height, spriteData);
 
    }
    else
@@ -657,7 +705,7 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
          // Draw 16 row sprite!
          collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
                                            theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
-                                           spriteData);
+                                           height, spriteData);
       }
    }
 
