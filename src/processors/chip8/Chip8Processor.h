@@ -87,8 +87,8 @@ protected:
    Chip8Display theDisplay;
    
 
-   
-   unsigned int theHiResFontsAddr;
+   CpuAddress theLowResFontsAddr;
+   CpuAddress theHiResFontsAddr;
    
    /**
     * How fast the emulator should process instructions
@@ -103,6 +103,9 @@ protected:
     * Loads the Chip-8 font sprites into memory below 0x200
     */
    void loadFonts();
+
+   bool load5BytesHelper(CpuAddress& addr, uint8_t byteA, uint8_t byteB,
+                         uint8_t byteC, uint8_t byteD, uint8_t byteE);
 
 
 
