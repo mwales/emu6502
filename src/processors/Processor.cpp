@@ -52,7 +52,7 @@ void Processor::registerDebugHandlerCommands(Debugger* dbgr)
    dbgr->registerNewCommandHandler("regs", "Prints / Sets values of the registers",
                                    Processor::registersCommandHandlerStatic,
                                    this);
-   dbgr->registerNewCommandHandler("step", "Steps CPU through 1 instruction",
+   dbgr->registerNewCommandHandler("step", "Steps CPU through 1 or more instruction",
                                    Processor::stepCommandHandlerStatic,
                                    this);
    dbgr->registerNewCommandHandler("disass", "Disassembles instructions",
@@ -133,8 +133,30 @@ void Processor::registersCommandHandler(std::vector<std::string> const & args)
 
 void Processor::stepCommandHandler(std::vector<std::string> const & args)
 {
-   step();
+
    Display::getInstance()->processQueues();
+
+   int stepCount = 1;
+   if (args.size() > 0)
+   {
+      // User specified a step count
+      stepCount = atoi(args[0].c_str());
+   }
+
+   for(int i = 0; i < stepCount; i++)
+   {
+      if (!step())
+      {
+         std::cout << "Emulation halted in step function";
+         break;
+      }
+
+      if(!Display::getInstance()->processQueues())
+      {
+         std::cout << "Emulation halted by SDL event";
+         break;
+      }
+   }
    
    std::vector<std::string> emptyArgList;
    registersCommandHandler(emptyArgList);

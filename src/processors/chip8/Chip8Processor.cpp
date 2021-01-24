@@ -17,7 +17,7 @@
    #define C8DEBUG  LOG_DEBUG
    #define C8WARNING  LOG_WARNING
 #else
-   #define C89DEBUG    if(0) LOG_DEBUG
+   #define C8DEBUG    if(0) LOG_DEBUG
    #define C8WARNING  if(0) LOG_WARNING
 #endif
 
@@ -37,8 +37,9 @@
 
 
 Chip8Processor::Chip8Processor(std::string instanceName):
-   theHighResMode(false),
    theDisassembler(nullptr),
+   theLowResFontsAddr(0x0),
+   theHiResFontsAddr(0x0),
    theSoundEnabled(true),
    theDisplayQueue(nullptr),
    theEventQueue(nullptr)
@@ -98,9 +99,6 @@ void Chip8Processor::resetState()
    theKeysDown.clear();
    theCpuStack.clear();
 
-   //theScreen->clearScreen();
-   //theScreen->hiResModeEnable(false);
-   theHighResMode = false;
 
    // unsigned int loadAddr = thePc;
      
@@ -109,31 +107,33 @@ void Chip8Processor::resetState()
 
    C8DEBUG() << "Going to start the display";
 
-   Display* theDisp = Display::getInstance();
-   theDisplayQueue = theDisp->getCommandQueue();
-   theEventQueue = theDisp->getEventQueue();
+//   Display* theDisp = Display::getInstance();
+//   theDisplayQueue = theDisp->getCommandQueue();
+//   theEventQueue = theDisp->getEventQueue();
 
-   // Send command to start the screen, low-res mode
-   DisplayCommand startCmd;
-   startCmd.id = SET_RESOLUTION;
-   startCmd.data.DcSetResolution.width = 640;
-   startCmd.data.DcSetResolution.height = 320;
-   theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &startCmd);
+//   // Send command to start the screen, low-res mode
+//   DisplayCommand startCmd;
+//   startCmd.id = SET_RESOLUTION;
+//   startCmd.data.DcSetResolution.width = 640;
+//   startCmd.data.DcSetResolution.height = 320;
+//   theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &startCmd);
 
-   DisplayCommand logicalResCmd;
-   logicalResCmd.id = SET_LOGICAL_SIZE;
-   logicalResCmd.data.DcSetLogicalSize.width = 64;
-   logicalResCmd.data.DcSetLogicalSize.height = 32;
-   theDisplayQueue->writeMessage(sizeof(logicalResCmd), (char*) &logicalResCmd);
+//   DisplayCommand logicalResCmd;
+//   logicalResCmd.id = SET_LOGICAL_SIZE;
+//   logicalResCmd.data.DcSetLogicalSize.width = 64;
+//   logicalResCmd.data.DcSetLogicalSize.height = 32;
+//   theDisplayQueue->writeMessage(sizeof(logicalResCmd), (char*) &logicalResCmd);
 
-   DisplayCommand clearScrCmd;
-   clearScrCmd.id = CLEAR_SCREEN;
-   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
-   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
-   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
-   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
+//   DisplayCommand clearScrCmd;
+//   clearScrCmd.id = CLEAR_SCREEN;
+//   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
+//   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
+//   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
+//   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
 
-   theDisp->processQueues();
+//   theDisp->processQueues();
+
+   theDisplay.resetDisplay();
 
 }
 
@@ -155,6 +155,7 @@ bool Chip8Processor::step()
    thePc += 2;
    return true;
 }
+
 
 void Chip8Processor::keyDown(unsigned char key)
 {
@@ -219,12 +220,15 @@ unsigned char Chip8Processor::getDelayTimer()
 
 void Chip8Processor::insClearScreen()
 {
-   DisplayCommand clearScrCmd;
-   clearScrCmd.id = CLEAR_SCREEN;
-   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
-   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
-   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
-   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
+
+//   DisplayCommand clearScrCmd;
+//   clearScrCmd.id = CLEAR_SCREEN;
+//   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
+//   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
+//   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
+//   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
+
+   theDisplay.clearScreen();
 }
 
 void Chip8Processor::insReturnFromSub()
@@ -520,13 +524,29 @@ void Chip8Processor::insSetIndexMemoryToRegBcd(unsigned reg)
 
    unsigned char val = theCpuRegisters[reg];
 
-   //theMemory[theIndexRegister] = val / 100;
+   if (!theMemoryController->write8(theIndexRegister, val/100))
+   {
+      C8WARNING() << "BCD operation accessed invalid memory address";
+      theStopFlag = true;
+      return;
+   }
+
    val = val % 100;
 
-   //theMemory[theIndexRegister+1] = val / 10;
+   if (!theMemoryController->write8(theIndexRegister + 1, val/10))
+   {
+      C8WARNING() << "BCD operation accessed invalid memory address";
+      theStopFlag = true;
+      return;
+   }
+
    val = val % 10;
 
-  // theMemory[theIndexRegister+2] = val;
+   if (!theMemoryController->write8(theIndexRegister + 2, val))
+   {
+      C8WARNING() << "BCD operation accessed invalid memory address";
+      theStopFlag = true;
+   }
 }
 
 void Chip8Processor::insStoreRegsToIndexMemory(unsigned reg)
@@ -541,7 +561,11 @@ void Chip8Processor::insStoreRegsToIndexMemory(unsigned reg)
 
    for(unsigned int i = 0; i <= reg; i++)
    {
-      //theMemory[theIndexRegister + i] = theCpuRegisters[i];
+      if (!theMemoryController->write8(theIndexRegister + i, theCpuRegisters[i]))
+      {
+         C8WARNING() << "Store operation accessed invalid memory address";
+         theStopFlag = true;
+      }
    }
 }
 
@@ -557,7 +581,16 @@ void Chip8Processor::insLoadRegsFromIndexMemory(unsigned reg)
 
    for(unsigned int i = 0; i <= reg; i++)
    {
-      //theCpuRegisters[i] = theMemory[theIndexRegister + i];
+      uint8_t val;
+      if (theMemoryController->read8(theIndexRegister + i, &val))
+      {
+         theCpuRegisters[i] = val;
+      }
+      else
+      {
+         C8WARNING() << "Load operation accessed invalid memory address";
+         theStopFlag = true;
+      }
    }
 }
 
@@ -588,7 +621,11 @@ void Chip8Processor::insStoreRegsToIndexMemoryXo(unsigned regStart, unsigned reg
    for(int i = 0; i < numRegisters; i++)
    {
 
-      //theMemory[theIndexRegister + i] = theCpuRegisters[regIndex];
+      if (!theMemoryController->write8(theIndexRegister + i, theCpuRegisters[regIndex]))
+      {
+         C8WARNING() << "StoreXo operation accessed invalid memory address";
+         theStopFlag = true;
+      }
 
       if (regStop > regStart)
       {
@@ -628,7 +665,16 @@ void Chip8Processor::insLoadRegsFromIndexMemoryXo(unsigned regStart, unsigned re
    for(int i = 0; i < numRegisters; i++)
    {
 
-      //theCpuRegisters[regIndex] = theMemory[theIndexRegister + i];
+      uint8_t val;
+      if (theMemoryController->read8(theIndexRegister + i, &val))
+      {
+         theCpuRegisters[regIndex] = val;
+      }
+      else
+      {
+         C8WARNING() << "LoadXo operation accessed invalid memory address";
+         theStopFlag = true;
+      }
 
       if (regStop > regStart)
       {
@@ -651,7 +697,8 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
    int numBytesRequired = height;
    if (height == 0)
    {
-     if (theHighResMode)
+
+     if (theDisplay.isHighResMode())
      {
         // Sprite is 16-bits wide, 16 bits tall, 32 total bytes
         numBytesRequired = 32;
@@ -663,54 +710,153 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
      }
    }
 
-//   // For XO mode, there are multiple bit planes, see how many bit planes are active
-//   numBytesRequired *= theScreen->getNumBitPlanes();
+   // For XO mode, there are multiple bit planes, see how many bit planes are active
+   numBytesRequired *= theDisplay.getNumBitPlanes();
 
-//   // Does the memory fit the sprite data required
-//   if (theIndexRegister + numBytesRequired >= MAX_MEMORY)
-//   {
-//      C8DEBUG() << "Index register out of valid memory range for the draw sprite instruction.  Index = "
-//               << addressToString(theIndexRegister) << "and" << QString::number(numBytesRequired, 16)
-//               << "bytes are required.  CPU address is" << QString::number(thePc, 16);
-//      theStopFlag = true;
-//      return;
-//   }
+   // Does the memory fit the sprite data required
+   if (theIndexRegister + numBytesRequired >= MAX_MEMORY)
+   {
+      C8DEBUG() << "Index register out of valid memory range for the draw sprite instruction.  Index = "
+               << addressToString(theIndexRegister) << "and" << Utils::toHex16(numBytesRequired)
+               << "bytes are required.  CPU address is" << Utils::toHex16(thePc, 16);
+      theStopFlag = true;
+      return;
+   }
 
    for(int i = 0; i < numBytesRequired; i++)
    {
-      uint8_t sd = 0;
-      getByteFromAddress(theIndexRegister+i, &sd);
-      spriteData.push_back(sd);
+
+      uint8_t val = 0;
+      if (!theMemoryController->read8(theIndexRegister + i, &val))
+      {
+         C8WARNING() << "Load operation accessed invalid memory address";
+         theStopFlag = true;
+      }
+      spriteData.push_back(val);
+
    }
 
    if (height > 0)
    {
-      collision = drawSpriteHelper(theCpuRegisters[xReg],
-                                   theCpuRegisters[yReg],
-                                   8,
-                                   numBytesRequired,
-                                   spriteData);
+
+//      collision = drawSpriteHelper(theCpuRegisters[xReg],
+//                                   theCpuRegisters[yReg],
+//                                   8,
+//                                   numBytesRequired,
+//                                   spriteData);
+//   }
+//   else
+//   {
+//      // height = 0, special super chip-8 form of instruction
+//      if (theHighResMode)
+//      {
+//         // Draw super sprite!
+//         collision = drawSpriteHelper(theCpuRegisters[xReg],
+//                                      theCpuRegisters[yReg],
+//                                      16,
+//                                      numBytesRequired / 2,
+//                                      spriteData);
+//      }
+//      else
+//      {
+//         // Draw 16 row sprite!
+//         collision = drawSpriteHelper(theCpuRegisters[xReg],
+//                                      theCpuRegisters[yReg],
+//                                      8,
+//                                      numBytesRequired,
+//                                      spriteData);
+//      }
+//   }
+
+//   if (collision)
+//      theCpuRegisters[0xf] = 1;
+//   else
+//      theCpuRegisters[0xf] = 0;
+//}
+
+//bool Chip8Processor::drawSpriteHelper(uint8_t x, uint8_t y, uint8_t width, uint8_t height, std::vector<uint8_t> spriteData)
+//{
+//   C8DEBUG() << "drawSpriteHelper(" << (int) x << "," << (int) y << "," << (int) width << "," << (int) height
+//             << "len(" << spriteData.size() << ") " << Utils::hexDump(spriteData.data(), spriteData.size()) << "):";
+
+//   bool collisionOccured = false;
+
+//   int curByte = 0;
+//   int curBit = 0x80;
+//   for(uint16_t curY = y; curY < y + height; curY++)
+//   {
+//      int curYWrapped = curY % (theHighResMode ? HIGH_RES_HEIGHT : LOW_RES_HEIGHT);
+
+//      for(uint16_t curX = x; curX < x + width; curX++)
+//      {
+//         int curXWrapped = curX % (theHighResMode ? HIGH_RES_WIDTH : LOW_RES_WIDTH);
+
+//         // Is the current bit set?
+//         bool spriteBitSet = spriteData[curByte] & curBit;
+//         bool bitSetPreviously = theFrameBuffer[curYWrapped][curXWrapped];
+
+//         bool changePixelState  = spriteBitSet != bitSetPreviously;
+
+//         C8DEBUG() << "  (" << curXWrapped << "," << curYWrapped << "), bitSet=" << (spriteBitSet ? "Y" : "N")
+//                   << ", prevSet=" << (bitSetPreviously ? "Y" : "N") << ", changeState=" << (changePixelState ? "Y" : "N")
+//                   << ", curByte=" << curByte << ", curBit=" << curBit;
+
+//         if (spriteBitSet && bitSetPreviously)
+//         {
+//            collisionOccured = true;
+//         }
+
+//         if (changePixelState)
+//         {
+//            // Flip the state of the pixel in the frame buffer
+//            theFrameBuffer[curYWrapped][curXWrapped] = theFrameBuffer[curYWrapped][curXWrapped] ? 0 : 1;
+
+//            DisplayCommand setPixel;
+//            setPixel.id = DRAW_PIXEL;
+//            setPixel.data.DcDrawPixel.x = curXWrapped;
+//            setPixel.data.DcDrawPixel.y = curYWrapped;
+//            setPixel.data.DcDrawPixel.color.red   = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
+//            setPixel.data.DcDrawPixel.color.green = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
+//            setPixel.data.DcDrawPixel.color.blue  = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
+//            theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &setPixel);
+//         }
+
+//         if (curBit == 0x01)
+//         {
+//            curBit = 0x80;
+//            curByte++;
+//         }
+//         else
+//         {
+//            curBit >>= 1;
+//         }
+//      }
+
+//   }
+
+//   return collisionOccured;
+
+      collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
+                                        theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
+                                        height, spriteData);
+
    }
    else
    {
       // height = 0, special super chip-8 form of instruction
-      if (theHighResMode)
+      if (theDisplay.isHighResMode())
       {
          // Draw super sprite!
-         collision = drawSpriteHelper(theCpuRegisters[xReg],
-                                      theCpuRegisters[yReg],
-                                      16,
-                                      numBytesRequired / 2,
-                                      spriteData);
+         collision = theDisplay.drawSuperSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
+                                                theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
+                                                spriteData);
       }
       else
       {
          // Draw 16 row sprite!
-         collision = drawSpriteHelper(theCpuRegisters[xReg],
-                                      theCpuRegisters[yReg],
-                                      8,
-                                      numBytesRequired,
-                                      spriteData);
+         collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
+                                           theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
+                                           height, spriteData);
       }
    }
 
@@ -718,69 +864,7 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
       theCpuRegisters[0xf] = 1;
    else
       theCpuRegisters[0xf] = 0;
-}
 
-bool Chip8Processor::drawSpriteHelper(uint8_t x, uint8_t y, uint8_t width, uint8_t height, std::vector<uint8_t> spriteData)
-{
-   C8DEBUG() << "drawSpriteHelper(" << (int) x << "," << (int) y << "," << (int) width << "," << (int) height
-             << "len(" << spriteData.size() << ") " << Utils::hexDump(spriteData.data(), spriteData.size()) << "):";
-
-   bool collisionOccured = false;
-
-   int curByte = 0;
-   int curBit = 0x80;
-   for(uint16_t curY = y; curY < y + height; curY++)
-   {
-      int curYWrapped = curY % (theHighResMode ? HIGH_RES_HEIGHT : LOW_RES_HEIGHT);
-
-      for(uint16_t curX = x; curX < x + width; curX++)
-      {
-         int curXWrapped = curX % (theHighResMode ? HIGH_RES_WIDTH : LOW_RES_WIDTH);
-
-         // Is the current bit set?
-         bool spriteBitSet = spriteData[curByte] & curBit;
-         bool bitSetPreviously = theFrameBuffer[curYWrapped][curXWrapped];
-
-         bool changePixelState  = spriteBitSet != bitSetPreviously;
-
-         C8DEBUG() << "  (" << curXWrapped << "," << curYWrapped << "), bitSet=" << (spriteBitSet ? "Y" : "N")
-                   << ", prevSet=" << (bitSetPreviously ? "Y" : "N") << ", changeState=" << (changePixelState ? "Y" : "N")
-                   << ", curByte=" << curByte << ", curBit=" << curBit;
-
-         if (spriteBitSet && bitSetPreviously)
-         {
-            collisionOccured = true;
-         }
-
-         if (changePixelState)
-         {
-            // Flip the state of the pixel in the frame buffer
-            theFrameBuffer[curYWrapped][curXWrapped] = theFrameBuffer[curYWrapped][curXWrapped] ? 0 : 1;
-
-            DisplayCommand setPixel;
-            setPixel.id = DRAW_PIXEL;
-            setPixel.data.DcDrawPixel.x = curXWrapped;
-            setPixel.data.DcDrawPixel.y = curYWrapped;
-            setPixel.data.DcDrawPixel.color.red   = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
-            setPixel.data.DcDrawPixel.color.green = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
-            setPixel.data.DcDrawPixel.color.blue  = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
-            theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &setPixel);
-         }
-
-         if (curBit == 0x01)
-         {
-            curBit = 0x80;
-            curByte++;
-         }
-         else
-         {
-            curBit >>= 1;
-         }
-      }
-
-   }
-
-   return collisionOccured;
 }
 
 void Chip8Processor::insScrollDown(unsigned char numLines)
@@ -852,62 +936,82 @@ void Chip8Processor::insBad(unsigned opCode)
    theStopFlag = true;
 }
 
+bool Chip8Processor::load5BytesHelper(CpuAddress& addr, uint8_t byteA, uint8_t byteB,
+                      uint8_t byteC, uint8_t byteD, uint8_t byteE)
+{
+   bool retVal = true;
+   retVal = retVal && theMemoryController->write8(addr++, byteA);
+   retVal = retVal && theMemoryController->write8(addr++, byteB);
+   retVal = retVal && theMemoryController->write8(addr++, byteC);
+   retVal = retVal && theMemoryController->write8(addr++, byteD);
+   retVal = retVal && theMemoryController->write8(addr++, byteE);
+   return retVal;
+
+}
+
 void Chip8Processor::loadFonts()
 {
    // Low res Font codes found at:  http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#dispcoords
+   bool status = true;
+   CpuAddress curFontAddr = 0x100;
+   theLowResFontsAddr = curFontAddr;
 
-//   theMemory << 0xf0 << 0x90 << 0x90 << 0x90 << 0xf0; // 0
-//   theMemory << 0x20 << 0x60 << 0x20 << 0x20 << 0x70;
-//   theMemory << 0xf0 << 0x10 << 0xf0 << 0x80 << 0xf0;
-//   theMemory << 0xf0 << 0x10 << 0xf0 << 0x10 << 0xf0;
-//   theMemory << 0x90 << 0x90 << 0xf0 << 0x10 << 0x10;
-//   theMemory << 0xf0 << 0x80 << 0xf0 << 0x10 << 0xf0; // 5
-//   theMemory << 0xf0 << 0x80 << 0xf0 << 0x90 << 0xf0;
-//   theMemory << 0xf0 << 0x10 << 0x20 << 0x40 << 0x40;
-//   theMemory << 0xf0 << 0x90 << 0xf0 << 0x90 << 0xf0;
-//   theMemory << 0xf0 << 0x90 << 0xf0 << 0x10 << 0xf0;
-//   theMemory << 0xf0 << 0x90 << 0xf0 << 0x90 << 0x90; // A
-//   theMemory << 0xe0 << 0x90 << 0xe0 << 0x90 << 0xe0;
-//   theMemory << 0xf0 << 0x80 << 0x80 << 0x80 << 0xf0;
-//   theMemory << 0xe0 << 0x90 << 0x90 << 0x90 << 0xe0;
-//   theMemory << 0xf0 << 0x80 << 0xf0 << 0x80 << 0xf0;
-//   theMemory << 0xf0 << 0x80 << 0xf0 << 0x80 << 0x80; // F
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x90, 0x90, 0x90, 0xf0); // 0
+   status = status && load5BytesHelper(curFontAddr, 0x20, 0x60, 0x20, 0x20, 0x70);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x10, 0xf0, 0x80, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x10, 0xf0, 0x10, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0x90, 0x90, 0xf0, 0x10, 0x10);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x80, 0xf0, 0x10, 0xf0); // 5
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x80, 0xf0, 0x90, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x10, 0x20, 0x40, 0x40);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x90, 0xf0, 0x90, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x90, 0xf0, 0x10, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x90, 0xf0, 0x90, 0x90); // A
+   status = status && load5BytesHelper(curFontAddr, 0xe0, 0x90, 0xe0, 0x90, 0xe0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x80, 0x80, 0x80, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0xe0, 0x90, 0x90, 0x90, 0xe0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x80, 0xf0, 0x80, 0xf0);
+   status = status && load5BytesHelper(curFontAddr, 0xf0, 0x80, 0xf0, 0x80, 0x80); // F
 
-//   theHiResFontsAddr = theMemory.size();
+   theHiResFontsAddr = curFontAddr;
 
-//   theMemory << 0x3c << 0x66 << 0xc3 << 0x81 << 0x81
-//             << 0x81 << 0x81 << 0xc3 << 0x66 << 0x3c; // 0
-//   theMemory << 0x10 << 0x30 << 0x10 << 0x10 << 0x10
-//             << 0x10 << 0x10 << 0x10 << 0x10 << 0x7e;
-//   theMemory << 0x3c << 0x66 << 0x81 << 0x01 << 0x03
-//             << 0x06 << 0x38 << 0xc0 << 0x80 << 0xff;
-//   theMemory << 0x7e << 0x83 << 0x81 << 0x01 << 0x06
-//             << 0x06 << 0x01 << 0x81 << 0x83 << 0x7e;
-//   theMemory << 0x04 << 0x0c << 0x14 << 0x24 << 0x44
-//             << 0xff << 0x04 << 0x04 << 0x04 << 0x04;
-//   theMemory << 0xff << 0x80 << 0x80 << 0x80 << 0xfe
-//             << 0xc2 << 0x01 << 0x01 << 0x83 << 0x7e; // 5
-//   theMemory << 0x3e << 0x41 << 0x81 << 0x80 << 0xbc
-//             << 0xc2 << 0x81 << 0x81 << 0x81 << 0x7e;
-//   theMemory << 0xff << 0x01 << 0x03 << 0x06 << 0x08
-//             << 0x10 << 0x20 << 0x60 << 0x40 << 0x80;
-//   theMemory << 0x18 << 0x24 << 0x42 << 0x42 << 0x3c
-//             << 0x42 << 0x81 << 0x81 << 0x81 << 0x7e;
-//   theMemory << 0x7e << 0x81 << 0x81 << 0x81 << 0x43
-//             << 0x3d << 0x01 << 0x81 << 0x86 << 0x7c;
-//   theMemory << 0x18 << 0x66 << 0x42 << 0x81 << 0x81
-//             << 0xff << 0x81 << 0x81 << 0x81 << 0x81; // A
-//   theMemory << 0xfc << 0x82 << 0x82 << 0x82 << 0xfc
-//             << 0x82 << 0x81 << 0x81 << 0x81 << 0xfe;
-//   theMemory << 0x3c << 0x66 << 0xc3 << 0x81 << 0x80
-//             << 0x80 << 0x81 << 0xc3 << 0x66 << 0x3c;
-//   theMemory << 0xf8 << 0x84 << 0x82 << 0x81 << 0x81
-//             << 0x81 << 0x81 << 0x82 << 0x84 << 0xf8;
-//   theMemory << 0xff << 0x80 << 0x80 << 0x80 << 0x80
-//             << 0xfc << 0x80 << 0x80 << 0x80 << 0xff;
-//   theMemory << 0xff << 0x80 << 0x80 << 0x80 << 0x80
-//             << 0xfc << 0x80 << 0x80 << 0x80 << 0x80; // F
+   status = status && load5BytesHelper(curFontAddr, 0x3c, 0x66, 0xc3, 0x81, 0x81);
+   status = status && load5BytesHelper(curFontAddr, 0x81, 0x81, 0xc3, 0x66, 0x3c); // 0
+   status = status && load5BytesHelper(curFontAddr, 0x10, 0x30, 0x10, 0x10, 0x10);
+   status = status && load5BytesHelper(curFontAddr, 0x10, 0x10, 0x10, 0x10, 0x7e);
+   status = status && load5BytesHelper(curFontAddr, 0x3c, 0x66, 0x81, 0x01, 0x03);
+   status = status && load5BytesHelper(curFontAddr, 0x06, 0x38, 0xc0, 0x80, 0xff);
+   status = status && load5BytesHelper(curFontAddr, 0x7e, 0x83, 0x81, 0x01, 0x06);
+   status = status && load5BytesHelper(curFontAddr, 0x06, 0x01, 0x81, 0x83, 0x7e);
+   status = status && load5BytesHelper(curFontAddr, 0x04, 0x0c, 0x14, 0x24, 0x44);
+   status = status && load5BytesHelper(curFontAddr, 0xff, 0x04, 0x04, 0x04, 0x04);
+   status = status && load5BytesHelper(curFontAddr, 0xff, 0x80, 0x80, 0x80, 0xfe);
+   status = status && load5BytesHelper(curFontAddr, 0xc2, 0x01, 0x01, 0x83, 0x7e); // 5
+   status = status && load5BytesHelper(curFontAddr, 0x3e, 0x41, 0x81, 0x80, 0xbc);
+   status = status && load5BytesHelper(curFontAddr, 0xc2, 0x81, 0x81, 0x81, 0x7e);
+   status = status && load5BytesHelper(curFontAddr, 0xff, 0x01, 0x03, 0x06, 0x08);
+   status = status && load5BytesHelper(curFontAddr, 0x10, 0x20, 0x60, 0x40, 0x80);
+   status = status && load5BytesHelper(curFontAddr, 0x18, 0x24, 0x42, 0x42, 0x3c);
+   status = status && load5BytesHelper(curFontAddr, 0x42, 0x81, 0x81, 0x81, 0x7e);
+   status = status && load5BytesHelper(curFontAddr, 0x7e, 0x81, 0x81, 0x81, 0x43);
+   status = status && load5BytesHelper(curFontAddr, 0x3d, 0x01, 0x81, 0x86, 0x7c);
+   status = status && load5BytesHelper(curFontAddr, 0x18, 0x66, 0x42, 0x81, 0x81);
+   status = status && load5BytesHelper(curFontAddr, 0xff, 0x81, 0x81, 0x81, 0x81); // A
+   status = status && load5BytesHelper(curFontAddr, 0xfc, 0x82, 0x82, 0x82, 0xfc);
+   status = status && load5BytesHelper(curFontAddr, 0x82, 0x81, 0x81, 0x81, 0xfe);
+   status = status && load5BytesHelper(curFontAddr, 0x3c, 0x66, 0xc3, 0x81, 0x80);
+   status = status && load5BytesHelper(curFontAddr, 0x80, 0x81, 0xc3, 0x66, 0x3c);
+   status = status && load5BytesHelper(curFontAddr, 0xf8, 0x84, 0x82, 0x81, 0x81);
+   status = status && load5BytesHelper(curFontAddr, 0x81, 0x81, 0x82, 0x84, 0xf8);
+   status = status && load5BytesHelper(curFontAddr, 0xff, 0x80, 0x80, 0x80, 0x80);
+   status = status && load5BytesHelper(curFontAddr, 0xfc, 0x80, 0x80, 0x80, 0xff);
+   status = status && load5BytesHelper(curFontAddr, 0xff, 0x80, 0x80, 0x80, 0x80);
+   status = status && load5BytesHelper(curFontAddr, 0xfc, 0x80, 0x80, 0x80, 0x80); // F
 
+   if (!status)
+   {
+      C8WARNING() << "Error loading the fonts into RAM";
+   }
 }
 
 // Controls to play, pause, reset the emulator
@@ -916,6 +1020,9 @@ void Chip8Processor::loadFonts()
 //{
 //   theSoundEnabled = enable;
 //}
+
+
+
 
 std::vector<std::string> Chip8Processor::getRegisterNames()
 {

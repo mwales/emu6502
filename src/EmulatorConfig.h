@@ -89,5 +89,8 @@
 // Chip-8 CPU debug
 #define CHIP8_CPU_DEBUG
 
+// Chip-8 Display debug
+#define CHIP8_DISPLAY_DEBUG
+
 #endif
 

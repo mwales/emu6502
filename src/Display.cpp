@@ -2,6 +2,7 @@
 #include "Debugger.h"
 
 #include <cstring>
+#include <cstdlib>
 
 #include "Logger.h"
 #include "Utils.h"
@@ -208,7 +209,6 @@ bool Display::processQueues()
                                                               (char*) &cmd,
                                                               sizeof(DisplayCommand));
 
-
       if (!callSuccessful)
       {
          DISP_WARNING() << "Error trying to read display command queue";
@@ -337,7 +337,6 @@ SimpleQueue* Display::getEventQueue()
    return theEventCommandQueue;
 }
 
-
 bool Display::handleDcSetResolution(DisplayCommand* cmd)
 {
    return setResolution(cmd->data.DcSetResolution.width, cmd->data.DcSetResolution.height);
@@ -382,24 +381,27 @@ bool Display::setResolution(int width, int height)
 
 bool Display::handleDcSetLogicalSize(DisplayCommand* cmd)
 {
+   return setLogicalSize(cmd->data.DcSetLogicalSize.width,
+                         cmd->data.DcSetLogicalSize.height);
+}
+
+bool Display::setLogicalSize(int width, int height)
+{
    if ( (theWindow == nullptr) || (theRenderer == nullptr) )
    {
       LOG_FATAL() << "Can't set logical size of renderer if SDL window not initialized";
       return true;
    }
 
-   SDL_TRACE() << "SDL_RenderSetLogicalSize(pointer," << cmd->data.DcSetLogicalSize.width
-               << "," << cmd->data.DcSetLogicalSize.height << ")";
+   SDL_TRACE() << "SDL_RenderSetLogicalSize(pointer," << width << "," << height << ")";
 
-   if (SDL_RenderSetLogicalSize(theRenderer, cmd->data.DcSetLogicalSize.width,
-                                cmd->data.DcSetLogicalSize.height))
+   if (SDL_RenderSetLogicalSize(theRenderer, width, height))
    {
       DISP_WARNING() << "Error setting logical renderer size:" << SDL_GetError();
    }
    else
    {
-      DISP_DEBUG() << "Set SDL Renderer to " << cmd->data.DcSetLogicalSize.width << "x"
-                   << cmd->data.DcSetLogicalSize.height << "successfully";
+      DISP_DEBUG() << "Set SDL Renderer to " << width << "x" << height << "successfully";
    }
 
    return true;
@@ -407,17 +409,19 @@ bool Display::handleDcSetLogicalSize(DisplayCommand* cmd)
 
 bool Display::handleDcClearScreen(DisplayCommand* cmd)
 {
+   return clearScreen(cmd->data.DcClearScreen.blankColor);
+}
+
+bool Display::clearScreen(Color24 bgcolor)
+{
    DISP_DEBUG() << "Display has received a clear screen command";
 
-   SDL_TRACE() << "SDL_SetRenderDrawColor(pointer," << Utils::toHex8(cmd->data.DcClearScreen.blankColor.red)
-               << "," << Utils::toHex8(cmd->data.DcClearScreen.blankColor.green)
-               << "," << Utils::toHex8(cmd->data.DcClearScreen.blankColor.blue) << ",SDL_ALPHA_OPAQUE)";
+   SDL_TRACE() << "SDL_SetRenderDrawColor(pointer," << Utils::toHex8(bgcolor.red)
+               << "," << Utils::toHex8(bgcolor.green) << ","
+               << Utils::toHex8(bgcolor.blue) << ",SDL_ALPHA_OPAQUE)";
 
-   if (SDL_SetRenderDrawColor(theRenderer,
-                              cmd->data.DcClearScreen.blankColor.red,
-                              cmd->data.DcClearScreen.blankColor.green,
-                              cmd->data.DcClearScreen.blankColor.blue,
-                              SDL_ALPHA_OPAQUE))
+   if (SDL_SetRenderDrawColor(theRenderer, bgcolor.red, bgcolor.green,
+                              bgcolor.blue, SDL_ALPHA_OPAQUE))
    {
       DISP_WARNING() << "Error setting the color of renderer before clearing screen:"
                      << SDL_GetError();
@@ -433,40 +437,53 @@ bool Display::handleDcClearScreen(DisplayCommand* cmd)
    return true;
 }
 
+
+
 bool Display::handleDcDrawPixel(DisplayCommand* cmd)
+{
+   return drawPixel(cmd->data.DcDrawPixel.x, cmd->data.DcDrawPixel.y,
+                    cmd->data.DcDrawPixel.color);
+}
+
+bool Display::drawPixel(int x, int y, Color24 col)
 {
    DISP_DEBUG() << "Display has received a draw pixel command";
 
-   SDL_TRACE() << "SDL_SetRenderDrawColor(pointer," << Utils::toHex8(cmd->data.DcDrawPixel.color.red)
-               << "," << Utils::toHex8(cmd->data.DcDrawPixel.color.green)
-               << "," << Utils::toHex8(cmd->data.DcDrawPixel.color.blue) << ",SDL_ALPHA_OPAQUE)";
+   SDL_TRACE() << "SDL_SetRenderDrawColor(pointer," << Utils::toHex8(col.red)
+               << "," << Utils::toHex8(col.green)
+               << "," << Utils::toHex8(col.blue) << ",SDL_ALPHA_OPAQUE)";
 
    if (SDL_SetRenderDrawColor(theRenderer,
-                              cmd->data.DcDrawPixel.color.red,
-                              cmd->data.DcDrawPixel.color.green,
-                              cmd->data.DcDrawPixel.color.blue,
+                              col.red,
+                              col.green,
+                              col.blue,
                               SDL_ALPHA_OPAQUE))
    {
        DISP_WARNING() << "drawPixel failed to set color";
        return true;
    }
 
-   SDL_TRACE() << "SDL_RenderDrawPoint(pointer," << cmd->data.DcDrawPixel.x
-               << "," << cmd->data.DcDrawPixel.y << ")";
+   SDL_TRACE() << "SDL_RenderDrawPoint(pointer," << x << "," << y << ")";
 
-   if (SDL_RenderDrawPoint(theRenderer, cmd->data.DcDrawPixel.x,
-                            cmd->data.DcDrawPixel.y))
+   if (SDL_RenderDrawPoint(theRenderer, x, y))
    {
        DISP_WARNING() << "drawPixel failed to draw pixel after setting color";
        return true;
    }
 
-   DISP_DEBUG() << "  pixel @ " << cmd->data.DcDrawPixel.x << "," << cmd->data.DcDrawPixel.y
-                << ", color = " << colorToString(cmd->data.DcDrawPixel.color);
+   SDL_RenderPresent(theRenderer);
+
+   DISP_DEBUG() << "  pixel @ " << x << "," << y << ", color = " << colorToString(col);
    return true;
 }
 
 bool Display::handleDcHaltEmulation(DisplayCommand* cmd)
+{
+   haltEmulation();
+   return false;
+}
+
+bool Display::haltEmulation()
 {
    DISP_DEBUG() << "Display has received a halt emulation command";
    return false;
@@ -660,6 +677,9 @@ void Display::registerDebuggerCommands(Debugger* d)
 {
    d->registerNewCommandHandler("displayres", "Sets the resolution of display screen",
                                 Display::setResolutionDebugHandlerStatic, this);
+
+   d->registerNewCommandHandler("drawpixel", "Draws a pixel on screen",
+                                Display::drawPixelDebugHandlerStatic, this);
 }
 
 void Display::setResolutionDebugHandlerStatic(std::vector<std::string> const & args, void* context)
@@ -671,4 +691,31 @@ void Display::setResolutionDebugHandlerStatic(std::vector<std::string> const & a
 void Display::setResolutionDebugHandler(std::vector<std::string> const & args)
 {
    DISP_DEBUG() << "Display Set Resolution Command called!";
+}
+
+void Display::drawPixelDebugHandlerStatic(std::vector<std::string> const & args, void* context)
+{
+   Display* disp = reinterpret_cast<Display*>(context);
+   disp->drawPixelDebugHandler(args);
+}
+
+void Display::drawPixelDebugHandler(std::vector<std::string> const & args)
+{
+   // args are x, y, r, g , b
+   if (args.size() != 5)
+   {
+      std::cout << "Usage: drawPixel x y redVal greenVal blueVal" << std::endl;
+      return;
+   }
+
+   int x, y;
+   uint8_t r, g, b;
+   x = atoi(args[0].c_str());
+   y = atoi(args[1].c_str());
+   r = (uint8_t) atoi(args[2].c_str());
+   g = (uint8_t) atoi(args[3].c_str());
+   b = (uint8_t) atoi(args[4].c_str());
+
+   Color24 col = {r, g, b};
+   drawPixel(x, y, col);
 }

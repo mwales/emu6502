@@ -2,7 +2,7 @@
 #define CHIP8_PROCESSOR_H
 
 #include "Chip8Decoder.h"
-//#include "Chip8Screen.h"
+#include "Chip8Display.h"
 #include "Processor.h"
 
 #include <vector>
@@ -11,6 +11,7 @@
 #include "SimpleQueue.h"
 
 class Chip8Disassembler;
+class Display;
 
 /**
  * Chip-8 Processor class
@@ -55,6 +56,8 @@ public:
    
    // From the decoder
    virtual bool getByteFromAddress(CpuAddress address, uint8_t* retByte);
+
+
    
 protected:
    
@@ -66,7 +69,6 @@ protected:
 
    // QDateTime theDelayTimerExpiration;
    std::vector<unsigned char> theHp48Flags;
-   bool theHighResMode;
    
    /**
     * Stop the emulator when it is running and hits one of these addresses with the IP
@@ -81,10 +83,12 @@ protected:
    // EmulationScreen* theScreen;
    
    Chip8Disassembler* theDisassembler;
+
+   Chip8Display theDisplay;
    
 
-   
-   unsigned int theHiResFontsAddr;
+   CpuAddress theLowResFontsAddr;
+   CpuAddress theHiResFontsAddr;
    
    /**
     * How fast the emulator should process instructions
@@ -100,12 +104,9 @@ protected:
     */
    void loadFonts();
 
-   // Returns true if there was a collision (drew on top of an existing pixel)
-   bool drawSpriteHelper(uint8_t x, uint8_t y, uint8_t width, uint8_t height, std::vector<uint8_t> spriteData);
-   
-   // For simplicity, the frame buffer will store the color of current pixel (8-bit color) at high-resolution
-   std::vector<std::vector<uint8_t> > theFrameBuffer;
-   
+   bool load5BytesHelper(CpuAddress& addr, uint8_t byteA, uint8_t byteB,
+                         uint8_t byteC, uint8_t byteD, uint8_t byteE);
+
    // Chip-8 instruction handlers
    
    void insClearScreen();
@@ -208,6 +209,11 @@ protected:
    SimpleQueue* theDisplayQueue;
 
    SimpleQueue* theEventQueue;
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 542a09b1176cd34073af15ab2346a80f798b8065
 };
 
 #endif // CHIP8_PROCESSOR_H

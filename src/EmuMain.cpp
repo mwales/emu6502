@@ -31,12 +31,14 @@ void printUsage(char* appName)
    std::cout << appName << " is generic debugger / emulator" << std::endl;
    std::cout << std::endl;
 
-   std::cout << "Configuration parameters are specified via the following convention:" << std::endl;
-   std::cout << "   type.instance_name.config_key=value" << std::endl;
+   std::cout << "Configuration can be provided to the emulator via command line args or through" << std::endl;
+   std::cout << "Coniguration variable format is type.instance_name.var_name=value" << std::endl;
    std::cout << std::endl;
-   std::cout << "Configuration items can be specified on command line, or in a config file:" << std::endl;
-   std::cout << "To specify a config file:" << std::endl;
-   std::cout << "   " << CONFIGFILE_TYPE << ".dontcare." << CONFIGFILE_NAME << "=configfilename.txt" << std::endl;
+   std::cout << "Configuration Type: config" << std::endl;
+   std::cout << "    String config: filename" << std::endl;
+   std::cout << std::endl;
+   std::cout << std::endl;
+
 }
 
 bool initializeSdl()
