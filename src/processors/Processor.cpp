@@ -2,6 +2,7 @@
 #include "Processor.h"
 #include "Logger.h"
 #include "Debugger.h"
+#include "Display.h"
 
 Processor::Processor():
     theMemoryController(nullptr),
@@ -133,6 +134,7 @@ void Processor::registersCommandHandler(std::vector<std::string> const & args)
 void Processor::stepCommandHandler(std::vector<std::string> const & args)
 {
    step();
+   Display::getInstance()->processQueues();
    
    std::vector<std::string> emptyArgList;
    registersCommandHandler(emptyArgList);

@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "EmulatorConfig.h"
-#include "DisplayManager.h"
+#include "Display.h"
 #include "ConfigManager.h"
 #include "MemoryFactory.h"
 #include "MemoryController.h"
@@ -30,6 +30,13 @@ void printUsage(char* appName)
 {
    std::cout << appName << " is generic debugger / emulator" << std::endl;
    std::cout << std::endl;
+
+   std::cout << "Configuration parameters are specified via the following convention:" << std::endl;
+   std::cout << "   type.instance_name.config_key=value" << std::endl;
+   std::cout << std::endl;
+   std::cout << "Configuration items can be specified on command line, or in a config file:" << std::endl;
+   std::cout << "To specify a config file:" << std::endl;
+   std::cout << "   " << CONFIGFILE_TYPE << ".dontcare." << CONFIGFILE_NAME << "=configfilename.txt" << std::endl;
 }
 
 bool initializeSdl()
@@ -108,8 +115,19 @@ int main(int argc, char* argv[])
       cpu->setMemoryController(memControl);
       cpu->registerDebugHandlerCommands(&d);
    }
+
+   Display* disp = Display::createInstance();
+   disp->registerDebuggerCommands(&d);
+   disp->processQueues();
+
+   cpu->resetState();
    
    d.start();
+
+   LOG_DEBUG() << "Shutting down emulator";
+
+   disp->destroyInstance();
+   disp = nullptr;
 
 
 //   constructCpuGlobals();

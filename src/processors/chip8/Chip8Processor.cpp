@@ -9,6 +9,8 @@
 #include "ProcessorFactory.h"
 #include "MemoryDev.h"
 #include "force_execute.h"
+#include "Display.h"
+#include "DisplayCommands.h"
 
 
 #ifdef CHIP8_CPU_DEBUG
@@ -28,13 +30,18 @@
 #define FONT_HEIGHT_STD        5
 #define FONT_HEIGHT_HIRES      10
 
-
+#define LOW_RES_WIDTH      64
+#define LOW_RES_HEIGHT     32
+#define HIGH_RES_WIDTH     128
+#define HIGH_RES_HEIGHT    64
 
 
 Chip8Processor::Chip8Processor(std::string instanceName):
    theHighResMode(false),
    theDisassembler(nullptr),
-   theSoundEnabled(true)
+   theSoundEnabled(true),
+   theDisplayQueue(nullptr),
+   theEventQueue(nullptr)
 {
    C8DEBUG() << "Creating an instance of" << instanceName;
    
@@ -46,6 +53,18 @@ Chip8Processor::Chip8Processor(std::string instanceName):
    loadFonts();
    
    thePc = 0x200;
+
+   // Initialize the frame buffer
+   std::vector<uint8_t> rowOfPixels;
+   for(int x = 0; x < HIGH_RES_WIDTH; x++)
+   {
+      rowOfPixels.push_back(0);
+   }
+
+   for(int y = 0; y < HIGH_RES_HEIGHT; y++)
+   {
+      theFrameBuffer.push_back(rowOfPixels);
+   }
 }
 
 Chip8Processor::~Chip8Processor()
@@ -62,6 +81,8 @@ Chip8Processor::~Chip8Processor()
 
 void Chip8Processor::resetState()
 {
+   C8DEBUG() << "resetState() called";
+
    // Reset the IP
    thePc = 0x0200;
 
@@ -85,6 +106,35 @@ void Chip8Processor::resetState()
      
 
     // theDelayTimerExpiration = QDateTime::currentDateTime();
+
+   C8DEBUG() << "Going to start the display";
+
+   Display* theDisp = Display::getInstance();
+   theDisplayQueue = theDisp->getCommandQueue();
+   theEventQueue = theDisp->getEventQueue();
+
+   // Send command to start the screen, low-res mode
+   DisplayCommand startCmd;
+   startCmd.id = SET_RESOLUTION;
+   startCmd.data.DcSetResolution.width = 640;
+   startCmd.data.DcSetResolution.height = 320;
+   theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &startCmd);
+
+   DisplayCommand logicalResCmd;
+   logicalResCmd.id = SET_LOGICAL_SIZE;
+   logicalResCmd.data.DcSetLogicalSize.width = 64;
+   logicalResCmd.data.DcSetLogicalSize.height = 32;
+   theDisplayQueue->writeMessage(sizeof(logicalResCmd), (char*) &logicalResCmd);
+
+   DisplayCommand clearScrCmd;
+   clearScrCmd.id = CLEAR_SCREEN;
+   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
+   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
+   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
+   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
+
+   theDisp->processQueues();
+
 }
 
 bool Chip8Processor::step()
@@ -169,7 +219,12 @@ unsigned char Chip8Processor::getDelayTimer()
 
 void Chip8Processor::insClearScreen()
 {
-   //theScreen->clearScreen();
+   DisplayCommand clearScrCmd;
+   clearScrCmd.id = CLEAR_SCREEN;
+   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
+   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
+   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
+   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
 }
 
 void Chip8Processor::insReturnFromSub()
@@ -590,23 +645,23 @@ void Chip8Processor::insLoadRegsFromIndexMemoryXo(unsigned regStart, unsigned re
 
 void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height)
 {
-//   QVector<unsigned char> spriteData;
-//   bool collision;
+   std::vector<uint8_t> spriteData;
+   bool collision;
 
-//   int numBytesRequired = height;
-//   if (height == 0)
-//   {
-//     if (theHighResMode)
-//     {
-//        // Sprite is 16-bits wide, 16 bits tall, 32 total bytes
-//        numBytesRequired = 32;
-//     }
-//     else
-//     {
-//        // Normal-res, sprite of 0 rows = 16 rows of 8 bits, 16 total bytes
-//        numBytesRequired = 16;
-//     }
-//   }
+   int numBytesRequired = height;
+   if (height == 0)
+   {
+     if (theHighResMode)
+     {
+        // Sprite is 16-bits wide, 16 bits tall, 32 total bytes
+        numBytesRequired = 32;
+     }
+     else
+     {
+        // Normal-res, sprite of 0 rows = 16 rows of 8 bits, 16 total bytes
+        numBytesRequired = 16;
+     }
+   }
 
 //   // For XO mode, there are multiple bit planes, see how many bit planes are active
 //   numBytesRequired *= theScreen->getNumBitPlanes();
@@ -621,41 +676,111 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
 //      return;
 //   }
 
-//   for(unsigned int i = 0; i < numBytesRequired; i++)
-//   {
-//      spriteData.push_back(theMemory[theIndexRegister+i]);
-//   }
+   for(int i = 0; i < numBytesRequired; i++)
+   {
+      uint8_t sd = 0;
+      getByteFromAddress(theIndexRegister+i, &sd);
+      spriteData.push_back(sd);
+   }
 
-//   if (height > 0)
-//   {
-//      collision = theScreen->drawSprite(theCpuRegisters[xReg] % (theHighResMode ? 128 : 64),
-//                                        theCpuRegisters[yReg] % (theHighResMode ? 64 : 32),
-//                                        spriteData);
+   if (height > 0)
+   {
+      collision = drawSpriteHelper(theCpuRegisters[xReg],
+                                   theCpuRegisters[yReg],
+                                   8,
+                                   numBytesRequired,
+                                   spriteData);
+   }
+   else
+   {
+      // height = 0, special super chip-8 form of instruction
+      if (theHighResMode)
+      {
+         // Draw super sprite!
+         collision = drawSpriteHelper(theCpuRegisters[xReg],
+                                      theCpuRegisters[yReg],
+                                      16,
+                                      numBytesRequired / 2,
+                                      spriteData);
+      }
+      else
+      {
+         // Draw 16 row sprite!
+         collision = drawSpriteHelper(theCpuRegisters[xReg],
+                                      theCpuRegisters[yReg],
+                                      8,
+                                      numBytesRequired,
+                                      spriteData);
+      }
+   }
 
-//   }
-//   else
-//   {
-//      // height = 0, special super chip-8 form of instruction
-//      if (theHighResMode)
-//      {
-//         // Draw super sprite!
-//         collision = theScreen->drawSuperSprite(theCpuRegisters[xReg] % 128,
-//                                                theCpuRegisters[yReg] % 64,
-//                                                spriteData);
-//      }
-//      else
-//      {
-//         // Draw 16 row sprite!
-//         collision = theScreen->drawSprite(theCpuRegisters[xReg] % 64,
-//                                           theCpuRegisters[yReg] % 32,
-//                                           spriteData);
-//      }
-//   }
+   if (collision)
+      theCpuRegisters[0xf] = 1;
+   else
+      theCpuRegisters[0xf] = 0;
+}
 
-//   if (collision)
-//      theCpuRegisters[0xf] = 1;
-//   else
-//      theCpuRegisters[0xf] = 0;
+bool Chip8Processor::drawSpriteHelper(uint8_t x, uint8_t y, uint8_t width, uint8_t height, std::vector<uint8_t> spriteData)
+{
+   C8DEBUG() << "drawSpriteHelper(" << (int) x << "," << (int) y << "," << (int) width << "," << (int) height
+             << "len(" << spriteData.size() << ") " << Utils::hexDump(spriteData.data(), spriteData.size()) << "):";
+
+   bool collisionOccured = false;
+
+   int curByte = 0;
+   int curBit = 0x80;
+   for(uint16_t curY = y; curY < y + height; curY++)
+   {
+      int curYWrapped = curY % (theHighResMode ? HIGH_RES_HEIGHT : LOW_RES_HEIGHT);
+
+      for(uint16_t curX = x; curX < x + width; curX++)
+      {
+         int curXWrapped = curX % (theHighResMode ? HIGH_RES_WIDTH : LOW_RES_WIDTH);
+
+         // Is the current bit set?
+         bool spriteBitSet = spriteData[curByte] & curBit;
+         bool bitSetPreviously = theFrameBuffer[curYWrapped][curXWrapped];
+
+         bool changePixelState  = spriteBitSet != bitSetPreviously;
+
+         C8DEBUG() << "  (" << curXWrapped << "," << curYWrapped << "), bitSet=" << (spriteBitSet ? "Y" : "N")
+                   << ", prevSet=" << (bitSetPreviously ? "Y" : "N") << ", changeState=" << (changePixelState ? "Y" : "N")
+                   << ", curByte=" << curByte << ", curBit=" << curBit;
+
+         if (spriteBitSet && bitSetPreviously)
+         {
+            collisionOccured = true;
+         }
+
+         if (changePixelState)
+         {
+            // Flip the state of the pixel in the frame buffer
+            theFrameBuffer[curYWrapped][curXWrapped] = theFrameBuffer[curYWrapped][curXWrapped] ? 0 : 1;
+
+            DisplayCommand setPixel;
+            setPixel.id = DRAW_PIXEL;
+            setPixel.data.DcDrawPixel.x = curXWrapped;
+            setPixel.data.DcDrawPixel.y = curYWrapped;
+            setPixel.data.DcDrawPixel.color.red   = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
+            setPixel.data.DcDrawPixel.color.green = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
+            setPixel.data.DcDrawPixel.color.blue  = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
+            theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &setPixel);
+         }
+
+         if (curBit == 0x01)
+         {
+            curBit = 0x80;
+            curByte++;
+         }
+         else
+         {
+            curBit >>= 1;
+         }
+      }
+
+   }
+
+   return collisionOccured;
 }
 
 void Chip8Processor::insScrollDown(unsigned char numLines)

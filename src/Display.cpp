@@ -1,4 +1,5 @@
 #include "Display.h"
+#include "Debugger.h"
 
 #include <cstring>
 
@@ -20,6 +21,40 @@
    #define SDL_TRACE    if(0) LOG_DEBUG
 #endif
 
+Display* Display::theInstancePtr = nullptr;
+
+Display* Display::createInstance()
+{
+   if (theInstancePtr != nullptr)
+   {
+      DISP_WARNING() << "createInstance called when instance pointer already created";
+   }
+
+   theInstancePtr = new Display();
+   return theInstancePtr;
+}
+
+Display* Display::getInstance()
+{
+   if (theInstancePtr == nullptr)
+   {
+      DISP_WARNING() << "getInstance called with theInstancePtr null";
+   }
+
+   return theInstancePtr;
+}
+
+void Display::destroyInstance()
+{
+   if (theInstancePtr == nullptr)
+   {
+      DISP_WARNING() << "destroyInstance called with theInstancePtr null";
+   }
+
+   delete theInstancePtr;
+   theInstancePtr = nullptr;
+}
+
 
 Display::Display():
    theDisplayCommandQueue(nullptr),
@@ -29,6 +64,9 @@ Display::Display():
    theDisplayClosingExternallyTriggered(false)
 {
    DISP_DEBUG() << "Display constructor called";
+
+   theDisplayCommandQueue = new SimpleQueue(1024);
+   theEventCommandQueue = new SimpleQueue(1024);
 }
 
 Display::~Display()
@@ -152,6 +190,97 @@ bool Display::startDisplay()
    return true;  // we are closing because emulator told us too
 }
 
+bool Display::processQueues()
+{
+   DISP_DEBUG() << "Display processing queues";
+
+   DisplayCommand cmd;
+   memset((char*) &cmd, 0, sizeof(DisplayCommand));
+
+   bool runFlag = true;
+   int numBytesInCommand = 0;
+   bool callSuccessful = true;
+
+   // Clear all the events in the display command queue
+   do
+   {
+      callSuccessful = theDisplayCommandQueue->tryReadMessage(&numBytesInCommand,
+                                                              (char*) &cmd,
+                                                              sizeof(DisplayCommand));
+
+
+      if (!callSuccessful)
+      {
+         DISP_WARNING() << "Error trying to read display command queue";
+         break;
+      }
+
+      DISP_DEBUG() << "DISP RX: " << Utils::hexDump((uint8_t*) &cmd, numBytesInCommand);
+
+      if (numBytesInCommand == 0)
+      {
+         // There are no commands left, so nothing
+         DISP_DEBUG() << "No Display commands ready at this point";
+      }
+      else if (numBytesInCommand != sizeof(DisplayCommand))
+      {
+         DISP_WARNING() << "Received command in Display Q with wrong size.  Size = "
+                        << numBytesInCommand << "not" << sizeof(DisplayCommand);
+      }
+      else
+      {
+         // Message received is the correct size for a DisplayCommand
+         runFlag = handleDisplayQueueCommand(&cmd);
+      }
+
+   } while (numBytesInCommand > 0);
+
+   SDL_TRACE() << "SDL_RenderPresent(pointer)";
+   SDL_RenderPresent(theRenderer);
+
+   // Check for events from SDL
+   int sdlCallSuccess;
+   SDL_Event ev;
+   sdlCallSuccess = SDL_WaitEventTimeout(&ev, 10);
+   SDL_TRACE() << "SDL_WaitEventTimeout(pointer,1000)";
+
+   if (sdlCallSuccess)
+   {
+      switch(ev.type)
+      {
+      case SDL_KEYDOWN:
+         DISP_DEBUG() << "Received Keydown event";
+         break;
+
+      case SDL_KEYUP:
+         DISP_DEBUG() << "Received Keyup event";
+         break;
+
+      case SDL_QUIT:
+         DISP_DEBUG() << "Received Quit event";
+         runFlag = false;  // user closed by clicking X
+         break;
+
+      default:
+         DISP_DEBUG() << "Received unexpected SDL event type:" << sdlEventTypeToString(ev.type);
+      }
+
+      if (isSdlEventInteresting(ev.type))
+      {
+         DISP_DEBUG() << "Found an interesting event";
+         theEventCommandQueue->writeMessage(sizeof(SDL_Event), (char*) &ev);
+      }
+
+
+   }
+   else
+   {
+      DISP_DEBUG() << "No SDL event received";
+   }
+
+   return runFlag;
+}
+
 bool Display::handleDisplayQueueCommand(DisplayCommand* cmd)
 {
    DISP_DEBUG() << "Handling display queue event" << (int) cmd->id;
@@ -187,17 +316,34 @@ bool Display::handleDisplayQueueCommand(DisplayCommand* cmd)
 
 void Display::setCommandQueue(SimpleQueue* cmdQ)
 {
-   DISP_DEBUG() << "Display has received a reference to the command queue";
+   DISP_WARNING() << "Display has received a reference to the command queue (OLD API USE)";
    theDisplayCommandQueue = cmdQ;
 }
 
 void Display::setEventQueue(SimpleQueue* eventQ)
 {
-    DISP_DEBUG() << "Display has received a reference to the event queue";
-    theEventCommandQueue = eventQ;
+   DISP_WARNING() << "Display has received a reference to the event queue (OLD API USE)";
+   theEventCommandQueue = eventQ;
 }
 
+
+SimpleQueue* Display::getCommandQueue()
+{
+   return theDisplayCommandQueue;
+}
+
+SimpleQueue* Display::getEventQueue()
+{
+   return theEventCommandQueue;
+}
+
+
 bool Display::handleDcSetResolution(DisplayCommand* cmd)
+{
+   return setResolution(cmd->data.DcSetResolution.width, cmd->data.DcSetResolution.height);
+}
+
+bool Display::setResolution(int width, int height)
 {
    DISP_DEBUG() << "Display has received a set resolution command";
 
@@ -211,11 +357,10 @@ bool Display::handleDcSetResolution(DisplayCommand* cmd)
       DISP_DEBUG() << "Creating SDL window";
 
       SDL_TRACE() << "SDL_CreateWindow(\"EMU 6502\", SDL_WINDOWPOS_CENTERED, SDLWINDOWPOS_CENTERED,"
-                  << cmd->data.DcSetResolution.width << "," << cmd->data.DcSetResolution.height << ",0)";
+                  << width << "," << height << ",0)";
 
       theWindow = SDL_CreateWindow("EMU 6502", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                   cmd->data.DcSetResolution.width,
-                                   cmd->data.DcSetResolution.height, 0);
+                                   width, height, 0);
 
       if (theWindow == NULL)
       {
@@ -509,4 +654,21 @@ std::string Display::colorToString(Color24 c)
     retVal += ")";
 
     return retVal;
+}
+
+void Display::registerDebuggerCommands(Debugger* d)
+{
+   d->registerNewCommandHandler("displayres", "Sets the resolution of display screen",
+                                Display::setResolutionDebugHandlerStatic, this);
+}
+
+void Display::setResolutionDebugHandlerStatic(std::vector<std::string> const & args, void* context)
+{
+   Display* disp = reinterpret_cast<Display*>(context);
+   disp->setResolutionDebugHandler(args);
+}
+
+void Display::setResolutionDebugHandler(std::vector<std::string> const & args)
+{
+   DISP_DEBUG() << "Display Set Resolution Command called!";
 }

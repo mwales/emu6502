@@ -184,12 +184,24 @@ bool MemoryDev::configSelf()
          *(theUint32ConfigParams.getValue(key32bit)) = temp;
          LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
                      << "." << key32bit << "=" << Utils::toHex32(temp);
+
+         if (theOptionalParams.contains(key32bit))
+         {
+            theOptionalParams.set(key32bit, true);
+         }
       }
       else
       {
-         LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
-                       << theName << "." << key32bit;
-         retVal = false;
+         if (theOptionalParams.contains(key32bit))
+         {
+            LOG_DEBUG() << "Optional config not present:" << key32bit;
+         }
+         else
+         {
+            LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
+                          << theName << "." << key32bit;
+            retVal = false;
+         }
       }
    }
 
@@ -205,12 +217,24 @@ bool MemoryDev::configSelf()
          *(theUint16ConfigParams.getValue(key16bit)) = temp;
          LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
                      << "." << key16bit << "=" << Utils::toHex16(temp);
+
+         if (theOptionalParams.contains(key16bit))
+         {
+            theOptionalParams.set(key16bit, true);
+         }
       }
       else
       {
-         LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
-                       << theName << "." << key16bit;
-         retVal = false;
+         if (theOptionalParams.contains(key16bit))
+         {
+            LOG_DEBUG() << "Optional config not present:" << key16bit;
+         }
+         else
+         {
+            LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
+                          << theName << "." << key16bit;
+            retVal = false;
+         }
       }
    }
    
@@ -226,12 +250,24 @@ bool MemoryDev::configSelf()
          *(theStrConfigParams.getValue(keyStr)) = temp;
          LOG_DEBUG() << "Config: " << getConfigTypeName() << "." << theName
                      << "." << keyStr << "=" << temp;
+
+         if (theOptionalParams.contains(keyStr))
+         {
+            theOptionalParams.set(keyStr, true);
+         }
       }
       else
       {
-         LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
-                       << theName << "." << keyStr;
-         retVal = false;
+         if (theOptionalParams.contains(keyStr))
+         {
+            LOG_DEBUG() << "Optional config not present:" << keyStr;
+         }
+         else
+         {
+            LOG_WARNING() << "Config Missing: " << getConfigTypeName() << "."
+                          << theName << "." << keyStr;
+            retVal = false;
+         }
       }
    }
 
@@ -257,6 +293,11 @@ bool MemoryDev::configSelf()
          retVal += ", ";
       }
       retVal += curConfig;
+
+      if (theOptionalParams.contains(curConfig))
+      {
+          retVal += " (optional)";
+      }
    }
       
    isFirst = true;
@@ -272,6 +313,11 @@ bool MemoryDev::configSelf()
          retVal += ", ";
       }
       retVal += curConfig;
+
+      if (theOptionalParams.contains(curConfig))
+      {
+          retVal += " (optional)";
+      }
    }
       
    isFirst = true;
@@ -287,6 +333,11 @@ bool MemoryDev::configSelf()
          retVal += ", ";
       }
       retVal += curConfig;
+
+      if (theOptionalParams.contains(curConfig))
+      {
+          retVal += " (optional)";
+      }
    }
    retVal += "\n";
    

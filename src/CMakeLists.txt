@@ -33,6 +33,8 @@ set(EMULATOR_FILES
 	Utils.cpp
 	ConfigManager.cpp
 	Debugger.cpp
+	Display.cpp
+	SimpleQueue.cpp
 	)
 
 add_executable(emu ${EMULATOR_FILES} ${DEVICE_FILES} ${PROCESSOR_FILES})

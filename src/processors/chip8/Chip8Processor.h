@@ -8,6 +8,8 @@
 #include <vector>
 #include <set>
 
+#include "SimpleQueue.h"
+
 class Chip8Disassembler;
 
 /**
@@ -97,8 +99,12 @@ protected:
     * Loads the Chip-8 font sprites into memory below 0x200
     */
    void loadFonts();
+
+   // Returns true if there was a collision (drew on top of an existing pixel)
+   bool drawSpriteHelper(uint8_t x, uint8_t y, uint8_t width, uint8_t height, std::vector<uint8_t> spriteData);
    
-   
+   // For simplicity, the frame buffer will store the color of current pixel (8-bit color) at high-resolution
+   std::vector<std::vector<uint8_t> > theFrameBuffer;
    
    // Chip-8 instruction handlers
    
@@ -198,6 +204,10 @@ protected:
    void insGraphicsPlane(unsigned char planeNum);
    
    void insBad(unsigned opCode);
+
+   SimpleQueue* theDisplayQueue;
+
+   SimpleQueue* theEventQueue;
 };
 
 #endif // CHIP8_PROCESSOR_H

@@ -8,7 +8,9 @@
 #include "DisplayCommands.h"
 
 #include <vector>
+#include <string>
 
+class Debugger;
 
 /**
  * Displays graphics for the user.  Receives command messages from the display
@@ -18,9 +20,14 @@
 class Display
 {
 public:
-   Display();
 
-   virtual ~Display();
+   static Display* createInstance();
+
+   static Display* getInstance();
+
+   static void destroyInstance();
+
+
 
    /**
     * Starts the display, blocks until the display is closed
@@ -32,11 +39,29 @@ public:
 
    void setEventQueue(SimpleQueue* eventQ);
 
+   SimpleQueue* getCommandQueue();
+
+   SimpleQueue* getEventQueue();
+
+   void registerDebuggerCommands(Debugger* d);
+
+   bool processQueues();
+
+   static void setResolutionDebugHandlerStatic(std::vector<std::string> const & args, void* context);
+
+   void setResolutionDebugHandler(std::vector<std::string> const & args);
+
 protected:
+
+
+   Display();
+
+   virtual ~Display();
 
    bool handleDisplayQueueCommand(DisplayCommand* cmd);
 
    bool handleDcSetResolution(DisplayCommand* cmd);
+   bool setResolution(int width, int height);
 
    bool handleDcSetLogicalSize(DisplayCommand* cmd);
 
@@ -72,6 +97,8 @@ protected:
    bool theDisplayClosingExternallyTriggered;
 
    std::vector<uint32_t> theEventsOfInterest;
+
+   static Display* theInstancePtr;
 
 };
 

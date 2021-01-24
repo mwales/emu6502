@@ -42,6 +42,15 @@ public:
     * @return File contents
     */
    static std::string loadFile(std::string& name, std::string& errorOut);
+   
+   /**
+    * Loads an entire file into a vector of bytes
+    * @param name Filename to load
+    * @param[out] errorOut Returns an error if one occurs.  Intialize with empty string before
+    *             calling and check to see if still empty
+    * @return File contents
+    */
+   static std::vector<uint8_t> loadFileBytes(std::string& name, std::string& errorOut);
 
    /// Converts a string into a list of the string parts (whitespace removed)
    static std::vector<std::string> tokenizeString(std::string const & input);
