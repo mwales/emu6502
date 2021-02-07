@@ -149,7 +149,7 @@ bool Display::startDisplay()
       // Check for events from SDL
       int sdlCallSuccess;
       SDL_Event ev;
-      sdlCallSuccess = SDL_WaitEventTimeout(&ev, 10);
+      sdlCallSuccess = SDL_WaitEventTimeout(&ev, 0);
       SDL_TRACE() << "SDL_WaitEventTimeout(pointer,1000)";
 
       if (sdlCallSuccess)
@@ -241,7 +241,7 @@ bool Display::processQueues()
    // Check for events from SDL
    int sdlCallSuccess;
    SDL_Event ev;
-   sdlCallSuccess = SDL_WaitEventTimeout(&ev, 10);
+   sdlCallSuccess = SDL_WaitEventTimeout(&ev, 1);
    SDL_TRACE() << "SDL_WaitEventTimeout(pointer,1000)";
 
    if (sdlCallSuccess)
@@ -250,10 +250,12 @@ bool Display::processQueues()
       {
       case SDL_KEYDOWN:
          DISP_DEBUG() << "Received Keydown event";
+         sendKeyStateChangeEvent(true, ev.key.keysym);
          break;
 
       case SDL_KEYUP:
          DISP_DEBUG() << "Received Keyup event";
+         sendKeyStateChangeEvent(false, ev.key.keysym);
          break;
 
       case SDL_QUIT:
@@ -471,10 +473,13 @@ bool Display::drawPixel(int x, int y, Color24 col)
        return true;
    }
 
-   SDL_RenderPresent(theRenderer);
-
    DISP_DEBUG() << "  pixel @ " << x << "," << y << ", color = " << colorToString(col);
    return true;
+}
+
+void Display::render()
+{
+   SDL_RenderPresent(theRenderer);
 }
 
 bool Display::handleDcHaltEmulation(DisplayCommand* cmd)
@@ -543,6 +548,19 @@ bool Display::handleNoDisplayDevice(DisplayCommand* cmd)
    }
 
    return true;
+}
+
+void Display::sendKeyStateChangeEvent(bool isDown, SDL_Keysym keycode)
+{
+   DISP_DEBUG() << " with key " << (isDown ? "down" : "up") << " and key = "; //<< keycode;
+
+   DisplayEvent dispEv;
+   memset(&dispEv, 0, sizeof(DisplayEvent));
+   dispEv.id = KEY_STATE_CHANGE;
+   dispEv.data.DeKeyStateChange.isDown = isDown;
+   dispEv.data.DeKeyStateChange.keyCode = keycode;
+
+   theEventCommandQueue->writeMessage(sizeof(DisplayEvent), (char*) &dispEv);
 }
 
 std::string Display::sdlEventTypeToString(const uint32_t& et)

@@ -15,7 +15,6 @@ public:
 
    void resetDisplay();
 
-
    int getScreenWidth();
    int getScreenHeight();
    int getNumBitPlanes();
@@ -42,9 +41,6 @@ protected:
    uint8_t getPlaneMask(int index);
 
    Display* theDisplay;
-
-
-
 
    bool theHighResMode;
 

@@ -76,9 +76,10 @@ protected:
    std::set<unsigned int> theBreakpoints;
    
    // Key press event lock and list
-   std::set<unsigned char> theKeysDown;
+   void checkDisplayEvents();
+   std::set<uint8_t> theKeysDown;
 
-   
+
    
    // EmulationScreen* theScreen;
    
@@ -209,11 +210,7 @@ protected:
    SimpleQueue* theDisplayQueue;
 
    SimpleQueue* theEventQueue;
-<<<<<<< HEAD
-=======
 
-
->>>>>>> 542a09b1176cd34073af15ab2346a80f798b8065
 };
 
 #endif // CHIP8_PROCESSOR_H

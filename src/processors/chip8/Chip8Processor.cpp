@@ -6,6 +6,8 @@
 #include "Logger.h"
 #include <cstdlib>
 
+#include "SDL.h"
+
 #include "ProcessorFactory.h"
 #include "MemoryDev.h"
 #include "force_execute.h"
@@ -50,22 +52,8 @@ Chip8Processor::Chip8Processor(std::string instanceName):
    {
       theCpuRegisters.push_back(0);
    }
-
-   loadFonts();
    
    thePc = 0x200;
-
-   // Initialize the frame buffer
-   std::vector<uint8_t> rowOfPixels;
-   for(int x = 0; x < HIGH_RES_WIDTH; x++)
-   {
-      rowOfPixels.push_back(0);
-   }
-
-   for(int y = 0; y < HIGH_RES_HEIGHT; y++)
-   {
-      theFrameBuffer.push_back(rowOfPixels);
-   }
 }
 
 Chip8Processor::~Chip8Processor()
@@ -107,34 +95,130 @@ void Chip8Processor::resetState()
 
    C8DEBUG() << "Going to start the display";
 
-//   Display* theDisp = Display::getInstance();
-//   theDisplayQueue = theDisp->getCommandQueue();
-//   theEventQueue = theDisp->getEventQueue();
-
-//   // Send command to start the screen, low-res mode
-//   DisplayCommand startCmd;
-//   startCmd.id = SET_RESOLUTION;
-//   startCmd.data.DcSetResolution.width = 640;
-//   startCmd.data.DcSetResolution.height = 320;
-//   theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &startCmd);
-
-//   DisplayCommand logicalResCmd;
-//   logicalResCmd.id = SET_LOGICAL_SIZE;
-//   logicalResCmd.data.DcSetLogicalSize.width = 64;
-//   logicalResCmd.data.DcSetLogicalSize.height = 32;
-//   theDisplayQueue->writeMessage(sizeof(logicalResCmd), (char*) &logicalResCmd);
-
-//   DisplayCommand clearScrCmd;
-//   clearScrCmd.id = CLEAR_SCREEN;
-//   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
-//   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
-//   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
-//   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
-
-//   theDisp->processQueues();
-
    theDisplay.resetDisplay();
 
+}
+
+uint8_t mapSdlKeyCodeToChip8(SDL_Keysym ks)
+{
+   // Assuming key layout of:
+   // 123C
+   // 456D
+   // 789E
+   // A0BF
+
+   SDL_Keycode keycode = ks.sym;
+
+   // Top row
+   if (keycode == SDLK_1)
+   {
+      return 1;
+   }
+   if (keycode == SDLK_2)
+   {
+      return 2;
+   }
+   if (keycode == SDLK_3)
+   {
+      return 3;
+   }
+   if (keycode == SDLK_4)
+   {
+      return 0xc;
+   }
+
+   // Second row
+   if (keycode == SDLK_q)
+   {
+      return 4;
+   }
+   if (keycode == SDLK_w)
+   {
+      return 5;
+   }
+   if (keycode == SDLK_e)
+   {
+      return 6;
+   }
+   if (keycode == SDLK_r)
+   {
+      return 0xd;
+   }
+
+   // Third row
+   if (keycode == SDLK_a)
+   {
+      return 7;
+   }
+   if (keycode == SDLK_s)
+   {
+      return 8;
+   }
+   if (keycode == SDLK_d)
+   {
+      return 9;
+   }
+   if (keycode == SDLK_f)
+   {
+      return 0xe;
+   }
+
+   // Last row
+   if (keycode == SDLK_z)
+   {
+      return 0xa;
+   }
+   if (keycode == SDLK_x)
+   {
+      return 0;
+   }
+   if (keycode == SDLK_c)
+   {
+      return 0xb;
+   }
+   if (keycode == SDLK_v)
+   {
+      return 0xf;
+   }
+
+   return 0xff;
+}
+
+void Chip8Processor::checkDisplayEvents()
+{
+   // process display events
+   int numBytesEvent;
+   DisplayEvent ev;
+   bool success;
+   success = Display::getInstance()->getEventQueue()->tryReadMessage(&numBytesEvent,
+                                                                     (char*) &ev,
+                                                                     sizeof(DisplayEvent));
+   if(!success)
+   {
+      return;
+   }
+
+   if (ev.id == KEY_STATE_CHANGE)
+   {
+      C8DEBUG() << "Oh, it's a key press!!!!";
+
+      uint8_t keyChar = mapSdlKeyCodeToChip8(ev.data.DeKeyStateChange.keyCode);
+      if (keyChar == 0xff)
+      {
+         // Invalid key pressed, ignore
+         C8DEBUG() << "Invalid key pressed";
+         return;
+      }
+
+      if (ev.data.DeKeyStateChange.isDown)
+      {
+         theKeysDown.emplace(keyChar);
+      }
+      else
+      {
+         theKeysDown.erase(keyChar);
+      }
+   }
 }
 
 bool Chip8Processor::step()
@@ -144,6 +228,8 @@ bool Chip8Processor::step()
       C8DEBUG() << "Instruction address " << addressToString(thePc) << " out of bounds";
       return false;
    }
+
+   checkDisplayEvents();
 
    if (!decodeInstruction(thePc))
    {
@@ -220,14 +306,6 @@ unsigned char Chip8Processor::getDelayTimer()
 
 void Chip8Processor::insClearScreen()
 {
-
-//   DisplayCommand clearScrCmd;
-//   clearScrCmd.id = CLEAR_SCREEN;
-//   clearScrCmd.data.DcClearScreen.blankColor.red = 0;
-//   clearScrCmd.data.DcClearScreen.blankColor.green = 0;
-//   clearScrCmd.data.DcClearScreen.blankColor.blue = 0;
-//   theDisplayQueue->writeMessage(sizeof(clearScrCmd), (char*) & clearScrCmd);
-
    theDisplay.clearScreen();
 }
 
@@ -738,108 +816,9 @@ void Chip8Processor::insDrawSprite(unsigned xReg, unsigned yReg, unsigned height
 
    if (height > 0)
    {
-
-//      collision = drawSpriteHelper(theCpuRegisters[xReg],
-//                                   theCpuRegisters[yReg],
-//                                   8,
-//                                   numBytesRequired,
-//                                   spriteData);
-//   }
-//   else
-//   {
-//      // height = 0, special super chip-8 form of instruction
-//      if (theHighResMode)
-//      {
-//         // Draw super sprite!
-//         collision = drawSpriteHelper(theCpuRegisters[xReg],
-//                                      theCpuRegisters[yReg],
-//                                      16,
-//                                      numBytesRequired / 2,
-//                                      spriteData);
-//      }
-//      else
-//      {
-//         // Draw 16 row sprite!
-//         collision = drawSpriteHelper(theCpuRegisters[xReg],
-//                                      theCpuRegisters[yReg],
-//                                      8,
-//                                      numBytesRequired,
-//                                      spriteData);
-//      }
-//   }
-
-//   if (collision)
-//      theCpuRegisters[0xf] = 1;
-//   else
-//      theCpuRegisters[0xf] = 0;
-//}
-
-//bool Chip8Processor::drawSpriteHelper(uint8_t x, uint8_t y, uint8_t width, uint8_t height, std::vector<uint8_t> spriteData)
-//{
-//   C8DEBUG() << "drawSpriteHelper(" << (int) x << "," << (int) y << "," << (int) width << "," << (int) height
-//             << "len(" << spriteData.size() << ") " << Utils::hexDump(spriteData.data(), spriteData.size()) << "):";
-
-//   bool collisionOccured = false;
-
-//   int curByte = 0;
-//   int curBit = 0x80;
-//   for(uint16_t curY = y; curY < y + height; curY++)
-//   {
-//      int curYWrapped = curY % (theHighResMode ? HIGH_RES_HEIGHT : LOW_RES_HEIGHT);
-
-//      for(uint16_t curX = x; curX < x + width; curX++)
-//      {
-//         int curXWrapped = curX % (theHighResMode ? HIGH_RES_WIDTH : LOW_RES_WIDTH);
-
-//         // Is the current bit set?
-//         bool spriteBitSet = spriteData[curByte] & curBit;
-//         bool bitSetPreviously = theFrameBuffer[curYWrapped][curXWrapped];
-
-//         bool changePixelState  = spriteBitSet != bitSetPreviously;
-
-//         C8DEBUG() << "  (" << curXWrapped << "," << curYWrapped << "), bitSet=" << (spriteBitSet ? "Y" : "N")
-//                   << ", prevSet=" << (bitSetPreviously ? "Y" : "N") << ", changeState=" << (changePixelState ? "Y" : "N")
-//                   << ", curByte=" << curByte << ", curBit=" << curBit;
-
-//         if (spriteBitSet && bitSetPreviously)
-//         {
-//            collisionOccured = true;
-//         }
-
-//         if (changePixelState)
-//         {
-//            // Flip the state of the pixel in the frame buffer
-//            theFrameBuffer[curYWrapped][curXWrapped] = theFrameBuffer[curYWrapped][curXWrapped] ? 0 : 1;
-
-//            DisplayCommand setPixel;
-//            setPixel.id = DRAW_PIXEL;
-//            setPixel.data.DcDrawPixel.x = curXWrapped;
-//            setPixel.data.DcDrawPixel.y = curYWrapped;
-//            setPixel.data.DcDrawPixel.color.red   = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
-//            setPixel.data.DcDrawPixel.color.green = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
-//            setPixel.data.DcDrawPixel.color.blue  = theFrameBuffer[curYWrapped][curXWrapped] ? 200 : 0;
-//            theDisplayQueue->writeMessage(sizeof(DisplayCommand), (char*) &setPixel);
-//         }
-
-//         if (curBit == 0x01)
-//         {
-//            curBit = 0x80;
-//            curByte++;
-//         }
-//         else
-//         {
-//            curBit >>= 1;
-//         }
-//      }
-
-//   }
-
-//   return collisionOccured;
-
       collision = theDisplay.drawSprite(theCpuRegisters[xReg] % theDisplay.getScreenWidth(),
                                         theCpuRegisters[yReg] % theDisplay.getScreenHeight(),
                                         height, spriteData);
-
    }
    else
    {

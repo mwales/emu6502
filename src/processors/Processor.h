@@ -59,6 +59,10 @@ public:
    static void stepCommandHandlerStatic(std::vector<std::string> const & args, 
                                              void* context);   
    void stepCommandHandler(std::vector<std::string> const & args);
+
+   static void runCommandHandlerStatic(std::vector<std::string> const & args,
+                                             void* context);
+   void runCommandHandler(std::vector<std::string> const & args);
    
    static void disassCommandHandlerStatic(std::vector<std::string> const & args, 
                                              void* context);   

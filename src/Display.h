@@ -6,6 +6,7 @@
 #include "SDL.h"
 
 #include "DisplayCommands.h"
+#include "DisplayEvents.h"
 
 #include <vector>
 #include <string>
@@ -26,8 +27,6 @@ public:
    static Display* getInstance();
 
    static void destroyInstance();
-
-
 
    /**
     * Starts the display, blocks until the display is closed
@@ -55,6 +54,7 @@ public:
 
    void drawPixelDebugHandler(std::vector<std::string> const & args);
 
+   void render();
 
    // Command Functions
    bool setResolution(int width, int height);
@@ -73,7 +73,6 @@ protected:
    bool handleDisplayQueueCommand(DisplayCommand* cmd);
 
    bool handleDcSetResolution(DisplayCommand* cmd);
-   bool setResolution(int width, int height);
 
    bool handleDcSetLogicalSize(DisplayCommand* cmd);
 
@@ -86,6 +85,8 @@ protected:
    bool handleDcSdlSubscribeEventType(DisplayCommand* cmd);
 
    bool handleNoDisplayDevice(DisplayCommand* cmd);
+
+   void sendKeyStateChangeEvent(bool isDown, SDL_Keysym keycode);
 
    std::string sdlEventTypeToString(const uint32_t& et);
 

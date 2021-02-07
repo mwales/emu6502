@@ -179,6 +179,8 @@ bool Chip8Display::drawSprite(unsigned int x, unsigned int y, unsigned int rowsT
       }
    }
 
+   // After updating all the sprite pixels, then render the screen
+   theDisplay->render();
    return collisionFlag;
 }
 

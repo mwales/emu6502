@@ -55,6 +55,9 @@ void Processor::registerDebugHandlerCommands(Debugger* dbgr)
    dbgr->registerNewCommandHandler("step", "Steps CPU through 1 or more instruction",
                                    Processor::stepCommandHandlerStatic,
                                    this);
+   dbgr->registerNewCommandHandler("run", "Execute CPU forever",
+                                   Processor::runCommandHandlerStatic,
+                                   this);
    dbgr->registerNewCommandHandler("disass", "Disassembles instructions",
                                    Processor::disassCommandHandlerStatic,
                                    this);
@@ -71,6 +74,12 @@ void Processor::stepCommandHandlerStatic(std::vector<std::string> const & args, 
 {
    Processor* p = reinterpret_cast<Processor*>(context);
    p->stepCommandHandler(args);
+}
+
+void Processor::runCommandHandlerStatic(std::vector<std::string> const & args, void* context)
+{
+   Processor* p = reinterpret_cast<Processor*>(context);
+   p->runCommandHandler(args);
 }
 
 void Processor::disassCommandHandlerStatic(std::vector<std::string> const & args, 
@@ -164,6 +173,33 @@ void Processor::stepCommandHandler(std::vector<std::string> const & args)
    std::string assembly;
    disassembleAddr(thePc, &assembly);
    std::cout << assembly << std::endl; 
+}
+
+void Processor::runCommandHandler(std::vector<std::string> const & args)
+{
+   Display::getInstance()->processQueues();
+
+   while(true)
+   {
+      if (!step())
+      {
+         std::cout << "Emulation halted in run function";
+         break;
+      }
+
+      if(!Display::getInstance()->processQueues())
+      {
+         std::cout << "Emulation halted by SDL event";
+         break;
+      }
+   }
+
+   std::vector<std::string> emptyArgList;
+   registersCommandHandler(emptyArgList);
+
+   std::string assembly;
+   disassembleAddr(thePc, &assembly);
+   std::cout << assembly << std::endl;
 }
 
 void Processor::disassCommandHandler(std::vector<std::string> const & args)
