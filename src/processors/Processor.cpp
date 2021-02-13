@@ -138,13 +138,13 @@ void Processor::stepCommandHandler(std::vector<std::string> const & args)
    {
       if (!step())
       {
-         std::cout << "Emulation halted in step function";
+         std::cout << "Emulation halted in step function" << std::endl;
          break;
       }
 
       if(!Display::getInstance()->processQueues())
       {
-         std::cout << "Emulation halted by SDL event";
+         std::cout << "Emulation halted by SDL event" << std::endl;
          break;
       }
    }
@@ -172,13 +172,13 @@ void Processor::runCommandHandler(std::vector<std::string> const & args)
    {
       if (!step())
       {
-         std::cout << "Emulation halted in run function";
+         std::cout << "Emulation halted in run function" << std::endl;
          break;
       }
 
       if(!Display::getInstance()->processQueues())
       {
-         std::cout << "Emulation halted by SDL event";
+         std::cout << "Emulation halted by SDL event" << std::endl;
          break;
       }
    }

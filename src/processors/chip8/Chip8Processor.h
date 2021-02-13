@@ -22,12 +22,6 @@ public:
    Chip8Processor(std::string instanceName);
    virtual ~Chip8Processor();
    
-   // Connect to GUI keypress up/down events
-   void keyDown(unsigned char key);
-   void keyUp(unsigned char key);
-   
-   // void setEmulationScreen(EmulationScreen* screen);
-   
    // Accessors for the Chip-8 interpreter / CPU internal state
    unsigned char getRegister(unsigned char reg);
    unsigned int getIP();
@@ -57,8 +51,6 @@ public:
    // From the decoder
    virtual bool getByteFromAddress(CpuAddress address, uint8_t* retByte);
 
-
-   
 protected:
    
    // Internal state variables for the interpreter
@@ -81,10 +73,6 @@ protected:
    // Key press event lock and list
    void checkDisplayEvents();
    std::set<uint8_t> theKeysDown;
-
-
-   
-   // EmulationScreen* theScreen;
    
    Chip8Disassembler* theDisassembler;
 

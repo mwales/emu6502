@@ -89,12 +89,6 @@ void Chip8Processor::resetState()
    theKeysDown.clear();
    theCpuStack.clear();
 
-
-   // unsigned int loadAddr = thePc;
-     
-
-    // theDelayTimerExpiration = QDateTime::currentDateTime();
-
    C8DEBUG() << "Going to start the display";
 
    theDisplay.resetDisplay();
@@ -242,26 +236,6 @@ bool Chip8Processor::step()
    theInstructionsExecuted++;
    return true;
 }
-
-
-void Chip8Processor::keyDown(unsigned char key)
-{
-//   theKeysLock.lock();
-//   theKeysDown.insert(key);
-//   theKeysLock.unlock();
-}
-
-void Chip8Processor::keyUp(unsigned char key)
-{
-//   theKeysLock.lock();
-//   theKeysDown.remove(key);
-//   theKeysLock.unlock();
-}
-
-//void Chip8Processor::setEmulationScreen(EmulationScreen* screen)
-//{
-//   theScreen = screen;
-//}
 
 unsigned char Chip8Processor::getRegister(unsigned char reg)
 {
@@ -552,9 +526,6 @@ void Chip8Processor::insWaitForKeyPress(unsigned reg)
 {
    // Not sure what this thing would do if more than one key pressed at a time, so we will just return the first item
    // in the set unless I come up with a better idea
-
-   //theKeysLock.lock();
-
    bool waitingForKey = theKeysDown.empty();
 
    if (!waitingForKey)
@@ -562,8 +533,6 @@ void Chip8Processor::insWaitForKeyPress(unsigned reg)
       // Get a pressed key
       theCpuRegisters[reg] = *(theKeysDown.begin());
    }
-
-   //theKeysLock.unlock();
 
    if (waitingForKey)
    {
