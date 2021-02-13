@@ -39,6 +39,9 @@
 
 
 Chip8Processor::Chip8Processor(std::string instanceName):
+   theIndexRegister(0),
+   theTimerStartTickVal(0),
+   theTimerValOriginal(0),
    theDisassembler(nullptr),
    theLowResFontsAddr(0x0),
    theHiResFontsAddr(0x0),
@@ -200,8 +203,6 @@ void Chip8Processor::checkDisplayEvents()
 
    if (ev.id == KEY_STATE_CHANGE)
    {
-      C8DEBUG() << "Oh, it's a key press!!!!";
-
       uint8_t keyChar = mapSdlKeyCodeToChip8(ev.data.DeKeyStateChange.keyCode);
       if (keyChar == 0xff)
       {
@@ -239,6 +240,7 @@ bool Chip8Processor::step()
    }
    
    thePc += 2;
+   theInstructionsExecuted++;
    return true;
 }
 
@@ -288,20 +290,42 @@ std::vector<unsigned int> Chip8Processor::getStack()
    return theCpuStack;
 }
 
-unsigned char Chip8Processor::getDelayTimer()
+uint8_t Chip8Processor::getDelayTimer()
 {
-//   QDateTime curTime = QDateTime::currentDateTime();
+    // Special case, no one ever started the timer
+    if (theTimerValOriginal == 0)
+    {
+       return 0;
+    }
 
-//   if (curTime > theDelayTimerExpiration)
-//   {
-//      return 0;
-//   }
-//   else
-//   {
-//      int numMilliSecs = curTime.msecsTo(theDelayTimerExpiration);
-//      return numMilliSecs / MS_PER_TIMER_COUNT;
-//   }
-    return 0;
+    uint32_t currentTimerVal = SDL_GetTicks();
+    uint32_t timeDiffMs;
+
+    if(currentTimerVal < theTimerStartTickVal)
+    {
+       // Special case, timer rolled over!
+       timeDiffMs = 0xffffffff - theTimerStartTickVal + currentTimerVal;
+    }
+    else
+    {
+       timeDiffMs = currentTimerVal - theTimerStartTickVal;
+    }
+
+    double numberOfChip8Ticks = (double) timeDiffMs / 16.666667;
+    double regValueRaw = theTimerValOriginal - numberOfChip8Ticks;
+
+    if (regValueRaw < 0)
+    {
+       return 0;
+    }
+    else if (regValueRaw > 0xff)
+    {
+       return 0xff;
+    }
+    else
+    {
+       return (uint8_t) regValueRaw;
+    }
 }
 
 void Chip8Processor::insClearScreen()
@@ -557,8 +581,8 @@ void Chip8Processor::insSetRegToDelayTimer(unsigned reg)
 
 void Chip8Processor::insSetDelayTimer(unsigned reg)
 {
-   //theDelayTimerExpiration = QDateTime::currentDateTime();
-   //theDelayTimerExpiration = theDelayTimerExpiration.addMSecs(theCpuRegisters[reg] * MS_PER_TIMER_COUNT);
+   theTimerStartTickVal = SDL_GetTicks();
+   theTimerValOriginal = theCpuRegisters[reg];
 }
 
 void Chip8Processor::insSetSoundTimer(unsigned reg)

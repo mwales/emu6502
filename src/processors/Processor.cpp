@@ -170,9 +170,13 @@ void Processor::stepCommandHandler(std::vector<std::string> const & args)
    std::vector<std::string> emptyArgList;
    registersCommandHandler(emptyArgList);
    
+   std::cout << "InsCount=" << theInstructionsExecuted << std::endl;
+
    std::string assembly;
    disassembleAddr(thePc, &assembly);
-   std::cout << assembly << std::endl; 
+   std::cout << assembly << std::endl;
+
+
 }
 
 void Processor::runCommandHandler(std::vector<std::string> const & args)
@@ -196,6 +200,8 @@ void Processor::runCommandHandler(std::vector<std::string> const & args)
 
    std::vector<std::string> emptyArgList;
    registersCommandHandler(emptyArgList);
+
+   std::cout << "InsCount=" << theInstructionsExecuted << std::endl;
 
    std::string assembly;
    disassembleAddr(thePc, &assembly);

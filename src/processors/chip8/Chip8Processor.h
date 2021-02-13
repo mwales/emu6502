@@ -68,6 +68,9 @@ protected:
    unsigned int theIndexRegister;
 
    // QDateTime theDelayTimerExpiration;
+   uint32_t theTimerStartTickVal;
+   uint8_t theTimerValOriginal;
+
    std::vector<unsigned char> theHp48Flags;
    
    /**

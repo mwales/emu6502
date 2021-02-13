@@ -236,12 +236,12 @@ bool Display::processQueues()
    } while (numBytesInCommand > 0);
 
    SDL_TRACE() << "SDL_RenderPresent(pointer)";
-   SDL_RenderPresent(theRenderer);
+   // SDL_RenderPresent(theRenderer);
 
    // Check for events from SDL
    int sdlCallSuccess;
    SDL_Event ev;
-   sdlCallSuccess = SDL_WaitEventTimeout(&ev, 1);
+   sdlCallSuccess = SDL_WaitEventTimeout(&ev, 0);
    SDL_TRACE() << "SDL_WaitEventTimeout(pointer,1000)";
 
    if (sdlCallSuccess)
