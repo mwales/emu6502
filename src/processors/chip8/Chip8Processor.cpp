@@ -46,7 +46,6 @@ Chip8Processor::Chip8Processor(std::string instanceName):
    theLowResFontsAddr(0x0),
    theHiResFontsAddr(0x0),
    theSoundEnabled(true),
-   theDisplayQueue(nullptr),
    theEventQueue(nullptr)
 {
    C8DEBUG() << "Creating an instance of" << instanceName;
@@ -207,7 +206,7 @@ void Chip8Processor::checkDisplayEvents()
       if (keyChar == 0xff)
       {
          // Invalid key pressed, ignore
-         C8DEBUG() << "Invalid key pressed";
+         // C8DEBUG() << "Invalid key pressed";
          return;
       }
 
@@ -611,7 +610,7 @@ void Chip8Processor::insAddRegToIndexReg(unsigned reg)
 void Chip8Processor::insSetIndexToCharInReg(unsigned reg)
 {
    // Low-res fonts start at address 0
-   theIndexRegister = theCpuRegisters[reg] * FONT_HEIGHT_STD;
+   theIndexRegister = theCpuRegisters[reg] * FONT_HEIGHT_STD + theLowResFontsAddr;
 }
 
 void Chip8Processor::insSetIndexMemoryToRegBcd(unsigned reg)

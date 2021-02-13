@@ -210,8 +210,6 @@ protected:
    
    void insBad(unsigned opCode);
 
-   SimpleQueue* theDisplayQueue;
-
    SimpleQueue* theEventQueue;
 
 };

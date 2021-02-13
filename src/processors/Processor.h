@@ -68,15 +68,19 @@ public:
                                              void* context);   
    void disassCommandHandler(std::vector<std::string> const & args);
    
-   
+   static void resetCommandHandlerStatic(std::vector<std::string> const & args,
+                                             void* context);
+   void resetCommandHandler(std::vector<std::string> const & args);
+
+
+
 protected:
    
    MemoryController* theMemoryController;
    
    CpuAddress thePc;
    
-   uint64_t theInstructionsExecuted;
-  
+   uint64_t theInstructionsExecuted;  
 };
 
 typedef Processor* (*ProcessorConstructor)(std::string instanceName);

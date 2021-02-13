@@ -61,6 +61,9 @@ void Processor::registerDebugHandlerCommands(Debugger* dbgr)
    dbgr->registerNewCommandHandler("disass", "Disassembles instructions",
                                    Processor::disassCommandHandlerStatic,
                                    this);
+   dbgr->registerNewCommandHandler("reset", "Resets System",
+                                   Processor::resetCommandHandlerStatic,
+                                   this);
 }
 
 void Processor::registersCommandHandlerStatic(std::vector<std::string> const & args, 
@@ -89,7 +92,12 @@ void Processor::disassCommandHandlerStatic(std::vector<std::string> const & args
    p->disassCommandHandler(args);
 }
 
-
+void Processor::resetCommandHandlerStatic(std::vector<std::string> const & args,
+                                          void* context)
+{
+   Processor* p = reinterpret_cast<Processor*>(context);
+   p->resetCommandHandler(args);
+}
 
 void Processor::registersCommandHandler(std::vector<std::string> const & args)
 {
@@ -183,6 +191,9 @@ void Processor::runCommandHandler(std::vector<std::string> const & args)
 {
    Display::getInstance()->processQueues();
 
+   uint32_t startTimeTicks = SDL_GetTicks();
+   uint64_t theRunCommandStartInsCount = theInstructionsExecuted;
+
    while(true)
    {
       if (!step())
@@ -198,10 +209,28 @@ void Processor::runCommandHandler(std::vector<std::string> const & args)
       }
    }
 
+   uint32_t stopTimeTicks = SDL_GetTicks();
+   double numExecuted = theInstructionsExecuted - theRunCommandStartInsCount;
+
    std::vector<std::string> emptyArgList;
    registersCommandHandler(emptyArgList);
 
-   std::cout << "InsCount=" << theInstructionsExecuted << std::endl;
+   double instructionsPerSec = numExecuted * 1000.0 / ( (double) (stopTimeTicks - startTimeTicks) );
+
+   std::cout << "InsCount=" << theInstructionsExecuted << "\t";
+
+   if (instructionsPerSec > 1000000.0)
+   {
+      std::cout << instructionsPerSec / 1000000.0 << " MHz" << std::endl;
+   }
+   else if (instructionsPerSec > 1000.0)
+   {
+      std::cout << instructionsPerSec / 1000.0 << " kHz" << std::endl;
+   }
+   else
+   {
+      std::cout << instructionsPerSec << " Hz" << std::endl;
+   }
 
    std::string assembly;
    disassembleAddr(thePc, &assembly);
@@ -241,4 +270,9 @@ void Processor::disassCommandHandler(std::vector<std::string> const & args)
          return;
       }
    }
+}
+
+void Processor::resetCommandHandler(std::vector<std::string> const & args)
+{
+   resetState();
 }
