@@ -399,19 +399,24 @@ bool MemoryController::write32(CpuAddress addr, uint32_t val)
    return true;
 }
 
+DECLARE_DEBUGGER_CALLBACK(MemoryController, dump8CommandHandler);
+DECLARE_DEBUGGER_CALLBACK(MemoryController, dump16CommandHandler);
+DECLARE_DEBUGGER_CALLBACK(MemoryController, dump32CommandHandler);
+DECLARE_DEBUGGER_CALLBACK(MemoryController, memdevsCommandHandler);
+
 void MemoryController::registerDebuggerCommands(Debugger* dbgr)
 {
    dbgr->registerNewCommandHandler(DUMP_BYTE_COMMAND, "Dump memory by 8-bit byte",
-                                   &MemoryController::dump8CommandHandlerStatic,
+                                   g_dump8CommandHandler,
                                    this);
    dbgr->registerNewCommandHandler(DUMP_WORD_COMMAND, "Dump memory by 16-bit word",
-                                   &MemoryController::dump16CommandHandlerStatic,
+                                   g_dump16CommandHandler,
                                    this);
    dbgr->registerNewCommandHandler(DUMP_DWORD_COMMAND, "Dump memory by 32-bit dword",
-                                   &MemoryController::dump32CommandHandlerStatic,
+                                   g_dump32CommandHandler,
                                    this);
    dbgr->registerNewCommandHandler("memdevs", "List Memory Devices",
-                                   &MemoryController::memdevsCommandHandlerStatic,
+                                   g_memdevsCommandHandler,
                                    this);
    
 }
@@ -424,33 +429,6 @@ void MemoryController::printDebuggerUsage(std::string commandName)
    std::cout << "  " << commandName << ": Dumps 40 bytes after the last dump call" << std::endl;;
    std::cout << "  " << commandName << " [address]: Dumps 40 bytes after the specified address" << std::endl;
    std::cout << "  " << commandName << " [address] [numbytes]: Dumps numbytes after the specified address" << std::endl;
-}
-void MemoryController::dump8CommandHandlerStatic(std::vector<std::string> const & args, 
-                                                 void* context)
-{
-   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
-   mc->dump8CommandHandler(args);
-}
-
-void MemoryController::dump16CommandHandlerStatic(std::vector<std::string> const & args, 
-                                                  void* context)
-{
-   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
-   mc->dump16CommandHandler(args);
-}
-
-void MemoryController::dump32CommandHandlerStatic(std::vector<std::string> const & args, 
-                                                  void* context)
-{
-   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
-   mc->dump32CommandHandler(args);
-}
-
-void MemoryController::memdevsCommandHandlerStatic(std::vector<std::string> const & args, 
-                                                   void* context)
-{
-   MemoryController* mc = reinterpret_cast<MemoryController*>(context);
-   mc->memdevsCommandHandler(args);
 }
 
 void MemoryController::dump8CommandHandler(std::vector<std::string> const & args)

@@ -59,6 +59,12 @@ public:
    bool write32(CpuAddress addr, uint32_t val);
    
    void registerDebuggerCommands(Debugger* dbgr);
+
+   // Debugger command handlers
+   void dump8CommandHandler(std::vector<std::string> const & args);
+   void dump16CommandHandler(std::vector<std::string> const & args);
+   void dump32CommandHandler(std::vector<std::string> const & args);
+   void memdevsCommandHandler(std::vector<std::string> const & args);
    
 protected:
    /**
@@ -83,19 +89,6 @@ protected:
    
    void printDebuggerUsage(std::string commandName);
    
-   static void dump8CommandHandlerStatic(std::vector<std::string> const & args, 
-                                         void* context);
-   static void dump16CommandHandlerStatic(std::vector<std::string> const & args, 
-                                          void* context);
-   static void dump32CommandHandlerStatic(std::vector<std::string> const & args, 
-                                          void* context);
-   static void memdevsCommandHandlerStatic(std::vector<std::string> const & args, 
-                                           void* context);
-   
-   void dump8CommandHandler(std::vector<std::string> const & args);
-   void dump16CommandHandler(std::vector<std::string> const & args);
-   void dump32CommandHandler(std::vector<std::string> const & args);
-   void memdevsCommandHandler(std::vector<std::string> const & args);
    
    void debugDumpMemoryController(bool dumpContents = false);
    

@@ -691,30 +691,21 @@ std::string Display::colorToString(Color24 c)
     return retVal;
 }
 
+DECLARE_DEBUGGER_CALLBACK(Display, setResolutionDebugHandler);
+DECLARE_DEBUGGER_CALLBACK(Display, drawPixelDebugHandler);
+
 void Display::registerDebuggerCommands(Debugger* d)
 {
    d->registerNewCommandHandler("displayres", "Sets the resolution of display screen",
-                                Display::setResolutionDebugHandlerStatic, this);
+                                g_setResolutionDebugHandler, this);
 
    d->registerNewCommandHandler("drawpixel", "Draws a pixel on screen",
-                                Display::drawPixelDebugHandlerStatic, this);
-}
-
-void Display::setResolutionDebugHandlerStatic(std::vector<std::string> const & args, void* context)
-{
-   Display* disp = reinterpret_cast<Display*>(context);
-   disp->setResolutionDebugHandler(args);
+                                g_drawPixelDebugHandler, this);
 }
 
 void Display::setResolutionDebugHandler(std::vector<std::string> const & args)
 {
    DISP_DEBUG() << "Display Set Resolution Command called!";
-}
-
-void Display::drawPixelDebugHandlerStatic(std::vector<std::string> const & args, void* context)
-{
-   Display* disp = reinterpret_cast<Display*>(context);
-   disp->drawPixelDebugHandler(args);
 }
 
 void Display::drawPixelDebugHandler(std::vector<std::string> const & args)

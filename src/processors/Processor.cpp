@@ -47,57 +47,31 @@ void Processor::loadState(uint8_t stateData)
     LOG_DEBUG() << "Processor doesn't implement save states";
 }
 
+DECLARE_DEBUGGER_CALLBACK(Processor, registersCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Processor, stepCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Processor, runCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Processor, disassCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Processor, resetCommandHandler);
+
 void Processor::registerDebugHandlerCommands(Debugger* dbgr)
 {
    dbgr->registerNewCommandHandler("regs", "Prints / Sets values of the registers",
-                                   Processor::registersCommandHandlerStatic,
+                                   g_registersCommandHandler,
                                    this);
    dbgr->registerNewCommandHandler("step", "Steps CPU through 1 or more instruction",
-                                   Processor::stepCommandHandlerStatic,
+                                   g_stepCommandHandler,
                                    this);
    dbgr->registerNewCommandHandler("run", "Execute CPU forever",
-                                   Processor::runCommandHandlerStatic,
+                                   g_runCommandHandler,
                                    this);
    dbgr->registerNewCommandHandler("disass", "Disassembles instructions",
-                                   Processor::disassCommandHandlerStatic,
+                                   g_disassCommandHandler,
                                    this);
    dbgr->registerNewCommandHandler("reset", "Resets System",
-                                   Processor::resetCommandHandlerStatic,
+                                   g_resetCommandHandler,
                                    this);
 }
 
-void Processor::registersCommandHandlerStatic(std::vector<std::string> const & args, 
-                                          void* context)
-{
-    Processor* p = reinterpret_cast<Processor*>(context);
-    p->registersCommandHandler(args);
-}
-
-void Processor::stepCommandHandlerStatic(std::vector<std::string> const & args, void* context)
-{
-   Processor* p = reinterpret_cast<Processor*>(context);
-   p->stepCommandHandler(args);
-}
-
-void Processor::runCommandHandlerStatic(std::vector<std::string> const & args, void* context)
-{
-   Processor* p = reinterpret_cast<Processor*>(context);
-   p->runCommandHandler(args);
-}
-
-void Processor::disassCommandHandlerStatic(std::vector<std::string> const & args, 
-                                          void* context)
-{
-   Processor* p = reinterpret_cast<Processor*>(context);
-   p->disassCommandHandler(args);
-}
-
-void Processor::resetCommandHandlerStatic(std::vector<std::string> const & args,
-                                          void* context)
-{
-   Processor* p = reinterpret_cast<Processor*>(context);
-   p->resetCommandHandler(args);
-}
 
 void Processor::registersCommandHandler(std::vector<std::string> const & args)
 {

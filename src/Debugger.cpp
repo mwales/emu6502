@@ -10,13 +10,13 @@
 #include "Utils.h"
 
 
+DECLARE_DEBUGGER_CALLBACK(Debugger, helpCommandHandler);
+
 Debugger::Debugger(MemoryController* mc)
 {
    theMC = mc;
    
-   DebugCommandHandler dch = &Debugger::helpCommandHandlerStatic;
-   
-   registerNewCommandHandler("help", "Lists all the commands available", dch, (void*) this);
+   registerNewCommandHandler("help", "Lists all the commands available", g_helpCommandHandler, (void*) this);
 }
 
 void Debugger::start()
@@ -71,12 +71,6 @@ void Debugger::registerNewCommandHandler(std::string commandName,
    hd.theHelp = helpString;
    hd.theContext = context;
    theCommandHandlers.add(commandName, hd);
-}
-
-void Debugger::helpCommandHandlerStatic(std::vector<std::string> const & args, void* context)
-{
-   Debugger* d = reinterpret_cast<Debugger*>(context);
-   d->helpCommandHandler(args);
 }
 
 void Debugger::helpCommandHandler(std::vector<std::string> const & args)
