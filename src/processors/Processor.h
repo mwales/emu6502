@@ -39,11 +39,11 @@ public:
    virtual bool step() = 0;
    
    /// Returns -1 if it doesn't supprot serializing the state
-   virtual int getNumberOfBytesForState();
+   virtual int getSaveStateLength();
    
-   virtual void writeState(uint8_t* stateData);
+   virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved);
    
-   virtual void loadState(uint8_t stateData);
+   virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded);
    
    virtual void resetState() = 0;
    
@@ -62,6 +62,8 @@ public:
    
    void resetCommandHandler(std::vector<std::string> const & args);
 
+   void saveCommandHandler(std::vector<std::string> const & args);
+   void loadCommandHandler(std::vector<std::string> const & args);
 
 
 protected:

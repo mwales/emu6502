@@ -51,6 +51,12 @@ public:
    // From the decoder
    virtual bool getByteFromAddress(CpuAddress address, uint8_t* retByte);
 
+   virtual int getSaveStateLength() override;
+
+   virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved) override;
+
+   virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded) override;
+
 protected:
    
    // Internal state variables for the interpreter

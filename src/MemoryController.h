@@ -43,6 +43,8 @@ public:
    void resetAll();
    
    std::vector<MemoryDev*> getAllDevices();
+
+   std::vector<MemoryDev*> getAllDevicesInNameOrder();
    
    void setLittleEndianMode(bool le);
    
@@ -65,6 +67,29 @@ public:
    void dump16CommandHandler(std::vector<std::string> const & args);
    void dump32CommandHandler(std::vector<std::string> const & args);
    void memdevsCommandHandler(std::vector<std::string> const & args);
+
+   /**
+    * @return Number of bytes required to save device state
+    */
+   uint32_t getSaveStateLength();
+
+   /**
+    * Saves the state of the device into the buffer provided
+    *
+    * @param buffer Where to save the data
+    * @param[out] bytesSaved How many bytes were saved.  0 if the device doesn't save state.
+    * @return False on save error, true if successful or no state to save.
+    */
+   bool saveState(uint8_t* buffer, uint32_t* bytesSaved);
+
+   /**
+    * Loads state of the device from a file
+    *
+    * @param buffer Where to load the data from
+    * @param bytesLoaded[out] How many bytes were loaded from
+    * @return False on load error, true if successful or no state to save
+    */
+   bool loadState(uint8_t* buffer, uint32_t* bytesLoaded);
    
 protected:
    /**

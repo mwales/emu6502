@@ -344,4 +344,21 @@ bool MemoryDev::configSelf()
    return retVal;
 }
 
+ uint32_t MemoryDev::getSaveStateLength()
+ {
+    return 0;
+ }
+
+ bool MemoryDev::saveState(uint8_t* buffer, uint32_t* bytesSaved)
+ {
+    *bytesSaved = 0;
+    return true;
+ }
+
+ bool MemoryDev::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
+ {
+    *bytesLoaded = 0;
+    return true;
+ }
+
 

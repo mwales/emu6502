@@ -250,6 +250,30 @@ std::vector<uint8_t> Utils::loadFileBytes(std::string& name, std::string& errorO
    return retVal;
 }
 
+std::string Utils::saveFile(std::string const & filename, uint8_t* buf, int fileLen)
+{
+   SDL_RWops* f = SDL_RWFromFile(filename.c_str(), "w+");
+
+   if (f == NULL)
+   {
+      return "Error opening file for writing";
+   }
+
+   int bytesWritten = SDL_RWwrite(f, buf, fileLen, 1);
+
+   SDL_RWclose(f);
+
+   if (bytesWritten != fileLen)
+   {
+      return "Error writing the file";
+   }
+   else
+   {
+      // Success
+      return "";
+   }
+}
+
 std::vector<std::string> Utils::tokenizeString(std::string const & input)
 {
    std::vector<std::string> retVal;

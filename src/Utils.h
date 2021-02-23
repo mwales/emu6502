@@ -52,6 +52,8 @@ public:
     */
    static std::vector<uint8_t> loadFileBytes(std::string& name, std::string& errorOut);
 
+   static std::string saveFile(std::string const & filename, uint8_t* buf, int fileLen);
+
    /// Converts a string into a list of the string parts (whitespace removed)
    static std::vector<std::string> tokenizeString(std::string const & input);
    static std::vector<std::string> tokenizeString(std::string const & text, char delimiter);

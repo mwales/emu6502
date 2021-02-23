@@ -6,6 +6,8 @@
 #include "EmulatorConfig.h"
 #include "Utils.h"
 
+#include <algorithm>
+
 
 const char* DUMP_BYTE_COMMAND = "d8";
 const char* DUMP_WORD_COMMAND = "d16";
@@ -152,6 +154,21 @@ void MemoryController::resetAll()
 std::vector<MemoryDev*> MemoryController::getAllDevices()
 {
    return theDevices;
+}
+
+bool memoryDeviceNameOrderingHelper(MemoryDev const * const dev1,
+                                    MemoryDev const * const dev2)
+{
+   return dev1->getName() < dev2->getName();
+}
+
+std::vector<MemoryDev*> MemoryController::getAllDevicesInNameOrder()
+{
+   std::vector<MemoryDev*> returnVal;
+   returnVal = theDevices;
+   std::sort(returnVal.begin(), returnVal.end(), memoryDeviceNameOrderingHelper);
+
+   return returnVal;
 }
 
 
@@ -668,6 +685,53 @@ void MemoryController::memdevsCommandHandler(std::vector<std::string> const & ar
                    << md->getSize() << " bytes)" << std::endl;
       }
    }
+}
+
+uint32_t MemoryController::getSaveStateLength()
+{
+   std::vector<MemoryDev*> devList = getAllDevicesInNameOrder();
+   int retVal = 0;
+
+   for(auto singleDev: devList)
+   {
+      retVal += singleDev->getSaveStateLength();
+   }
+
+   return retVal;
+}
+
+bool MemoryController::saveState(uint8_t* buffer, uint32_t* bytesSaved)
+{
+   std::vector<MemoryDev*> devList = getAllDevicesInNameOrder();
+   uint8_t* originalBuffer = buffer;
+
+   uint32_t bytesSaveForSingleDev = 0;
+   for(auto singleDev: devList)
+   {
+      bytesSaveForSingleDev = 0;
+      if (!singleDev->saveState(buffer, &bytesSaveForSingleDev))
+      {
+         std::cerr << "Error saving the state with the " << singleDev->getName() << " device";
+         return false;
+      }
+
+      LOG_DEBUG() << "Saved state of" << singleDev->getName() << "successfully ("
+                  << bytesSaveForSingleDev << "bytes )";
+
+      *bytesSaved += bytesSaveForSingleDev;
+      buffer += bytesSaveForSingleDev;
+   }
+
+   LOG_DEBUG() << "Memory controller finished saving " << *bytesSaved << "bytes of data:"
+             << Utils::hexDump(originalBuffer, *bytesSaved);
+
+   return true;
+}
+
+bool MemoryController::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
+{
+   std::cout << "Nothing implemented in " << __PRETTY_FUNCTION__ << std::endl;
+   return false;
 }
 
 

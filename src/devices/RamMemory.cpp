@@ -175,6 +175,77 @@ void RamMemory::resetMemory()
    }
 }
 
+typedef struct RamMemorySaveStruct
+{
+   uint32_t theMagicNumber;
+
+   CpuAddress theAddress;
+   CpuAddress theSize;
+
+   CpuAddress theLoadDataOffset;
+
+   // Include room for the null terminator!
+   uint32_t theLoadDataFilenameLength;
+
+
+} RamMemorySave;
+
+#define RAM_MEMORY_MAGIC 0xf00dda7a;
+
+uint32_t RamMemory::getSaveStateLength()
+{
+   uint32_t returnVal = sizeof(RamMemorySave);
+   returnVal += theLoadDataFile.size() + 1;
+   returnVal += theSize;
+   return returnVal;
+}
+
+bool RamMemory::saveState(uint8_t* buffer, uint32_t* bytesSaved)
+{
+   uint8_t* originalBuffer = buffer;
+
+   RamMemorySave saveData;
+   memset(&saveData, 0, sizeof(saveData));
+   *bytesSaved = 0;
+
+   // Fill in the contents of the save data
+   saveData.theMagicNumber = RAM_MEMORY_MAGIC;
+   saveData.theAddress = theAddress;
+   saveData.theSize = theSize;
+   // Don't care about the name
+   saveData.theLoadDataOffset = theLoadDataOffset;
+   saveData.theLoadDataFilenameLength = theLoadDataFile.size() + 1;
+
+   // Start writing the buffer
+   memcpy(buffer, &saveData, sizeof(RamMemorySave));
+   buffer += sizeof(RamMemorySave);
+   *bytesSaved += sizeof(RamMemorySave);
+
+   // Next write the data from memory
+   memcpy(buffer, theData, theSize);
+   buffer += theSize;
+   *bytesSaved += theSize;
+
+   // Finally write the filename
+   memcpy(buffer, theLoadDataFile.c_str(), theLoadDataFile.size());
+   buffer += theLoadDataFile.size();
+   * bytesSaved += theLoadDataFile.size();
+
+   // Write the null byte
+   *buffer = 0;
+   buffer += 1;
+   *bytesSaved += 1;
+
+   RAM_DEBUG() << "Data saved for" << getName() << ":" << Utils::hexDump(originalBuffer, *bytesSaved);
+   return true;
+}
+
+bool RamMemory::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
+{
+   *bytesLoaded = 0;
+   return false;
+}
+
 FORCE_EXECUTE(fe_ram_memory)
 {
 	MemoryFactory* mf = MemoryFactory::getInstance();

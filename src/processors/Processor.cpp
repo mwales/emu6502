@@ -32,19 +32,23 @@ void Processor::setMemoryController(MemoryController* mc)
    theMemoryController = mc;
 }
 
-int Processor::getNumberOfBytesForState()
+int Processor::getSaveStateLength()
 {
     return -1;
 }
 
-void Processor::writeState(uint8_t* stateData)
+bool Processor::saveState(uint8_t* buffer, uint32_t* bytesSaved)
 {
     LOG_DEBUG() << "Processor doesn't implement save states";
+    *bytesSaved = 0;
+    return true;
 }
 
-void Processor::loadState(uint8_t stateData)
+bool Processor::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
 {
     LOG_DEBUG() << "Processor doesn't implement save states";
+    *bytesLoaded = 0;
+    return true;
 }
 
 DECLARE_DEBUGGER_CALLBACK(Processor, registersCommandHandler);
@@ -52,6 +56,8 @@ DECLARE_DEBUGGER_CALLBACK(Processor, stepCommandHandler);
 DECLARE_DEBUGGER_CALLBACK(Processor, runCommandHandler);
 DECLARE_DEBUGGER_CALLBACK(Processor, disassCommandHandler);
 DECLARE_DEBUGGER_CALLBACK(Processor, resetCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Processor, saveCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Processor, loadCommandHandler);
 
 void Processor::registerDebugHandlerCommands(Debugger* dbgr)
 {
@@ -69,6 +75,12 @@ void Processor::registerDebugHandlerCommands(Debugger* dbgr)
                                    this);
    dbgr->registerNewCommandHandler("reset", "Resets System",
                                    g_resetCommandHandler,
+                                   this);
+   dbgr->registerNewCommandHandler("save", "Saves system state to a file",
+                                   g_saveCommandHandler,
+                                   this);
+   dbgr->registerNewCommandHandler("load", "Loads system state to a file",
+                                   g_loadCommandHandler,
                                    this);
 }
 
@@ -250,3 +262,50 @@ void Processor::resetCommandHandler(std::vector<std::string> const & args)
 {
    resetState();
 }
+
+void Processor::saveCommandHandler(std::vector<std::string> const & args)
+{
+   std::cout << "Save command with " << args.size() << std::endl;
+   if (args.size() <= 0)
+   {
+      std::cout << "Need to provide a filename to save state into" << std::endl;
+      return;
+   }
+
+   int stateLen = getSaveStateLength();
+   if (stateLen <= 0)
+   {
+      std::cout << "System doesn't support save states" << std::endl;
+      return;
+   }
+
+   uint8_t* buf = (uint8_t*) malloc(stateLen);
+   uint32_t savedBytes = 0;
+   if (!saveState(buf, &savedBytes))
+   {
+      std::cout << "Error serializing state data";
+      return;
+   }
+
+   std::string result = Utils::saveFile(args[0], buf, stateLen);
+   if (result == "")
+   {
+      std::cout << "Saved system state successfully to " << args[0] << " ("
+                << stateLen << " bytes)" << std::endl;
+   }
+   else
+   {
+      std::cout << "Error saving system state to " << args[0] << ": " << result << std::endl;
+   }
+}
+
+void Processor::loadCommandHandler(std::vector<std::string> const & args)
+{
+
+}
+
+
+
+
+
+

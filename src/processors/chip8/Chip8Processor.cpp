@@ -1167,6 +1167,44 @@ bool Chip8Processor::getByteFromAddress(CpuAddress address, uint8_t* retByte)
    return true;
 }
 
+
+int Chip8Processor::getSaveStateLength()
+{
+   int returnVal = 0;
+
+   returnVal += theMemoryController->getSaveStateLength();
+
+   // todo get size of internal cpu state
+   // todo get size of display state
+
+   return returnVal;
+}
+
+bool Chip8Processor::saveState(uint8_t* buffer, uint32_t* bytesSaved)
+{
+   uint32_t savedBytes = 0;
+   if (!theMemoryController->saveState(buffer, &savedBytes))
+   {
+      std::cout << "Error serializing the state of the memory controller" << std::endl;
+      return false;
+   }
+
+   C8DEBUG() << "Successfully saved" << savedBytes << "bytes from memory controller";
+
+   *bytesSaved += savedBytes;
+   buffer += savedBytes;
+
+   // get data internal cpu state
+   // get data of display state
+
+   return true;
+}
+
+bool Chip8Processor::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
+{
+   return false;
+}
+
 Processor* CreateChip8Processor(std::string instanceName)
 {
    return new Chip8Processor(instanceName);
