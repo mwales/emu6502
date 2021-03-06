@@ -42,10 +42,9 @@ public:
 
    virtual void resetMemory() override;
 
+   // ISerializable
    virtual uint32_t getSaveStateLength() override;
-
    virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved) override;
-
    virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded) override;
 
 protected:

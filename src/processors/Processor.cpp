@@ -32,9 +32,9 @@ void Processor::setMemoryController(MemoryController* mc)
    theMemoryController = mc;
 }
 
-int Processor::getSaveStateLength()
+uint32_t Processor::getSaveStateLength()
 {
-    return -1;
+    return 0;
 }
 
 bool Processor::saveState(uint8_t* buffer, uint32_t* bytesSaved)
@@ -265,7 +265,6 @@ void Processor::resetCommandHandler(std::vector<std::string> const & args)
 
 void Processor::saveCommandHandler(std::vector<std::string> const & args)
 {
-   std::cout << "Save command with " << args.size() << std::endl;
    if (args.size() <= 0)
    {
       std::cout << "Need to provide a filename to save state into" << std::endl;
@@ -301,7 +300,35 @@ void Processor::saveCommandHandler(std::vector<std::string> const & args)
 
 void Processor::loadCommandHandler(std::vector<std::string> const & args)
 {
+   if (args.size() <= 0)
+   {
+      std::cout << "Need to provide a filename to load state from" << std::endl;
+      return;
+   }
 
+   std::string errorMsg = "";
+   std::vector<uint8_t> saveData = Utils::loadFileBytes(args[0], errorMsg);
+   if (errorMsg != "")
+   {
+      std::cout << "Error loading the file" << args[0] << "(" << errorMsg << ")" << std::endl;
+      return;
+   }
+
+   uint32_t bytesLoaded = saveData.size();
+   bool success = loadState(saveData.data(), &bytesLoaded);
+
+   if (!success)
+   {
+      std::cout << "Error deserializing the save data from the file into the system" << std::endl;;
+      return;
+   }
+
+   if (saveData.size() != bytesLoaded)
+   {
+      std::cout << "Warning: Only used " << bytesLoaded << " bytes of the save state file's"
+                << saveData.size() << " bytes of data" << std::endl;;
+      return;
+   }
 }
 
 

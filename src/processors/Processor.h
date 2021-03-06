@@ -5,15 +5,17 @@
 #include <vector>
 #include <cstdint>
 
+#include "ISerializable.h"
 #include "EmulatorCommon.h"
 #include "MemoryController.h"
+
 
 class Debugger;
 
 /**
  * Processor
  */
-class Processor
+class Processor: public ISerializable
 {
 public:
    Processor();
@@ -38,12 +40,10 @@ public:
    
    virtual bool step() = 0;
    
-   /// Returns -1 if it doesn't supprot serializing the state
-   virtual int getSaveStateLength();
-   
-   virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved);
-   
-   virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded);
+   /// ISerializable
+   virtual uint32_t getSaveStateLength() override;
+   virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved) override;
+   virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded) override;
    
    virtual void resetState() = 0;
    

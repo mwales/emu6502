@@ -235,7 +235,8 @@ bool Display::processQueues()
 
    } while (numBytesInCommand > 0);
 
-   SDL_TRACE() << "SDL_RenderPresent(pointer)";
+   // Calling render all the time very expensive / time wasting
+   // SDL_TRACE() << "SDL_RenderPresent(pointer)";
    // SDL_RenderPresent(theRenderer);
 
    // Check for events from SDL

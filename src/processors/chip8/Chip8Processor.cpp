@@ -1167,15 +1167,36 @@ bool Chip8Processor::getByteFromAddress(CpuAddress address, uint8_t* retByte)
    return true;
 }
 
+typedef struct Chip8SaveStateStruct
+{
+   uint32_t theMagicWord;
+   uint8_t theRegisters[16];
+   uint16_t theStack[32];
+   int theStackLen;
+   unsigned int theIndexReg;
+   uint32_t theTimerStartTickVal;
+   uint8_t theTimerValOriginal;
+   uint16_t theKeysDown;
+   uint16_t thePc;
 
-int Chip8Processor::getSaveStateLength()
+} Chip8SaveState;
+
+#define CHIP8_STATE_MAGIC 0xC8DA7AC8
+
+uint32_t Chip8Processor::getSaveStateLength()
 {
    int returnVal = 0;
 
-   returnVal += theMemoryController->getSaveStateLength();
+   std::vector<ISerializable*> componentList;
+   componentList.push_back(theMemoryController);
+   componentList.push_back(&theDisplay);
 
-   // todo get size of internal cpu state
-   // todo get size of display state
+   for(auto it: componentList)
+   {
+      returnVal += it->getSaveStateLength();
+   }
+
+   returnVal += sizeof(Chip8SaveState);
 
    return returnVal;
 }
@@ -1183,26 +1204,124 @@ int Chip8Processor::getSaveStateLength()
 bool Chip8Processor::saveState(uint8_t* buffer, uint32_t* bytesSaved)
 {
    uint32_t savedBytes = 0;
-   if (!theMemoryController->saveState(buffer, &savedBytes))
+   *bytesSaved = 0;
+
+   std::vector<ISerializable*> componentList;
+   componentList.push_back(theMemoryController);
+   componentList.push_back(&theDisplay);
+
+   for(auto it: componentList)
    {
-      std::cout << "Error serializing the state of the memory controller" << std::endl;
-      return false;
+      if (!it->saveState(buffer, &savedBytes))
+      {
+         std::cout << "Error saving one of the components of Chip8Processor" << std::endl;
+         return false;
+      }
+      else
+      {
+         C8DEBUG() << "Saved" << savedBytes << "of data so far";
+      }
+
+      *bytesSaved += savedBytes;
+      buffer += savedBytes;
+      savedBytes = 0;
    }
 
-   C8DEBUG() << "Successfully saved" << savedBytes << "bytes from memory controller";
+   Chip8SaveState c8State;
+   memset(&c8State, 0, sizeof(Chip8SaveState));
 
-   *bytesSaved += savedBytes;
-   buffer += savedBytes;
+   c8State.theMagicWord = CHIP8_STATE_MAGIC;
 
-   // get data internal cpu state
-   // get data of display state
+   for(int i = 0; i < 16; i++)
+   {
+      c8State.theRegisters[i] = theCpuRegisters[i];
+   }
+
+   for(unsigned int i = 0; (i < 32) && (i < theCpuStack.size()); i++ )
+   {
+      c8State.theStack[i] = theCpuStack[i];
+   }
+   c8State.theStackLen = theCpuStack.size();
+   c8State.theIndexReg = theIndexRegister;
+   c8State.theTimerStartTickVal = theTimerStartTickVal;
+   c8State.theTimerValOriginal = theTimerValOriginal;
+   c8State.thePc = thePc;
+
+   for(auto curKey: theKeysDown)
+   {
+      c8State.theKeysDown |= 1 < curKey;
+   }
+
+   memcpy(buffer, &c8State, sizeof(Chip8SaveState));
+   buffer += sizeof(Chip8SaveState);
+   *bytesSaved += sizeof(Chip8SaveState);
 
    return true;
 }
 
 bool Chip8Processor::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
 {
-   return false;
+   uint32_t compBytesLoaded = 0;
+   *bytesLoaded = 0;
+
+   std::vector<ISerializable*> componentList;
+   componentList.push_back(theMemoryController);
+   componentList.push_back(&theDisplay);
+
+   for(auto it: componentList)
+   {
+      if (!it->loadState(buffer, &compBytesLoaded))
+      {
+         std::cout << "Error loading one of the components of Chip8Processor" << std::endl;
+         return false;
+      }
+      else
+      {
+         C8DEBUG() << "Loaded" << compBytesLoaded << "bytes of save data";
+      }
+
+      *bytesLoaded += compBytesLoaded;
+      buffer += compBytesLoaded;
+      compBytesLoaded = 0;
+
+      C8DEBUG() << "After a single loop" << *bytesLoaded << "bytes are loaded";
+   }
+
+   Chip8SaveState c8State;
+   memcpy(&c8State, buffer, sizeof(Chip8SaveState));
+
+   if (c8State.theMagicWord != CHIP8_STATE_MAGIC)
+   {
+      std::cout << "Chip-8 state magic word invalid" << std::endl;
+      return false;
+   }
+
+   for(int i = 0; i < 16; i++)
+   {
+      theCpuRegisters[i] = c8State.theRegisters[i];
+   }
+
+   theCpuStack.clear();
+   for(int i = 0; (i < 32) && (i < c8State.theStackLen); i++ )
+   {
+       theCpuStack.push_back(c8State.theStack[i]);
+   }
+   theIndexRegister = c8State.theIndexReg;
+   theTimerStartTickVal = c8State.theTimerStartTickVal;
+   theTimerValOriginal = c8State.theTimerValOriginal;
+   thePc = c8State.thePc;
+
+   for(auto curKey: theKeysDown)
+   {
+      c8State.theKeysDown |= 1 < curKey;
+   }
+
+   buffer += sizeof(Chip8SaveState);
+   *bytesLoaded += sizeof(Chip8SaveState);
+
+   C8DEBUG() << "Done loading in Chip8Processsor" << *bytesLoaded << "bytes";
+
+   return true;
 }
 
 Processor* CreateChip8Processor(std::string instanceName)

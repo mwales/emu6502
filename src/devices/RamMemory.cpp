@@ -190,7 +190,7 @@ typedef struct RamMemorySaveStruct
 
 } RamMemorySave;
 
-#define RAM_MEMORY_MAGIC 0xf00dda7a;
+#define RAM_MEMORY_MAGIC 0xf00dda7a
 
 uint32_t RamMemory::getSaveStateLength()
 {
@@ -242,8 +242,43 @@ bool RamMemory::saveState(uint8_t* buffer, uint32_t* bytesSaved)
 
 bool RamMemory::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
 {
-   *bytesLoaded = 0;
-   return false;
+   RamMemorySave saveData;
+   memset(&saveData, 0, sizeof(RamMemorySave));
+   memcpy(&saveData, buffer, sizeof(RamMemorySave));
+
+   if (saveData.theMagicNumber != RAM_MEMORY_MAGIC)
+   {
+      std::cout << "Error loading RAM save data magic number";
+      *bytesLoaded = 0;
+      return false;
+   }
+
+   theAddress = saveData.theAddress;
+
+   if (theSize != saveData.theSize)
+   {
+      std::cout << "RAM size currently doesn't match size of saved RAM data";
+      // This way we don't have to resize the data
+      return false;
+   }
+   theLoadDataOffset = saveData.theLoadDataOffset;
+
+   *bytesLoaded = sizeof(RamMemorySave);
+   buffer += sizeof(RamMemorySave);
+   saveData.theLoadDataFilenameLength = theLoadDataFile.size() + 1;
+
+   // Next write the data from memory
+   memcpy(theData, buffer, theSize);
+   buffer += theSize;
+   *bytesLoaded += theSize;
+
+   // Finally write the filename
+   theLoadDataFile = std::string( (char*) buffer);
+   buffer += saveData.theLoadDataFilenameLength;
+   *bytesLoaded += saveData.theLoadDataFilenameLength;
+
+   RAM_DEBUG() << "RAM data loaded for" << getName();
+   return true;
 }
 
 FORCE_EXECUTE(fe_ram_memory)

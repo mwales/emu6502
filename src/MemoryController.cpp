@@ -703,7 +703,6 @@ uint32_t MemoryController::getSaveStateLength()
 bool MemoryController::saveState(uint8_t* buffer, uint32_t* bytesSaved)
 {
    std::vector<MemoryDev*> devList = getAllDevicesInNameOrder();
-   uint8_t* originalBuffer = buffer;
 
    uint32_t bytesSaveForSingleDev = 0;
    for(auto singleDev: devList)
@@ -722,16 +721,35 @@ bool MemoryController::saveState(uint8_t* buffer, uint32_t* bytesSaved)
       buffer += bytesSaveForSingleDev;
    }
 
-   LOG_DEBUG() << "Memory controller finished saving " << *bytesSaved << "bytes of data:"
-             << Utils::hexDump(originalBuffer, *bytesSaved);
+   LOG_DEBUG() << "Memory controller finished saving " << *bytesSaved << "bytes of data";
 
    return true;
 }
 
 bool MemoryController::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
 {
-   std::cout << "Nothing implemented in " << __PRETTY_FUNCTION__ << std::endl;
-   return false;
+   std::vector<MemoryDev*> devList = getAllDevicesInNameOrder();
+
+   uint32_t bytesLoadForSingleDev = 0;
+   for(auto singleDev: devList)
+   {
+      bytesLoadForSingleDev = 0;
+      if (!singleDev->loadState(buffer, &bytesLoadForSingleDev))
+      {
+         std::cerr << "Error loading the state for the " << singleDev->getName() << " device";
+         return false;
+      }
+
+      LOG_DEBUG() << "Loaded state of" << singleDev->getName() << "successfully ("
+                  << bytesLoadForSingleDev << "bytes )";
+
+      *bytesLoaded += bytesLoadForSingleDev;
+      buffer += bytesLoadForSingleDev;
+   }
+
+   LOG_DEBUG() << "Memory controller finished loading " << *bytesLoaded << "bytes of data";
+
+   return true;
 }
 
 

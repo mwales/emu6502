@@ -3,10 +3,11 @@
 
 #include <stdint.h>
 #include <vector>
+#include "ISerializable.h"
 
 class Display;
 
-class Chip8Display
+class Chip8Display : public ISerializable
 {
 public:
    Chip8Display();
@@ -31,6 +32,11 @@ public:
    void setResolution(bool highMode);
 
    void redrawScreen();
+
+   // ISerializable
+   virtual uint32_t getSaveStateLength() override;
+   virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved) override;
+   virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded) override;
 
 protected:
 

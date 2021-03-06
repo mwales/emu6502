@@ -275,3 +275,84 @@ void Chip8Display::updateResolution()
       theDisplay->setLogicalSize(LOW_RES_WIDTH, LOW_RES_HEIGHT);
    }
 }
+
+typedef struct C8DisplayState
+{
+   uint32_t theMagicNumber;
+   uint8_t pixelData[HIGH_RES_HEIGHT][HIGH_RES_WIDTH];
+   uint8_t theMode;
+   uint8_t thePlanes;
+} C8DisplayState;
+
+#define DISPLAY_MAGIC_NUMBER 0xd1591a45
+
+uint32_t Chip8Display::getSaveStateLength()
+{
+   return sizeof(C8DisplayState);
+}
+
+bool Chip8Display::saveState(uint8_t* buffer, uint32_t* bytesSaved)
+{
+   C8DISPDEBUG() << "saveState()";
+
+   C8DisplayState state;
+   memset(&state, 0, sizeof(C8DisplayState));
+
+   for(int y = 0; y < HIGH_RES_HEIGHT; y++)
+   {
+      for(int x = 0; x < HIGH_RES_WIDTH; x++)
+      {
+         state.pixelData[y][x] = thePixels[y][x];
+
+      }
+   }
+
+   state.theMagicNumber = DISPLAY_MAGIC_NUMBER;
+   state.theMode = (theHighResMode ? 1 : 0);
+   state.thePlanes = thePlaneValue;
+
+   memcpy(buffer, &state, sizeof(C8DisplayState));
+
+   *bytesSaved = sizeof(C8DisplayState);
+   return true;
+}
+
+bool Chip8Display::loadState(uint8_t* buffer, uint32_t* bytesLoaded)
+{
+   C8DISPDEBUG() << "loadState()";
+
+   C8DisplayState state;
+   memcpy(&state, buffer, sizeof(C8DisplayState));
+
+   if (state.theMagicNumber != DISPLAY_MAGIC_NUMBER)
+   {
+      std::cout << "Error reading display data (invalid magic number)" << std::endl;
+      return false;
+   }
+
+   for(int y = 0; y < HIGH_RES_HEIGHT; y++)
+   {
+      for(int x = 0; x < HIGH_RES_WIDTH; x++)
+      {
+         thePixels[y][x] = state.pixelData[y][x];
+
+         if (state.pixelData[y][x] == 1)
+         {
+            theDisplay->drawPixel(x, y, white);
+         }
+         else
+         {
+            theDisplay->drawPixel(x, y, black);
+         }
+      }
+   }
+
+   setResolution(state.theMode);
+   thePlaneValue = state.thePlanes;
+
+   *bytesLoaded = sizeof(C8DisplayState);
+
+   theDisplay->render();
+
+   return true;
+}

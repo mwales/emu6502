@@ -201,7 +201,7 @@ std::string Utils::loadFile(std::string& name, std::string& errorOut)
    return retVal;
 }
 
-std::vector<uint8_t> Utils::loadFileBytes(std::string& name, std::string& errorOut)
+std::vector<uint8_t> Utils::loadFileBytes(std::string const & name, std::string& errorOut)
 {
    std::vector<uint8_t> retVal;
 
@@ -259,11 +259,11 @@ std::string Utils::saveFile(std::string const & filename, uint8_t* buf, int file
       return "Error opening file for writing";
    }
 
-   int bytesWritten = SDL_RWwrite(f, buf, fileLen, 1);
+   int objsWritten = SDL_RWwrite(f, buf, fileLen, 1);
 
    SDL_RWclose(f);
 
-   if (bytesWritten != fileLen)
+   if (objsWritten != 1)
    {
       return "Error writing the file";
    }

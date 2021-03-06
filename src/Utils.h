@@ -50,7 +50,7 @@ public:
     *             calling and check to see if still empty
     * @return File contents
     */
-   static std::vector<uint8_t> loadFileBytes(std::string& name, std::string& errorOut);
+   static std::vector<uint8_t> loadFileBytes(std::string const & name, std::string& errorOut);
 
    static std::string saveFile(std::string const & filename, uint8_t* buf, int fileLen);
 
