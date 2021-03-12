@@ -30,6 +30,12 @@ public:
     */
    bool decodeInstruction(CpuAddress addr);
 
+   /**
+    * Decodes the given opcode as if it were at the given address.  This is needed
+    * by the debugger when we hit a breakpoint and the memory has the break instruction.
+    */
+   bool decodeOpCode(CpuAddress addr, uint16_t opCode);
+
    std::string getErrorMessage();
 
 protected:

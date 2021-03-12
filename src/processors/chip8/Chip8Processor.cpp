@@ -46,6 +46,8 @@ Chip8Processor::Chip8Processor(std::string instanceName):
    theLowResFontsAddr(0x0),
    theHiResFontsAddr(0x0),
    theSoundEnabled(true),
+   theStopFlag(false),
+   theCounterOnBreakpoint(0xffffffffffffffff),
    theEventQueue(nullptr)
 {
    C8DEBUG() << "Creating an instance of" << instanceName;
@@ -217,6 +219,8 @@ void Chip8Processor::checkDisplayEvents()
 
 bool Chip8Processor::step()
 {
+   theStopFlag = false;
+
    if (thePc > (0x1000 - 2))
    {
       C8DEBUG() << "Instruction address " << addressToString(thePc) << " out of bounds";
@@ -234,7 +238,7 @@ bool Chip8Processor::step()
    
    thePc += 2;
    theInstructionsExecuted++;
-   return true;
+   return  !theStopFlag;
 }
 
 unsigned char Chip8Processor::getRegister(unsigned char reg)
@@ -338,6 +342,31 @@ void Chip8Processor::insCall(unsigned addr)
       C8DEBUG() << "Call to address" << addressToString(addr) << "is out of bounds";
       theStopFlag = true;
       return;
+   }
+
+   // Check for the debugger break instruction
+   if (addr == 0x0)
+   {
+      // Did we already break at this address?
+      if (theCounterOnBreakpoint == (theInstructionsExecuted - 1))
+      {
+         C8DEBUG() << "We already hit this breakpoint @" << addressToString(thePc) << ", keep running!";
+
+         uint16_t theRealOpCode = theBreakpointList[thePc];
+         decodeOpCode(thePc, theRealOpCode);
+         return;
+      }
+      else
+      {
+         C8DEBUG() << "First time hitting this breakpoint @" << addressToString(thePc)
+                   << "with IC=" << theInstructionsExecuted;
+         theCounterOnBreakpoint = theInstructionsExecuted;
+         theStopFlag = true;
+
+         // Don't let PC increment
+         thePc -= 2;
+         return;
+      }
    }
 
    theCpuStack.push_back(thePc);
@@ -1328,6 +1357,131 @@ Processor* CreateChip8Processor(std::string instanceName)
 {
    return new Chip8Processor(instanceName);
 }
+
+DECLARE_DEBUGGER_CALLBACK(Chip8Processor, breakpointCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Chip8Processor, breakpointListCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Chip8Processor, breakpointDeleteCommandHandler);
+
+void Chip8Processor::registerDebugHandlerCommands(Debugger* dbgr)
+{
+   Processor::registerDebugHandlerCommands(dbgr);
+
+   dbgr->registerNewCommandHandler("b", "Adds a breakpoint",
+                                   g_breakpointCommandHandler,
+                                   this);
+   dbgr->registerNewCommandHandler("bl", "Lists breakpoints",
+                                   g_breakpointListCommandHandler,
+                                   this);
+   dbgr->registerNewCommandHandler("bd", "Deletes a breakpoint",
+                                   g_breakpointDeleteCommandHandler,
+                                   this);
+}
+
+// In Chip8, instruction 2xxx is CALL instruction.  0 is an invalid address, so we shouldn't
+// encounter this instruction in every day binaries
+#define BREAKPOINT_INSTRUCTION 0x2000
+
+void Chip8Processor::breakpointCommandHandler(std::vector<std::string> const & args)
+{
+   C8DEBUG() << "Add breakpoint (called with" << args.size() << "args)";
+
+   // Verify user provided a breakpoint
+   if (args.size() < 1)
+   {
+      std::cout << "Usage: b <address>" << std::endl;
+      return;
+   }
+
+   // Verify memory address is valid
+   bool success = true;
+   CpuAddress bpAddr = Utils::parseUInt32(args[0], &success);
+   if (!success)
+   {
+      std::cout << "Error parsing breakpoint address" << args[0] << std::endl;
+      return;
+   }
+
+   uint16_t originalInstruction;
+   success = theMemoryController->read16(bpAddr, &originalInstruction);
+   if (!success)
+   {
+      std::cout << "Error reading memory from " << addressToString(bpAddr) << std::endl;
+      return;
+   }
+
+   // Overwrite memory address with a CALL #0 instrution (internal emulator meta command)
+   success = theMemoryController->write16(bpAddr, BREAKPOINT_INSTRUCTION);
+   if (!success)
+   {
+      std::cout << "Error writing the breakpoint instruction" << std::endl;
+      return;
+   }
+
+   // Add the breakpoint info to theBreakpointList
+   theBreakpointList[bpAddr] = originalInstruction;
+
+   std::cout << "Breakpoint added at " << addressToString(bpAddr) << std::endl;
+}
+
+void Chip8Processor::breakpointListCommandHandler(std::vector<std::string> const & args)
+{
+   C8DEBUG() << "Show breakpoint list";
+
+   std::cout << "  OPCODE \tAddress   \tInstruction" << std::endl;
+   for(auto curBp: theBreakpointList)
+   {
+      theMemoryController->write16(curBp.first, curBp.second);
+      std::string instruction;
+      disassembleAddr(curBp.first, &instruction);
+
+      std::cout << "  " << Utils::toHex16(curBp.second)
+                << "\t" << instruction << std::endl;
+
+      theMemoryController->write16(curBp.first, 0x2000);
+   }
+}
+
+void Chip8Processor::breakpointDeleteCommandHandler(std::vector<std::string> const & args)
+{
+   C8DEBUG() << "Delete breakpoint (called with" << args.size() << "args)";
+
+   // Verify user provided a breakpoint
+   if (args.size() < 1)
+   {
+      std::cout << "Usage: bd <address>" << std::endl;
+      return;
+   }
+
+   // Verify memory address is valid
+   bool success = true;
+   CpuAddress bpAddr = Utils::parseUInt32(args[0], &success);
+   if (!success)
+   {
+      std::cout << "Error parsing breakpoint address" << args[0] << std::endl;
+      return;
+   }
+
+   // Is the address in the breakpoint list?
+   auto bplIter = theBreakpointList.find(bpAddr);
+   if (bplIter == theBreakpointList.end())
+   {
+      std::cout << "No breakpoint at " << addressToString(bpAddr) << std::endl;
+      return;
+   }
+
+   // Overwrite memory address with a original instrution
+   if (!theMemoryController->write16(bpAddr, bplIter->second))
+   {
+      std::cout << "Error writing the orig instruction over breakpoint" << std::endl;
+      return;
+   }
+
+   // Add the breakpoint info to theBreakpointList
+   theBreakpointList.erase(bplIter);
+
+   std::cout << "Breakpoint deleted at " << addressToString(bpAddr) << std::endl;
+}
+
 
 FORCE_EXECUTE(fe_chip8_cpu)
 {

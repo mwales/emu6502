@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <set>
+#include <map>
 
 #include "SimpleQueue.h"
 
@@ -56,6 +57,12 @@ public:
    virtual bool saveState(uint8_t* buffer, uint32_t* bytesSaved) override;
    virtual bool loadState(uint8_t* buffer, uint32_t* bytesLoaded) override;
 
+   virtual void registerDebugHandlerCommands(Debugger* dbgr);
+
+   void breakpointCommandHandler(std::vector<std::string> const & args);
+   void breakpointListCommandHandler(std::vector<std::string> const & args);
+   void breakpointDeleteCommandHandler(std::vector<std::string> const & args);
+
 protected:
    
    // Internal state variables for the interpreter
@@ -70,11 +77,6 @@ protected:
 
    std::vector<unsigned char> theHp48Flags;
    
-   /**
-    * Stop the emulator when it is running and hits one of these addresses with the IP
-    */
-   std::set<unsigned int> theBreakpoints;
-   
    // Key press event lock and list
    void checkDisplayEvents();
    std::set<uint8_t> theKeysDown;
@@ -86,14 +88,22 @@ protected:
    CpuAddress theLowResFontsAddr;
    CpuAddress theHiResFontsAddr;
    
-   /**
-    * How fast the emulator should process instructions
-    */
-   int theInstructionPeriodMicroSecs;
-   
    bool theSoundEnabled;
    
    bool theStopFlag;
+
+   /**
+    * Breakpoints are going to be implemented as CALL #000.  So when inserting a breakpoint
+    * replace the instruction with a CALL 0, but put the real instruction in this table so it
+    * can be executed later.
+    */
+   std::map<CpuAddress, uint16_t> theBreakpointList;
+
+   /**
+     * Whenever you stop for a breakpoint, put the instruction counter here.  Don't stop for
+     * a breakpoint you just stopped for on previous instruction
+     */
+   uint64_t theCounterOnBreakpoint;
    
    /**
     * Loads the Chip-8 font sprites into memory below 0x200

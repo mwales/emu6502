@@ -63,9 +63,13 @@ bool Chip8Decoder::decodeInstruction(CpuAddress addr)
 	   return false;
    }
    
-   
+   uint16_t opCode = lsb * 0x100 + msb;
+   return decodeOpCode(addr, opCode);
+}
 
-   unsigned int word = lsb * 0x100 + msb;
+bool Chip8Decoder::decodeOpCode(CpuAddress addr, uint16_t word)
+{
+
    unsigned int prefix = word & MASK_PREFIX;
 
    bool retCode = false;

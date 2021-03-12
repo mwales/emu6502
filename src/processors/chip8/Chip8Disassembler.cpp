@@ -107,10 +107,18 @@ void Chip8Disassembler::insJump(unsigned addr)
 
 void Chip8Disassembler::insCall(unsigned addr)
 {
-   ostringstream ss;
-   ss << "call loc_" << setfill('0') << setw(4) << hex << addr;
+   if (addr == 0)
+   {
+      // Special internal meta instruction for a debugger breakpoint
+      theDisassemblyText = "DEBUG_BREAK";
+   }
+   else
+   {
+      ostringstream ss;
+      ss << "call loc_" << setfill('0') << setw(4) << hex << addr;
 
-   theDisassemblyText = ss.str();
+      theDisassemblyText = ss.str();
+   }
 }
 
 
