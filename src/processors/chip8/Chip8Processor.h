@@ -62,6 +62,7 @@ public:
    void breakpointCommandHandler(std::vector<std::string> const & args);
    void breakpointListCommandHandler(std::vector<std::string> const & args);
    void breakpointDeleteCommandHandler(std::vector<std::string> const & args);
+   void loadChip8RomCommandHandler(std::vector<std::string> const & args);
 
 protected:
    

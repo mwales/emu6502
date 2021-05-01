@@ -25,6 +25,7 @@
 
 #define NUM_REGISTERS      16
 #define MAX_MEMORY         0x1000
+#define START_ADDRESS      0x200
 
 #define SCREEN_MEMORY_ADDR 0x0f00
 #define SCREEN_MEMORY_SIZE 0x0100
@@ -57,7 +58,7 @@ Chip8Processor::Chip8Processor(std::string instanceName):
       theCpuRegisters.push_back(0);
    }
    
-   thePc = 0x200;
+   thePc = START_ADDRESS;
 }
 
 Chip8Processor::~Chip8Processor()
@@ -1361,6 +1362,7 @@ Processor* CreateChip8Processor(std::string instanceName)
 DECLARE_DEBUGGER_CALLBACK(Chip8Processor, breakpointCommandHandler);
 DECLARE_DEBUGGER_CALLBACK(Chip8Processor, breakpointListCommandHandler);
 DECLARE_DEBUGGER_CALLBACK(Chip8Processor, breakpointDeleteCommandHandler);
+DECLARE_DEBUGGER_CALLBACK(Chip8Processor, loadChip8RomCommandHandler);
 
 void Chip8Processor::registerDebugHandlerCommands(Debugger* dbgr)
 {
@@ -1374,6 +1376,9 @@ void Chip8Processor::registerDebugHandlerCommands(Debugger* dbgr)
                                    this);
    dbgr->registerNewCommandHandler("bd", "Deletes a breakpoint",
                                    g_breakpointDeleteCommandHandler,
+                                   this);
+   dbgr->registerNewCommandHandler("loadrom", "Loads Chip-8 ROM",
+                                   g_loadChip8RomCommandHandler,
                                    this);
 }
 
@@ -1480,6 +1485,36 @@ void Chip8Processor::breakpointDeleteCommandHandler(std::vector<std::string> con
    theBreakpointList.erase(bplIter);
 
    std::cout << "Breakpoint deleted at " << addressToString(bpAddr) << std::endl;
+}
+
+void Chip8Processor::loadChip8RomCommandHandler(std::vector<std::string> const & args)
+{
+   if (args.size() < 1)
+   {
+      std::cout << "Usage: loadrom filename" << std::endl;
+      return;
+   }
+
+   std::string errors;
+   std::vector<uint8_t> romData = Utils::loadFileBytes(args[0], errors);
+   if (!errors.empty())
+   {
+      std::cout << "Error loading rom file " << args[0] << ":"
+                << errors << std::endl;
+      return;
+   }
+
+   CpuAddress curAddress = START_ADDRESS;
+   for(size_t i = 0; i < romData.size(); i++)
+   {
+      theMemoryController->write8(curAddress, romData[i]);
+      curAddress++;
+   }
+
+   thePc = START_ADDRESS;
+
+   std::cout << "Loaded " << romData.size() << " bytes from " << args[0]
+             << "and reset PC to start address" << std::endl;
 }
 
 
